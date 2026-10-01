@@ -84025,6 +84025,14 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       _useState2 = (0, _slicedToArray2.default)(_useState, 2),
       ready = _useState2[0],
       setReady = _useState2[1];
+    var _useState3 = (0, _react.useState)(false),
+      _useState4 = (0, _slicedToArray2.default)(_useState3, 2),
+      initializationError = _useState4[0],
+      setInitializationError = _useState4[1];
+    var _useState5 = (0, _react.useState)(0),
+      _useState6 = (0, _slicedToArray2.default)(_useState5, 2),
+      retry = _useState6[0],
+      setRetry = _useState6[1];
     (0, _react.useEffect)(() => {
       function initApp() {
         return _initApp.apply(this, arguments);
@@ -84036,6 +84044,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             yield (0, require(_dependencyMap[7], "../services/notifications").rescheduleActivityReminders)();
           } catch (error) {
             console.error('Error al inicializar la base de datos:', error);
+            setInitializationError(true);
           } finally {
             // Garantiza que pase a la UI principal incluso si hubo un error en la BD
             setReady(true);
@@ -84044,7 +84053,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         return _initApp.apply(this, arguments);
       }
       initApp();
-    }, []);
+    }, [retry]);
     if (!ready) {
       return /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
         style: {
@@ -84056,6 +84065,51 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.ActivityIndicator, {
           color: "#9B8FBF"
         })
+      });
+    }
+    if (initializationError) {
+      return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+        style: {
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 28,
+          backgroundColor: '#0B0D14',
+          gap: 14
+        },
+        children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+          style: {
+            color: '#F8F7FB',
+            fontSize: 20,
+            fontWeight: '700'
+          },
+          children: "No se pudo abrir tu b\xF3veda local"
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+          style: {
+            color: '#AEB2C0',
+            textAlign: 'center'
+          },
+          children: "Tus datos no se han modificado. Intenta abrir la app de nuevo."
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
+          onPress: () => {
+            setInitializationError(false);
+            setReady(false);
+            setRetry(value => value + 1);
+          },
+          style: {
+            backgroundColor: '#A78BFA',
+            borderRadius: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 11
+          },
+          children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: {
+              color: '#171421',
+              fontWeight: '800'
+            },
+            children: "Reintentar"
+          })
+        })]
       });
     }
     return /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[8], "react-native-safe-area-context").SafeAreaProvider, {
@@ -84073,22 +84127,34 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   exports.getDb = getDb;
   var _asyncToGenerator2 = _interopRequireDefault(require(_dependencyMap[1], "@babel/runtime/helpers/asyncToGenerator"));
   var dbInstance = null;
+  var dbPromise = null;
   function getDb() {
     return _getDb.apply(this, arguments);
   }
   function _getDb() {
     _getDb = (0, _asyncToGenerator2.default)(function* () {
       if (dbInstance) return dbInstance;
+      dbPromise ??= initializeDb();
+      return dbPromise;
+    });
+    return _getDb.apply(this, arguments);
+  }
+  function initializeDb() {
+    return _initializeDb.apply(this, arguments);
+  }
+  function _initializeDb() {
+    _initializeDb = (0, _asyncToGenerator2.default)(function* () {
       var encryptionKey = yield (0, require(_dependencyMap[2], "./key").getOrCreateDbKey)();
       var db = (0, require(_dependencyMap[3], "@op-engineering/op-sqlite").open)({
         name: 'ritmo.db',
         encryptionKey
       });
+      yield db.execute('PRAGMA foreign_keys = ON');
       yield runMigrations(db);
       dbInstance = db;
       return db;
     });
-    return _getDb.apply(this, arguments);
+    return _initializeDb.apply(this, arguments);
   }
   function runMigrations(_x) {
     return _runMigrations.apply(this, arguments);
@@ -85362,6 +85428,14 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   }, {
     name: '006_notes_dates_and_category_icons',
     statements: [`ALTER TABLE categories ADD COLUMN emoji TEXT;`, `ALTER TABLE notes ADD COLUMN note_date TEXT;`, `CREATE INDEX idx_notes_note_date ON notes(note_date);`]
+  }, {
+    // Una excepción oculta una ocurrencia de una serie sin modificarla.
+    name: '007_time_block_exceptions',
+    statements: [`CREATE TABLE time_block_exceptions (
+        time_block_id TEXT NOT NULL REFERENCES time_blocks(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        PRIMARY KEY (time_block_id, date)
+      );`, `CREATE INDEX idx_time_block_exceptions_date ON time_block_exceptions(date);`]
   }];
 },634,null,"src/db/migrations/index.ts");
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
@@ -85384,7 +85458,14 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       // El valor visible por defecto es 15 min: úsalo también si el ajuste aún no se ha guardado.
       var minutes = Number((yield (0, require(_dependencyMap[4], "../db/repositories/settiengs").getSetting)('reminder_minutes')) ?? '15');
       if (!minutes) return;
-      var triggerAt = new Date(`${input.date}T${input.startTime}:00`).getTime() - minutes * 60_000;
+      var date = input.date;
+      var triggerAt = new Date(`${date}T${input.startTime}:00`).getTime() - minutes * 60_000;
+      if (triggerAt <= Date.now() && input.recurring) {
+        var next = new Date(`${date}T12:00:00`);
+        next.setDate(next.getDate() + 7);
+        date = (0, require(_dependencyMap[5], "../shared/utils/date").localDateKey)(next);
+        triggerAt = new Date(`${date}T${input.startTime}:00`).getTime() - minutes * 60_000;
+      }
       if (triggerAt <= Date.now()) return;
       var channelId = yield _reactNative.default.createChannel({
         id: 'activities',
@@ -89346,6 +89427,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   });
   exports.createTimeBlock = createTimeBlock;
   exports.deleteTimeBlock = deleteTimeBlock;
+  exports.deleteTimeBlockOccurrence = deleteTimeBlockOccurrence;
   exports.listBlocksForDate = listBlocksForDate;
   exports.listBlocksForReminders = listBlocksForReminders;
   exports.updateTimeBlock = updateTimeBlock;
@@ -89357,14 +89439,27 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     _listBlocksForDate = (0, _asyncToGenerator2.default)(function* (date) {
       var db = yield (0, require(_dependencyMap[2], "../client").getDb)();
       var dayOfWeek = (0, require(_dependencyMap[3], "../../shared/utils/date").weekdayFromKey)(date);
+      var previous = (0, require(_dependencyMap[3], "../../shared/utils/date").dateFromKey)(date);
+      previous.setDate(previous.getDate() - 1);
+      var previousDate = (0, require(_dependencyMap[3], "../../shared/utils/date").localDateKey)(previous);
+      var previousDayOfWeek = (0, require(_dependencyMap[3], "../../shared/utils/date").weekdayFromKey)(previousDate);
       var result = yield db.execute(`SELECT tb.id, tb.category_id, c.name AS category_name, c.color AS category_color, c.emoji AS category_emoji,
             tb.start_time, tb.end_time, tb.day_of_week, tb.is_recurring, tb.schedule_date
      FROM time_blocks tb JOIN categories c ON c.id = tb.category_id
-     WHERE tb.schedule_date = ?
+     WHERE (
+       tb.schedule_date = ?
+       OR (tb.schedule_date = ? AND tb.end_time < tb.start_time)
        OR (tb.schedule_date IS NULL AND tb.is_recurring = 1 AND tb.day_of_week = ?)
+       OR (tb.schedule_date IS NULL AND tb.is_recurring = 1 AND tb.day_of_week = ? AND tb.end_time < tb.start_time)
        OR (tb.schedule_date IS NULL AND tb.is_recurring = 0 AND tb.day_of_week = ?)
-     ORDER BY tb.start_time ASC`, [date, dayOfWeek, dayOfWeek]);
-      return result.rows ?? [];
+     )
+     ORDER BY tb.start_time ASC`, [date, previousDate, dayOfWeek, previousDayOfWeek, dayOfWeek]);
+      var exceptions = yield db.execute('SELECT time_block_id, date FROM time_block_exceptions WHERE date IN (?, ?)', [date, previousDate]);
+      var hidden = new Set((exceptions.rows ?? []).map(row => `${row.time_block_id}:${row.date}`));
+      return (result.rows ?? []).filter(block => {
+        var continuesFromPreviousDay = block.end_time < block.start_time && (block.schedule_date === previousDate || block.schedule_date === null && block.day_of_week === previousDayOfWeek);
+        return !hidden.has(`${block.id}:${continuesFromPreviousDay ? previousDate : date}`);
+      });
     });
     return _listBlocksForDate.apply(this, arguments);
   }
@@ -89402,14 +89497,36 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     });
     return _deleteTimeBlock.apply(this, arguments);
   }
-  function updateTimeBlock(_x4) {
+  function deleteTimeBlockOccurrence(_x4, _x5, _x6) {
+    return _deleteTimeBlockOccurrence.apply(this, arguments);
+  }
+  function _deleteTimeBlockOccurrence() {
+    _deleteTimeBlockOccurrence = (0, _asyncToGenerator2.default)(function* (id, date, recurring) {
+      var db = yield (0, require(_dependencyMap[2], "../client").getDb)();
+      if (recurring) {
+        yield db.execute('INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)', [id, date]);
+        return;
+      }
+      yield deleteTimeBlock(id);
+    });
+    return _deleteTimeBlockOccurrence.apply(this, arguments);
+  }
+  function updateTimeBlock(_x7) {
     return _updateTimeBlock.apply(this, arguments);
   }
   function _updateTimeBlock() {
     _updateTimeBlock = (0, _asyncToGenerator2.default)(function* (input) {
       var db = yield (0, require(_dependencyMap[2], "../client").getDb)();
       if (input.recurring && input.scope === 'day') {
-        yield db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ?, is_recurring = 0, schedule_date = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.date, input.id]);
+        yield db.transaction(/*#__PURE__*/function () {
+          var _ref = (0, _asyncToGenerator2.default)(function* (tx) {
+            yield tx.execute('INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)', [input.id, input.date]);
+            yield tx.execute('INSERT INTO time_blocks (id, category_id, start_time, end_time, day_of_week, is_recurring, schedule_date) VALUES (?, ?, ?, ?, ?, 0, ?)', [(0, require(_dependencyMap[4], "uuid").v4)(), input.categoryId, input.startTime, input.endTime, (0, require(_dependencyMap[3], "../../shared/utils/date").weekdayFromKey)(input.date), input.date]);
+          });
+          return function (_x8) {
+            return _ref.apply(this, arguments);
+          };
+        }());
         return;
       }
       yield db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.id]);
@@ -90228,10 +90345,12 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
               ELSE COALESCE(
                 (SELECT SUM(value) FROM goal_progress WHERE goal_id = g.id AND date >= ? AND date <= ?), 0)
             END as progress_value,
-            COALESCE(
-              (SELECT completed FROM goal_progress WHERE goal_id = g.id AND date = ?), 0) as completed
+            CASE WHEN g.period = 'weekly' THEN
+              CASE WHEN COALESCE((SELECT SUM(value) FROM goal_progress WHERE goal_id = g.id AND date >= ? AND date <= ?), 0) >= g.target_value THEN 1 ELSE 0 END
+            ELSE COALESCE((SELECT completed FROM goal_progress WHERE goal_id = g.id AND date = ?), 0)
+            END as completed
      FROM goals g
-     ORDER BY g.title ASC`, [todayDate, weekStart, todayDate, todayDate]);
+     ORDER BY g.title ASC`, [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate]);
       return result.rows ?? [];
     });
     return _listTodayGoals.apply(this, arguments);
@@ -108205,28 +108324,46 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   var _jsxFileName = "C:\\Users\\cuent\\Documents\\akmon_studio\\habitLook\\src\\features\\clock\\ClockScreen.tsx";
   function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
   var todayKey = () => (0, require(_dependencyMap[6], "../../shared/utils/date").localDateKey)();
+  function useNow(intervalMs = 30_000) {
+    var _useState = (0, _react.useState)(() => new Date()),
+      _useState2 = (0, _slicedToArray2.default)(_useState, 2),
+      now = _useState2[0],
+      setNow = _useState2[1];
+    (0, _react.useEffect)(() => {
+      var timer = setInterval(() => setNow(new Date()), intervalMs);
+      return () => clearInterval(timer);
+    }, [intervalMs]);
+    return now;
+  }
   var displayDate = date => new Date(`${date}T12:00:00`).toLocaleDateString('es-CO', {
     weekday: 'long',
     day: 'numeric',
     month: 'long'
   });
   function ClockScreen() {
+    var now = useNow();
     var _useWindowDimensions = (0, _reactNative.useWindowDimensions)(),
       width = _useWindowDimensions.width;
     var ringSize = Math.min(330, Math.max(260, width - 44));
-    var _useState = (0, _react.useState)(todayKey()),
-      _useState2 = (0, _slicedToArray2.default)(_useState, 2),
-      selectedDate = _useState2[0],
-      setSelectedDate = _useState2[1];
-    var _useState3 = (0, _react.useState)(false),
+    var _useState3 = (0, _react.useState)(todayKey()),
       _useState4 = (0, _slicedToArray2.default)(_useState3, 2),
-      calendarOpen = _useState4[0],
-      setCalendarOpen = _useState4[1];
-    var _useState5 = (0, _react.useState)(0),
+      selectedDate = _useState4[0],
+      setSelectedDate = _useState4[1];
+    var _useState5 = (0, _react.useState)(false),
       _useState6 = (0, _slicedToArray2.default)(_useState5, 2),
-      calendarRevision = _useState6[0],
-      setCalendarRevision = _useState6[1];
-    var _useTodayTimeline = (0, require(_dependencyMap[7], "./hooks/useTodayTimeline").useTodayTimeline)(selectedDate),
+      calendarOpen = _useState6[0],
+      setCalendarOpen = _useState6[1];
+    var _useState7 = (0, _react.useState)(0),
+      _useState8 = (0, _slicedToArray2.default)(_useState7, 2),
+      calendarRevision = _useState8[0],
+      setCalendarRevision = _useState8[1];
+    var previousToday = _react.default.useRef(todayKey());
+    (0, _react.useEffect)(() => {
+      var currentToday = (0, require(_dependencyMap[6], "../../shared/utils/date").localDateKey)(now);
+      if (selectedDate === previousToday.current) setSelectedDate(currentToday);
+      previousToday.current = currentToday;
+    }, [now, selectedDate]);
+    var _useTodayTimeline = (0, require(_dependencyMap[7], "./hooks/useTodayTimeline").useTodayTimeline)(selectedDate, now),
       segments = _useTodayTimeline.segments,
       nightSegments = _useTodayTimeline.nightSegments,
       legend = _useTodayTimeline.legend,
@@ -108237,18 +108374,18 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       goals = _useTodayGoals.goals,
       loadingGoals = _useTodayGoals.loading,
       reloadGoals = _useTodayGoals.reload;
-    var _useState7 = (0, _react.useState)(false),
-      _useState8 = (0, _slicedToArray2.default)(_useState7, 2),
-      planOpen = _useState8[0],
-      setPlanOpen = _useState8[1];
     var _useState9 = (0, _react.useState)(false),
       _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
-      goalOpen = _useState0[0],
-      setGoalOpen = _useState0[1];
-    var _useState1 = (0, _react.useState)(null),
+      planOpen = _useState0[0],
+      setPlanOpen = _useState0[1];
+    var _useState1 = (0, _react.useState)(false),
       _useState10 = (0, _slicedToArray2.default)(_useState1, 2),
-      selectedSegment = _useState10[0],
-      setSelectedSegment = _useState10[1];
+      goalOpen = _useState10[0],
+      setGoalOpen = _useState10[1];
+    var _useState11 = (0, _react.useState)(null),
+      _useState12 = (0, _slicedToArray2.default)(_useState11, 2),
+      selectedSegment = _useState12[0],
+      setSelectedSegment = _useState12[1];
     var freeSlot = (0, _react.useMemo)(() => segments.find(segment => segment.categoryId === '__free__'), [segments]);
     var formatTime = minutes => {
       var value = (minutes % 1440 + 1440) % 1440;
@@ -108268,7 +108405,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         return _ref.apply(this, arguments);
       };
     }();
-    if (loadingTimeline || loadingGoals) return /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[10], "react-native-safe-area-context").SafeAreaView, {
+    if (loadingTimeline && segments.length === 0 || loadingGoals) return /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[10], "react-native-safe-area-context").SafeAreaView, {
       style: styles.container,
       children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
         style: styles.loading,
@@ -108327,17 +108464,17 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             size: ringSize,
             daySegments: segments,
             nightSegments: nightSegments,
-            now: new Date(),
+            now: now,
             onSegmentPress: setSelectedSegment
           })
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.ringKey,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
             style: styles.keyDay,
-            children: ["Anillo grande \xB7 ", new Date().getHours() >= 6 && new Date().getHours() < 18 ? '06:00 — 17:59' : '18:00 — 05:59']
+            children: ["Anillo grande \xB7 ", now.getHours() >= 6 && now.getHours() < 18 ? '06:00 — 17:59' : '18:00 — 05:59']
           }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
             style: styles.keyNight,
-            children: ["Anillo interior \xB7 ", new Date().getHours() >= 6 && new Date().getHours() < 18 ? '18:00 — 05:59' : '06:00 — 17:59']
+            children: ["Anillo interior \xB7 ", now.getHours() >= 6 && now.getHours() < 18 ? '18:00 — 05:59' : '06:00 — 17:59']
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[13], "./components/CategoryLegend").CategoryLegend, {
           items: legend
@@ -108602,7 +108739,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       minute = _time$split$map2[1];
     return hour * 60 + minute;
   };
-  function useTodayTimeline(selectedDate) {
+  function useTodayTimeline(selectedDate, now = new Date()) {
     var _useState = (0, _react.useState)([]),
       _useState2 = (0, _slicedToArray2.default)(_useState, 2),
       segments = _useState2[0],
@@ -108626,17 +108763,30 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
       loading = _useState0[0],
       setLoading = _useState0[1];
+    var hasLoaded = (0, _react.useRef)(false);
     var load = (0, _react.useCallback)(/*#__PURE__*/(0, _asyncToGenerator2.default)(function* () {
-      setLoading(true);
+      if (!hasLoaded.current) setLoading(true);
       var blocks = yield (0, require(_dependencyMap[4], "../../../db/repositories/timeBlocks").listBlocksForDate)(selectedDate);
-      var mapped = blocks.map(block => ({
-        categoryId: block.category_id,
-        categoryName: block.category_name,
-        color: block.category_color,
-        emoji: block.category_emoji,
-        startMinutes: toMinutes(block.start_time),
-        endMinutes: toMinutes(block.end_time)
-      }));
+      var mapped = blocks.flatMap(block => {
+        var startMinutes = toMinutes(block.start_time);
+        var endMinutes = toMinutes(block.end_time);
+        var item = {
+          categoryId: block.category_id,
+          categoryName: block.category_name,
+          color: block.category_color,
+          emoji: block.category_emoji,
+          startMinutes,
+          endMinutes
+        };
+        if (endMinutes <= startMinutes) return [{
+          ...item,
+          endMinutes: endMinutes + 1440
+        }, {
+          ...item,
+          startMinutes: startMinutes - 1440
+        }];
+        return [item];
+      });
       // Son dos relojes completos de doce horas. El exterior contiene 06:00–17:59
       // y el interior 18:00–05:59; no se mezclan ni se solapan visualmente.
       var day = (0, require(_dependencyMap[5], "../utils/clockMath").buildRingSegments)(mapped, DAY_START, DAY_END, 180, 360);
@@ -108648,8 +108798,8 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       setSegments(day);
       setNightSegments(night);
       setLegend((0, require(_dependencyMap[5], "../utils/clockMath").mergeSegmentsByCategory)([...day, ...night]));
-      var today = (0, require(_dependencyMap[6], "../../../shared/utils/date").localDateKey)();
-      var nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+      var today = (0, require(_dependencyMap[6], "../../../shared/utils/date").localDateKey)(now);
+      var nowMinutes = now.getHours() * 60 + now.getMinutes();
       var active = selectedDate === today ? mapped.find(block => nowMinutes >= block.startMinutes && nowMinutes < block.endMinutes) : undefined;
       setCurrentActivity(active ? {
         name: active.categoryName,
@@ -108658,8 +108808,9 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         name: selectedDate === today ? 'Libre' : 'Día seleccionado',
         color: '#4B4F5A'
       });
+      hasLoaded.current = true;
       setLoading(false);
-    }), [selectedDate]);
+    }), [selectedDate, now]);
     (0, _react.useEffect)(() => {
       load();
     }, [load]);
@@ -108888,8 +109039,8 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     (0, _react.useEffect)(() => {
       var selected = (0, require(_dependencyMap[6], "../../../shared/utils/date").dateFromKey)(selectedDate);
       var start = startOfWeek(selected);
-      if (start.getTime() !== weekStart.getTime()) setWeekStart(start);
-    }, [selectedDate, weekStart]);
+      setWeekStart(current => current.getTime() === start.getTime() ? current : start);
+    }, [selectedDate]);
     var selectedEvents = events[selectedDate] ?? [];
     return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
       style: styles.card,
@@ -119369,11 +119520,17 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       var digits = raw.replace(/\D/g, '').slice(0, 2);
       onChange(`${part === 'hour' ? digits : hour.padStart(2, '0')}:${part === 'minute' ? digits : minute.padStart(2, '0')}`);
     };
+    var normalize = () => {
+      var h = Number(hour);
+      var m = Number(minute);
+      if (Number.isFinite(h) && Number.isFinite(m) && h <= 23 && m <= 59) onChange(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+    };
     return /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
       style: styles.timeField,
       children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
         value: hour,
         onChangeText: value => update('hour', value),
+        onBlur: normalize,
         keyboardType: "number-pad",
         maxLength: 2,
         placeholder: "00",
@@ -119385,6 +119542,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
         value: minute,
         onChangeText: value => update('minute', value),
+        onBlur: normalize,
         keyboardType: "number-pad",
         maxLength: 2,
         placeholder: "00",
@@ -119511,8 +119669,8 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }();
     var addBlock = /*#__PURE__*/function () {
       var _ref4 = (0, _asyncToGenerator2.default)(function* () {
-        if (!selected || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(end) || start >= end) {
-          _reactNative.Alert.alert('Revisa el horario', 'Usa un rango válido, por ejemplo 09:00 a 10:30.');
+        if (!selected || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(end) || start === end) {
+          _reactNative.Alert.alert('Revisa el horario', 'Usa horas válidas y distintas, por ejemplo 09:00 a 10:30. Los rangos nocturnos pueden cruzar medianoche.');
           return;
         }
         var clash = blocks.find(block => start < block.end_time && end > block.start_time);
@@ -119542,6 +119700,10 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     var saveEditBlock = /*#__PURE__*/function () {
       var _ref5 = (0, _asyncToGenerator2.default)(function* (scope) {
         if (!editingBlock) return;
+        if (!selected || !/^([01]\d|2[0-3]):[0-5]\d$/.test(start) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(end) || start === end) {
+          _reactNative.Alert.alert('Revisa el horario', 'Usa horas válidas y distintas.');
+          return;
+        }
         yield (0, require(_dependencyMap[7], "../../../db/repositories/timeBlocks").updateTimeBlock)({
           id: editingBlock.id,
           categoryId: selected,
@@ -119574,6 +119736,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       var _ref6 = (0, _asyncToGenerator2.default)(function* () {
         if (!editingCategory || !name.trim()) return;
         yield (0, require(_dependencyMap[6], "../../../db/repositories/categories").updateCategory)(editingCategory.id, name, color, emoji);
+        yield (0, require(_dependencyMap[9], "../../../services/notifications").rescheduleActivityReminders)();
         setEditingCategory(null);
         setName('');
         yield load();
@@ -119809,16 +119972,30 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             children: "\u270E"
           })
         }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
-          onPress: /*#__PURE__*/(0, _asyncToGenerator2.default)(function* () {
-            yield (0, require(_dependencyMap[7], "../../../db/repositories/timeBlocks").deleteTimeBlock)(block.id);
-            try {
-              yield (0, require(_dependencyMap[9], "../../../services/notifications").rescheduleActivityReminders)();
-            } catch (error) {
-              console.warn('No se pudieron actualizar los recordatorios:', error);
-            }
-            yield load();
-            onChanged();
-          }),
+          onPress: () => {
+            var remove = /*#__PURE__*/function () {
+              var _ref8 = (0, _asyncToGenerator2.default)(function* (scope) {
+                if (scope === 'all') yield (0, require(_dependencyMap[7], "../../../db/repositories/timeBlocks").deleteTimeBlock)(block.id);else yield (0, require(_dependencyMap[7], "../../../db/repositories/timeBlocks").deleteTimeBlockOccurrence)(block.id, date, Boolean(block.is_recurring));
+                yield (0, require(_dependencyMap[9], "../../../services/notifications").rescheduleActivityReminders)();
+                yield load();
+                onChanged();
+              });
+              return function remove(_x2) {
+                return _ref8.apply(this, arguments);
+              };
+            }();
+            if (block.is_recurring) _reactNative.Alert.alert('Eliminar actividad semanal', '¿Eliminar solo esta ocurrencia o toda la serie?', [{
+              text: 'Solo este día',
+              onPress: () => remove('day')
+            }, {
+              text: 'Toda la serie',
+              style: 'destructive',
+              onPress: () => remove('all')
+            }, {
+              text: 'Cancelar',
+              style: 'cancel'
+            }]);else remove('all');
+          },
           children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
             style: styles.remove,
             children: "\xD7"
@@ -120560,6 +120737,15 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     currency: 'COP',
     maximumFractionDigits: 0
   }).format(value);
+  var cop = value => Number(value.replace(/\D/g, ''));
+  var periodStart = period => {
+    var now = new Date();
+    if (period === 'week') {
+      var day = now.getDay();
+      now.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    } else now.setDate(1);
+    return (0, require(_dependencyMap[6], "../../shared/utils/date").localDateKey)(now);
+  };
   function AccountingScreen() {
     var _useState = (0, _react.useState)([]),
       _useState2 = (0, _slicedToArray2.default)(_useState, 2),
@@ -120657,7 +120843,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     (0, _react.useEffect)(() => {
       load();
     }, [load]);
-    var total = Number(amount.replace(',', '.'));
+    var total = cop(amount);
     var updatePayment = (index, patch) => setPayments(items => items.map((item, i) => i === index ? {
       ...item,
       ...patch
@@ -120672,9 +120858,9 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
           if (type === 'expense' && split) {
             var validPayments = payments.map(payment => ({
               accountId: payment.accountId,
-              amount: Number(payment.amount.replace(',', '.'))
+              amount: cop(payment.amount)
             })).filter(payment => payment.accountId && Number.isFinite(payment.amount) && payment.amount > 0);
-            if (Math.abs(validPayments.reduce((sum, payment) => sum + payment.amount, 0) - total) > 0.01) {
+            if (validPayments.reduce((sum, payment) => sum + payment.amount, 0) !== total) {
               _reactNative.Alert.alert('El pago no cuadra', 'Las partes deben sumar exactamente el total del gasto.');
               return;
             }
@@ -120728,18 +120914,14 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         return _ref3.apply(this, arguments);
       };
     }();
-    var totals = (0, _react.useMemo)(() => rows.reduce((result, row) => {
+    var recent = (0, _react.useMemo)(() => rows.filter(row => row.date >= periodStart(period)), [rows, period]);
+    var totals = (0, _react.useMemo)(() => recent.reduce((result, row) => {
       if (row.type === 'income') result.income += Number(row.amount);else result.expense += Number(row.amount);
       return result;
     }, {
       income: 0,
       expense: 0
-    }), [rows]);
-    var recent = (0, _react.useMemo)(() => {
-      var min = new Date();
-      min.setDate(min.getDate() - (period === 'week' ? 7 : 31));
-      return rows.filter(row => new Date(`${row.date}T12:00:00`) >= min);
-    }, [rows, period]);
+    }), [recent]);
     var addCategory = /*#__PURE__*/function () {
       var _ref4 = (0, _asyncToGenerator2.default)(function* () {
         if (!categoryName.trim()) return;
@@ -120752,7 +120934,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         return _ref4.apply(this, arguments);
       };
     }();
-    var paymentDifference = total - payments.reduce((sum, payment) => sum + (Number(payment.amount.replace(',', '.')) || 0), 0);
+    var paymentDifference = total - payments.reduce((sum, payment) => sum + (cop(payment.amount) || 0), 0);
     return /*#__PURE__*/(0, _jsxRuntime.jsxs)(require(_dependencyMap[11], "react-native-safe-area-context").SafeAreaView, {
       style: styles.container,
       children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.ScrollView, {
@@ -120868,7 +121050,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
           style: styles.amount,
           value: amount,
           onChangeText: setAmount,
-          keyboardType: "decimal-pad",
+          keyboardType: "number-pad",
           placeholder: "$ 0",
           placeholderTextColor: "#707687"
         }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
@@ -120959,7 +121141,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
               onChangeText: value => updatePayment(index, {
                 amount: value
               }),
-              keyboardType: "decimal-pad",
+              keyboardType: "number-pad",
               placeholder: "$ parte",
               placeholderTextColor: "#777C8E",
               style: styles.paymentAmount
@@ -120982,8 +121164,8 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
                 children: "+ Otra parte"
               })
             }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: [styles.splitDifference, Math.abs(paymentDifference) < .01 && styles.splitOk],
-              children: Math.abs(paymentDifference) < .01 ? 'Total completo' : `Faltan ${money(Math.max(0, paymentDifference))}`
+              style: [styles.splitDifference, paymentDifference === 0 && styles.splitOk],
+              children: paymentDifference === 0 ? 'Total completo' : `Faltan ${money(Math.max(0, paymentDifference))}`
             })]
           })]
         }) : /*#__PURE__*/(0, _jsxRuntime.jsxs)(_jsxRuntime.Fragment, {
@@ -121050,7 +121232,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             style: [styles.rowAmount, item.type === 'income' ? styles.income : styles.expense],
             children: [item.type === 'income' ? '+' : '−', " ", money(Number(item.amount))]
           })]
-        }, item.id)), transfers.filter(item => new Date(`${item.date}T12:00:00`) >= new Date(new Date().setDate(new Date().getDate() - (period === 'week' ? 7 : 31)))).map(item => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+        }, item.id)), transfers.filter(item => item.date >= periodStart(period)).map(item => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
           style: styles.row,
           children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             style: styles.rowInfo,
@@ -121093,10 +121275,14 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       _useState32 = (0, _slicedToArray2.default)(_useState31, 2),
       name = _useState32[0],
       setName = _useState32[1];
+    var _useState33 = (0, _react.useState)('bank'),
+      _useState34 = (0, _slicedToArray2.default)(_useState33, 2),
+      type = _useState34[0],
+      setType = _useState34[1];
     var save = /*#__PURE__*/function () {
       var _ref7 = (0, _asyncToGenerator2.default)(function* () {
         if (!name.trim()) return;
-        yield (0, require(_dependencyMap[7], "../../db/repositories/accounts").createAccount)(name.trim(), 'bank');
+        yield (0, require(_dependencyMap[7], "../../db/repositories/accounts").createAccount)(name.trim(), type);
         setName('');
         yield onSaved();
       });
@@ -121106,15 +121292,25 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }();
     return /*#__PURE__*/(0, _jsxRuntime.jsxs)(require(_dependencyMap[12], "../../shared/components/AppModal").AppModal, {
       visible: visible,
-      title: "Agregar banco",
+      title: "Agregar cuenta",
       onClose: onClose,
       children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
         style: styles.modalHelp,
-        children: "Escribe el nombre del banco. Podr\xE1s usarlo al registrar movimientos."
+        children: "Crea un banco, efectivo u otra cuenta para registrar movimientos y transferencias."
+      }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+        style: styles.chips,
+        children: ['bank', 'cash', 'other'].map(value => /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
+          onPress: () => setType(value),
+          style: [styles.chip, type === value && styles.chipActive],
+          children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: styles.chipText,
+            children: value === 'bank' ? 'Banco' : value === 'cash' ? 'Efectivo' : 'Otra'
+          })
+        }, value))
       }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
         value: name,
         onChangeText: setName,
-        placeholder: "Ej. Bancolombia",
+        placeholder: type === 'cash' ? 'Ej. Billetera' : 'Ej. Bancolombia',
         placeholderTextColor: "#777C8E",
         style: styles.input
       }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
@@ -121122,7 +121318,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         style: styles.submit,
         children: /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
           style: styles.submitText,
-          children: "Guardar banco"
+          children: "Guardar cuenta"
         })
       })]
     });
@@ -121133,22 +121329,22 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     onClose,
     onSaved
   }) {
-    var _useState33 = (0, _react.useState)(''),
-      _useState34 = (0, _slicedToArray2.default)(_useState33, 2),
-      from = _useState34[0],
-      setFrom = _useState34[1];
     var _useState35 = (0, _react.useState)(''),
       _useState36 = (0, _slicedToArray2.default)(_useState35, 2),
-      to = _useState36[0],
-      setTo = _useState36[1];
+      from = _useState36[0],
+      setFrom = _useState36[1];
     var _useState37 = (0, _react.useState)(''),
       _useState38 = (0, _slicedToArray2.default)(_useState37, 2),
-      amount = _useState38[0],
-      setAmount = _useState38[1];
+      to = _useState38[0],
+      setTo = _useState38[1];
     var _useState39 = (0, _react.useState)(''),
       _useState40 = (0, _slicedToArray2.default)(_useState39, 2),
-      note = _useState40[0],
-      setNote = _useState40[1];
+      amount = _useState40[0],
+      setAmount = _useState40[1];
+    var _useState41 = (0, _react.useState)(''),
+      _useState42 = (0, _slicedToArray2.default)(_useState41, 2),
+      note = _useState42[0],
+      setNote = _useState42[1];
     (0, _react.useEffect)(() => {
       if (visible) {
         setFrom(accounts[0]?.id ?? '');
@@ -121157,7 +121353,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }, [visible, accounts]);
     var save = /*#__PURE__*/function () {
       var _ref8 = (0, _asyncToGenerator2.default)(function* () {
-        var value = Number(amount.replace(',', '.'));
+        var value = cop(amount);
         if (!from || !to || from === to || !Number.isFinite(value) || value <= 0) {
           _reactNative.Alert.alert('Revisa la transferencia', 'Elige dos cuentas distintas y un monto válido.');
           return;
@@ -121217,7 +121413,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
         value: amount,
         onChangeText: setAmount,
-        keyboardType: "decimal-pad",
+        keyboardType: "number-pad",
         placeholder: "$ monto",
         placeholderTextColor: "#777C8E",
         style: styles.amount
@@ -121881,15 +122077,21 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       calendarOpen = _useState18[0],
       setCalendarOpen = _useState18[1];
     var load = (0, _react.useCallback)(/*#__PURE__*/(0, _asyncToGenerator2.default)(function* () {
-      return setNotes(yield (0, require(_dependencyMap[7], "../../db/repositories/notes").listNotes)(search, filter, selectedDate));
+      return setNotes(yield (0, require(_dependencyMap[7], "../../db/repositories/notes").listNotes)(search, filter, search.trim() ? undefined : selectedDate));
     }), [search, filter, selectedDate]);
-    (0, _react.useEffect)(() => {
+    var loadContext = (0, _react.useCallback)(() => {
       Promise.all([(0, require(_dependencyMap[8], "../../db/repositories/categories").listCategories)(), (0, require(_dependencyMap[9], "../../db/repositories/timeBlocks").listBlocksForDate)(selectedDate)]).then(([items, selectedBlocks]) => {
         setCategories(items);
         setBlocks(selectedBlocks);
         setTimeBlockId(undefined);
       });
     }, [selectedDate]);
+    (0, _react.useEffect)(() => {
+      loadContext();
+    }, [loadContext]);
+    (0, require(_dependencyMap[10], "@react-navigation/native").useFocusEffect)((0, _react.useCallback)(() => {
+      loadContext();
+    }, [loadContext]));
     (0, _react.useEffect)(() => {
       load();
     }, [load]);
@@ -121907,7 +122109,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         return _ref2.apply(this, arguments);
       };
     }();
-    return /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[10], "react-native-safe-area-context").SafeAreaView, {
+    return /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[11], "react-native-safe-area-context").SafeAreaView, {
       style: styles.container,
       children: /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.ScrollView, {
         contentContainerStyle: styles.content,
@@ -121937,7 +122139,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             style: styles.chevron,
             children: calendarOpen ? '⌃' : '⌄'
           })]
-        }), calendarOpen && /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[11], "../clock/components/MiniCalendar").MiniCalendar, {
+        }), calendarOpen && /*#__PURE__*/(0, _jsxRuntime.jsx)(require(_dependencyMap[12], "../clock/components/MiniCalendar").MiniCalendar, {
           selectedDate: selectedDate,
           onSelect: setSelectedDate,
           refreshKey: calendarRevision
@@ -121987,7 +122189,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.TextInput, {
           value: search,
           onChangeText: setSearch,
-          placeholder: "Buscar en tus notas",
+          placeholder: "Buscar en todas tus notas",
           placeholderTextColor: "#777C8E",
           style: styles.search
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.ScrollView, {
@@ -122038,7 +122240,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
               })]
             }) : /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
               style: styles.date,
-              children: new Date(note.created_at).toLocaleDateString()
+              children: note.note_date ?? 'Sin fecha'
             }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Pressable, {
               onPress: /*#__PURE__*/(0, _asyncToGenerator2.default)(function* () {
                 yield (0, require(_dependencyMap[7], "../../db/repositories/notes").deleteNote)(note.id);
@@ -122060,7 +122262,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             })
           }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
             style: styles.date,
-            children: new Date(note.created_at).toLocaleDateString()
+            children: note.note_date ?? 'Sin fecha'
           })]
         }, note.id))]
       })
@@ -122252,7 +122454,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       marginTop: 8
     }
   });
-},1073,[1,187,29,76,17,191,669,1074,1064,670,692,946],"src/features/notes/NotesScreen.tsx");
+},1073,[1,187,29,76,17,191,669,1074,1064,670,701,692,946],"src/features/notes/NotesScreen.tsx");
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0], "@babel/runtime/helpers/interopRequireDefault");
   Object.defineProperty(exports, "__esModule", {

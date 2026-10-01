@@ -34,11 +34,13 @@ export async function listTodayGoals(todayDate: string): Promise<GoalWithProgres
               ELSE COALESCE(
                 (SELECT SUM(value) FROM goal_progress WHERE goal_id = g.id AND date >= ? AND date <= ?), 0)
             END as progress_value,
-            COALESCE(
-              (SELECT completed FROM goal_progress WHERE goal_id = g.id AND date = ?), 0) as completed
+            CASE WHEN g.period = 'weekly' THEN
+              CASE WHEN COALESCE((SELECT SUM(value) FROM goal_progress WHERE goal_id = g.id AND date >= ? AND date <= ?), 0) >= g.target_value THEN 1 ELSE 0 END
+            ELSE COALESCE((SELECT completed FROM goal_progress WHERE goal_id = g.id AND date = ?), 0)
+            END as completed
      FROM goals g
      ORDER BY g.title ASC`,
-    [todayDate, weekStart, todayDate, todayDate]
+    [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate]
   );
   return (result.rows ?? []) as GoalWithProgress[];
 }

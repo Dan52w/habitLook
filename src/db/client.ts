@@ -3,13 +3,20 @@ import { getOrCreateDbKey } from './key';
 import { MIGRATIONS } from './migrations';
 
 let dbInstance: DB | null = null;
+let dbPromise: Promise<DB> | null = null;
 
 export async function getDb(): Promise<DB> {
   if (dbInstance) return dbInstance;
 
+  dbPromise ??= initializeDb();
+  return dbPromise;
+}
+
+async function initializeDb(): Promise<DB> {
   const encryptionKey = await getOrCreateDbKey();
   const db = open({ name: 'ritmo.db', encryptionKey });
 
+  await db.execute('PRAGMA foreign_keys = ON');
   await runMigrations(db);
 
   dbInstance = db;

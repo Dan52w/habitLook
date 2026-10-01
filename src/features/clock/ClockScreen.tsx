@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DayRing } from './components/DayRing';
@@ -17,25 +17,33 @@ import { MiniCalendar } from './components/MiniCalendar';
 import { localDateKey } from '../../shared/utils/date';
 
 const todayKey = () => localDateKey();
+function useNow(intervalMs = 30_000) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => { const timer = setInterval(() => setNow(new Date()), intervalMs); return () => clearInterval(timer); }, [intervalMs]);
+  return now;
+}
 const displayDate = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
 export function ClockScreen() {
+  const now = useNow();
   const { width } = useWindowDimensions();
   const ringSize = Math.min(330, Math.max(260, width - 44));
   const [selectedDate, setSelectedDate] = useState(todayKey()); const [calendarOpen, setCalendarOpen] = useState(false); const [calendarRevision, setCalendarRevision] = useState(0);
-  const { segments, nightSegments, legend, currentActivity, loading: loadingTimeline, reload: reloadTimeline } = useTodayTimeline(selectedDate);
+  const previousToday = React.useRef(todayKey());
+  useEffect(() => { const currentToday = localDateKey(now); if (selectedDate === previousToday.current) setSelectedDate(currentToday); previousToday.current = currentToday; }, [now, selectedDate]);
+  const { segments, nightSegments, legend, currentActivity, loading: loadingTimeline, reload: reloadTimeline } = useTodayTimeline(selectedDate, now);
   const { goals, loading: loadingGoals, reload: reloadGoals } = useTodayGoals();
   const [planOpen, setPlanOpen] = useState(false); const [goalOpen, setGoalOpen] = useState(false); const [selectedSegment, setSelectedSegment] = useState<RingSegment | null>(null);
   const freeSlot = useMemo(() => segments.find(segment => segment.categoryId === '__free__'), [segments]);
   const formatTime = (minutes: number) => { const value = ((minutes % 1440) + 1440) % 1440; return `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`; };
   const onChanged = () => { reloadTimeline(); reloadGoals(); setCalendarRevision(revision => revision + 1); };
   const markProgress = async (goal: typeof goals[number], direction = 1) => { await addGoalProgress(goal.id, todayKey(), (goal.targetType === 'duration' ? 5 : 1) * direction, goal.targetValue); reloadGoals(); };
-  if (loadingTimeline || loadingGoals) return <SafeAreaView style={styles.container}><Text style={styles.loading}>Preparando tu día…</Text></SafeAreaView>;
+  if ((loadingTimeline && segments.length === 0) || loadingGoals) return <SafeAreaView style={styles.container}><Text style={styles.loading}>Preparando tu día…</Text></SafeAreaView>;
   return <SafeAreaView style={styles.container}><ScrollView contentContainerStyle={styles.content}>
     <View style={styles.top}><View><Text style={styles.eyebrow}>RITMO</Text><Text style={styles.greeting}>Tu día, de un vistazo</Text></View><View style={styles.topActions}><Pressable onPress={() => setPlanOpen(true)} style={styles.planButton}><Text style={styles.planText}>Planificar</Text></Pressable></View></View>
     <Pressable onPress={() => setCalendarOpen(open => !open)} style={styles.dateSelector}><View><Text style={styles.dateLabel}>{selectedDate === todayKey() ? 'HOY' : 'DÍA ELEGIDO'}</Text><Text style={styles.dateValue}>{displayDate(selectedDate)}</Text></View><Text style={styles.calendarIcon}>{calendarOpen ? '⌃' : '⌄'}</Text></Pressable>
     {calendarOpen && <MiniCalendar selectedDate={selectedDate} refreshKey={calendarRevision} onSelect={date => { setSelectedDate(date); }} />}
-    <View style={styles.ringWrapper}><DayRing size={ringSize} daySegments={segments} nightSegments={nightSegments} now={new Date()} onSegmentPress={setSelectedSegment} /></View>
-    <View style={styles.ringKey}><Text style={styles.keyDay}>Anillo grande · {new Date().getHours() >= 6 && new Date().getHours() < 18 ? '06:00 — 17:59' : '18:00 — 05:59'}</Text><Text style={styles.keyNight}>Anillo interior · {new Date().getHours() >= 6 && new Date().getHours() < 18 ? '18:00 — 05:59' : '06:00 — 17:59'}</Text></View>
+    <View style={styles.ringWrapper}><DayRing size={ringSize} daySegments={segments} nightSegments={nightSegments} now={now} onSegmentPress={setSelectedSegment} /></View>
+    <View style={styles.ringKey}><Text style={styles.keyDay}>Anillo grande · {now.getHours() >= 6 && now.getHours() < 18 ? '06:00 — 17:59' : '18:00 — 05:59'}</Text><Text style={styles.keyNight}>Anillo interior · {now.getHours() >= 6 && now.getHours() < 18 ? '18:00 — 05:59' : '06:00 — 17:59'}</Text></View>
     <CategoryLegend items={legend} />
     <NowStatusCard activityName={currentActivity.name} color={currentActivity.color} onPress={() => setSelectedSegment(segments.find(segment => segment.categoryName === currentActivity.name) ?? freeSlot ?? null)} />
     <View style={styles.sectionRow}><Text style={styles.sectionTitle}>Metas de hoy</Text><Pressable onPress={() => setGoalOpen(true)}><Text style={styles.link}>+ Nueva</Text></Pressable></View>

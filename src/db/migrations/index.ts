@@ -153,4 +153,16 @@ export const MIGRATIONS = [
       `CREATE INDEX idx_notes_note_date ON notes(note_date);`,
     ],
   },
+  {
+    // Una excepción oculta una ocurrencia de una serie sin modificarla.
+    name: '007_time_block_exceptions',
+    statements: [
+      `CREATE TABLE time_block_exceptions (
+        time_block_id TEXT NOT NULL REFERENCES time_blocks(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        PRIMARY KEY (time_block_id, date)
+      );`,
+      `CREATE INDEX idx_time_block_exceptions_date ON time_block_exceptions(date);`,
+    ],
+  },
 ];

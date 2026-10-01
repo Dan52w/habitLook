@@ -17,7 +17,7 @@ export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: { selec
     setEvents(Object.fromEntries(dates.map((date, index) => [date, result[index]])));
   }, [days]);
   useEffect(() => { load(); }, [load, refreshKey]);
-  useEffect(() => { const selected = dateFromKey(selectedDate); const start = startOfWeek(selected); if (start.getTime() !== weekStart.getTime()) setWeekStart(start); }, [selectedDate, weekStart]);
+  useEffect(() => { const selected = dateFromKey(selectedDate); const start = startOfWeek(selected); setWeekStart(current => current.getTime() === start.getTime() ? current : start); }, [selectedDate]);
   const selectedEvents = events[selectedDate] ?? [];
   return <View style={styles.card}>
     <View style={styles.header}><Pressable onPress={() => setWeekStart(current => { const next = new Date(current); next.setDate(current.getDate() - 7); return next; })}><Text style={styles.arrow}>‹</Text></Pressable><View><Text style={styles.overline}>CALENDARIO SEMANAL</Text><Text style={styles.range}>{longDate(days[0])} — {longDate(days[6])}</Text></View><Pressable onPress={() => setWeekStart(current => { const next = new Date(current); next.setDate(current.getDate() + 7); return next; })}><Text style={styles.arrow}>›</Text></Pressable></View>

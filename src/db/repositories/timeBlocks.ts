@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../client';
-import { weekdayFromKey } from '../../shared/utils/date';
+import { dateFromKey, localDateKey, weekdayFromKey } from '../../shared/utils/date';
 
 export type TimeBlockWithCategory = {
   id: string; category_id: string; category_name: string; category_color: string; category_emoji: string | null;
@@ -10,16 +10,30 @@ export type TimeBlockWithCategory = {
 export async function listBlocksForDate(date: string): Promise<TimeBlockWithCategory[]> {
   const db = await getDb();
   const dayOfWeek = weekdayFromKey(date);
+  const previous = dateFromKey(date); previous.setDate(previous.getDate() - 1);
+  const previousDate = localDateKey(previous);
+  const previousDayOfWeek = weekdayFromKey(previousDate);
   const result = await db.execute(
     `SELECT tb.id, tb.category_id, c.name AS category_name, c.color AS category_color, c.emoji AS category_emoji,
             tb.start_time, tb.end_time, tb.day_of_week, tb.is_recurring, tb.schedule_date
      FROM time_blocks tb JOIN categories c ON c.id = tb.category_id
-     WHERE tb.schedule_date = ?
+     WHERE (
+       tb.schedule_date = ?
+       OR (tb.schedule_date = ? AND tb.end_time < tb.start_time)
        OR (tb.schedule_date IS NULL AND tb.is_recurring = 1 AND tb.day_of_week = ?)
+       OR (tb.schedule_date IS NULL AND tb.is_recurring = 1 AND tb.day_of_week = ? AND tb.end_time < tb.start_time)
        OR (tb.schedule_date IS NULL AND tb.is_recurring = 0 AND tb.day_of_week = ?)
-     ORDER BY tb.start_time ASC`, [date, dayOfWeek, dayOfWeek],
+     )
+     ORDER BY tb.start_time ASC`, [date, previousDate, dayOfWeek, previousDayOfWeek, dayOfWeek],
   );
-  return (result.rows ?? []) as TimeBlockWithCategory[];
+  const exceptions = await db.execute('SELECT time_block_id, date FROM time_block_exceptions WHERE date IN (?, ?)', [date, previousDate]);
+  const hidden = new Set((exceptions.rows ?? []).map((row: any) => `${row.time_block_id}:${row.date}`));
+  return ((result.rows ?? []) as TimeBlockWithCategory[]).filter(block => {
+    const continuesFromPreviousDay = block.end_time < block.start_time && (
+      block.schedule_date === previousDate || (block.schedule_date === null && block.day_of_week === previousDayOfWeek)
+    );
+    return !hidden.has(`${block.id}:${continuesFromPreviousDay ? previousDate : date}`);
+  });
 }
 
 export async function listBlocksForReminders(): Promise<TimeBlockWithCategory[]> {
@@ -44,10 +58,25 @@ export async function deleteTimeBlock(id: string): Promise<void> {
   await db.execute('DELETE FROM time_blocks WHERE id = ?', [id]);
 }
 
+export async function deleteTimeBlockOccurrence(id: string, date: string, recurring: boolean): Promise<void> {
+  const db = await getDb();
+  if (recurring) {
+    await db.execute('INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)', [id, date]);
+    return;
+  }
+  await deleteTimeBlock(id);
+}
+
 export async function updateTimeBlock(input: { id: string; categoryId: string; startTime: string; endTime: string; date: string; recurring: boolean; scope: 'day' | 'all' }): Promise<void> {
   const db = await getDb();
   if (input.recurring && input.scope === 'day') {
-    await db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ?, is_recurring = 0, schedule_date = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.date, input.id]);
+    await db.transaction(async tx => {
+      await tx.execute('INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)', [input.id, input.date]);
+      await tx.execute(
+        'INSERT INTO time_blocks (id, category_id, start_time, end_time, day_of_week, is_recurring, schedule_date) VALUES (?, ?, ?, ?, ?, 0, ?)',
+        [uuidv4(), input.categoryId, input.startTime, input.endTime, weekdayFromKey(input.date), input.date],
+      );
+    });
     return;
   }
   await db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.id]);
