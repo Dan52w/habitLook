@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../client';
+import { localDateKey } from '../../shared/utils/date';
 
 export type Note = {
   id: string;
@@ -18,21 +19,24 @@ export async function createNote(text: string, categoryId?: string, timeBlockId?
   const db = await getDb();
   await db.execute(
     'INSERT INTO notes (id, category_id, text, time_block_id, note_date) VALUES (?, ?, ?, ?, ?)',
-    [uuidv4(), categoryId ?? null, text.trim(), timeBlockId ?? null, noteDate ?? null],
+    [uuidv4(), categoryId ?? null, text.trim(), timeBlockId ?? null, noteDate ?? localDateKey()],
   );
 }
 
 export async function listNotes(search = '', categoryId?: string, noteDate?: string): Promise<Note[]> {
   const db = await getDb();
+  const trimmedSearch = search.trim();
   const result = await db.execute(
     `SELECT n.id, n.text, n.created_at, n.category_id, n.time_block_id, n.note_date,
             c.name AS category_name, c.color AS category_color,
             tb.start_time AS block_start_time, tb.end_time AS block_end_time
      FROM notes n LEFT JOIN categories c ON c.id = n.category_id
      LEFT JOIN time_blocks tb ON tb.id = n.time_block_id
-     WHERE (? = '' OR n.text LIKE '%' || ? || '%') AND (? IS NULL OR n.category_id = ?) AND (? IS NULL OR n.note_date = ?)
+     WHERE (? = '' OR n.text LIKE '%' || ? || '%')
+       AND (? IS NULL OR n.category_id = ?)
+       AND (? IS NULL OR n.note_date = ? OR (n.note_date IS NULL AND substr(n.created_at, 1, 10) = ?))
      ORDER BY n.created_at DESC`,
-    [search, search, categoryId ?? null, categoryId ?? null, noteDate ?? null, noteDate ?? null],
+    [trimmedSearch, trimmedSearch, categoryId ?? null, categoryId ?? null, noteDate ?? null, noteDate ?? null, noteDate ?? null],
   );
   return (result.rows ?? []) as Note[];
 }

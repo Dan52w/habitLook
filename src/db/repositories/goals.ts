@@ -61,13 +61,64 @@ export async function createGoal(input: {
 
 export async function addGoalProgress(goalId: string, date: string, delta: number, targetValue: number): Promise<void> {
   const db = await getDb();
-  const current = await db.execute('SELECT value FROM goal_progress WHERE goal_id = ? AND date = ?', [goalId, date]);
-  const value = Math.max(0, Number(current.rows?.[0]?.value ?? 0) + delta);
-  const completed = value >= targetValue ? 1 : 0;
-  if (current.rows?.length) {
-    await db.execute('UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?', [value, completed, goalId, date]);
+  const goalInfo = await db.execute('SELECT target_type, target_value, period FROM goals WHERE id = ?', [goalId]);
+  const goal = goalInfo.rows?.[0];
+  const targetType = goal?.target_type ?? 'count';
+  const period = goal?.period ?? 'daily';
+
+  const current = await db.execute('SELECT value, completed FROM goal_progress WHERE goal_id = ? AND date = ?', [goalId, date]);
+  const currentValue = Number(current.rows?.[0]?.value ?? 0);
+
+  if (targetType === 'boolean') {
+    if (delta > 0) {
+      if (period === 'weekly') {
+        const weekStart = startOfWeek(date);
+        const weeklySum = await db.execute(
+          'SELECT COALESCE(SUM(value), 0) AS total FROM goal_progress WHERE goal_id = ? AND date >= ? AND date <= ?',
+          [goalId, weekStart, date]
+        );
+        if (Number(weeklySum.rows?.[0]?.total ?? 0) >= 1) return;
+      } else if (currentValue >= 1) {
+        return;
+      }
+    }
+    const nextValue = delta > 0 ? 1 : 0;
+    const completed = nextValue >= 1 ? 1 : 0;
+    if (current.rows?.length) {
+      await db.execute('UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?', [nextValue, completed, goalId, date]);
+    } else {
+      await db.execute('INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)', [uuidv4(), goalId, date, nextValue, completed]);
+    }
+    return;
+  }
+
+  let nextValue: number;
+  if (period === 'weekly') {
+    const weekStart = startOfWeek(date);
+    const weeklySumRes = await db.execute(
+      'SELECT COALESCE(SUM(value), 0) AS total FROM goal_progress WHERE goal_id = ? AND date >= ? AND date <= ? AND date != ?',
+      [goalId, weekStart, date, date]
+    );
+    const otherDays = Number(weeklySumRes.rows?.[0]?.total ?? 0);
+    if (delta > 0) {
+      if (otherDays + currentValue >= targetValue) return;
+      const maxForToday = Math.max(0, targetValue - otherDays);
+      nextValue = Math.min(maxForToday, currentValue + delta);
+    } else {
+      nextValue = Math.max(0, currentValue + delta);
+    }
   } else {
-    await db.execute('INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)', [uuidv4(), goalId, date, value, completed]);
+    if (delta > 0 && currentValue >= targetValue) return;
+    nextValue = Math.max(0, currentValue + delta);
+    if (delta > 0) {
+      nextValue = Math.min(targetValue, nextValue);
+    }
+  }
+  const completed = nextValue >= targetValue ? 1 : 0;
+  if (current.rows?.length) {
+    await db.execute('UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?', [nextValue, completed, goalId, date]);
+  } else {
+    await db.execute('INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)', [uuidv4(), goalId, date, nextValue, completed]);
   }
 }
 

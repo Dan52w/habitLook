@@ -9,7 +9,12 @@ let dbPromise: Promise<DB> | null = null;
 export async function getDb(): Promise<DB> {
   if (dbInstance) return dbInstance;
 
-  dbPromise ??= initializeDb();
+  if (!dbPromise) {
+    dbPromise = initializeDb().catch(error => {
+      dbPromise = null;
+      throw error;
+    });
+  }
   return dbPromise;
 }
 

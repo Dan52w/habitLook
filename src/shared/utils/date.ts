@@ -11,3 +11,15 @@ export function dateFromKey(dateKey: string): Date {
 export function weekdayFromKey(dateKey: string): number {
   return dateFromKey(dateKey).getDay();
 }
+
+export function periodStart(period: 'week' | 'month', referenceDate = new Date()): string {
+  const date = new Date(referenceDate.getTime());
+  if (period === 'week') {
+    const day = date.getDay();
+    const diff = day === 0 ? 6 : day - 1;
+    date.setDate(date.getDate() - diff);
+  } else {
+    date.setDate(1);
+  }
+  return localDateKey(date);
+}

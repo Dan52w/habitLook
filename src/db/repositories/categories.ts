@@ -19,9 +19,11 @@ export async function listCategories(): Promise<Category[]> {
 export async function deleteCategory(id: string): Promise<void> {
   const db = await getDb();
   await db.execute('DELETE FROM categories WHERE id = ?', [id]);
+  try { const { rescheduleActivityReminders } = require('../../services/notifications'); await rescheduleActivityReminders(); } catch {}
 }
 
 export async function updateCategory(id: string, name: string, color: string, emoji?: string): Promise<void> {
   const db = await getDb();
   await db.execute('UPDATE categories SET name = ?, color = ?, emoji = ? WHERE id = ?', [name.trim(), color, emoji?.trim() || null, id]);
+  try { const { rescheduleActivityReminders } = require('../../services/notifications'); await rescheduleActivityReminders(); } catch {}
 }

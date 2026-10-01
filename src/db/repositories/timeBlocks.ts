@@ -36,6 +36,63 @@ export async function listBlocksForDate(date: string): Promise<TimeBlockWithCate
   });
 }
 
+export async function listBlocksForDates(dates: string[]): Promise<Record<string, TimeBlockWithCategory[]>> {
+  if (dates.length === 0) return {};
+  const db = await getDb();
+  const allNeededDates = new Set<string>();
+  dates.forEach(d => {
+    allNeededDates.add(d);
+    const prev = dateFromKey(d);
+    prev.setDate(prev.getDate() - 1);
+    allNeededDates.add(localDateKey(prev));
+  });
+  const dateList = Array.from(allNeededDates);
+  const placeholders = dateList.map(() => '?').join(',');
+
+  const [blocksResult, exceptionsResult] = await Promise.all([
+    db.execute(
+      `SELECT tb.id, tb.category_id, c.name AS category_name, c.color AS category_color, c.emoji AS category_emoji,
+              tb.start_time, tb.end_time, tb.day_of_week, tb.is_recurring, tb.schedule_date
+       FROM time_blocks tb JOIN categories c ON c.id = tb.category_id
+       WHERE tb.is_recurring = 1 OR tb.schedule_date IN (${placeholders})
+       ORDER BY tb.start_time ASC`,
+      dateList
+    ),
+    db.execute(
+      `SELECT time_block_id, date FROM time_block_exceptions WHERE date IN (${placeholders})`,
+      dateList
+    ),
+  ]);
+
+  const allBlocks = (blocksResult.rows ?? []) as TimeBlockWithCategory[];
+  const hidden = new Set((exceptionsResult.rows ?? []).map((row: any) => `${row.time_block_id}:${row.date}`));
+
+  const result: Record<string, TimeBlockWithCategory[]> = {};
+  for (const date of dates) {
+    const dayOfWeek = weekdayFromKey(date);
+    const prev = dateFromKey(date);
+    prev.setDate(prev.getDate() - 1);
+    const prevDate = localDateKey(prev);
+    const prevDayOfWeek = weekdayFromKey(prevDate);
+
+    result[date] = allBlocks.filter(block => {
+      const matchesToday =
+        block.schedule_date === date ||
+        (block.schedule_date === null && block.day_of_week === dayOfWeek);
+
+      const continuesFromPrev =
+        block.end_time < block.start_time &&
+        (block.schedule_date === prevDate || (block.schedule_date === null && block.day_of_week === prevDayOfWeek));
+
+      if (!matchesToday && !continuesFromPrev) return false;
+
+      const exceptionKey = `${block.id}:${continuesFromPrev ? prevDate : date}`;
+      return !hidden.has(exceptionKey);
+    });
+  }
+  return result;
+}
+
 export async function listBlocksForReminders(): Promise<TimeBlockWithCategory[]> {
   const db = await getDb();
   const result = await db.execute(`SELECT tb.id, tb.category_id, c.name AS category_name, c.color AS category_color, c.emoji AS category_emoji, tb.start_time, tb.end_time, tb.day_of_week, tb.is_recurring, tb.schedule_date FROM time_blocks tb JOIN categories c ON c.id = tb.category_id ORDER BY tb.start_time ASC`);
@@ -79,7 +136,10 @@ export async function updateTimeBlock(input: { id: string; categoryId: string; s
     });
     return;
   }
-  await db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.id]);
+  await db.execute(
+    'UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ?, day_of_week = ?, is_recurring = ?, schedule_date = ? WHERE id = ?',
+    [input.categoryId, input.startTime, input.endTime, weekdayFromKey(input.date), input.recurring ? 1 : 0, input.recurring ? null : input.date, input.id],
+  );
 }
 
 export async function markTimeBlockStarted(id: string, date: string): Promise<void> {

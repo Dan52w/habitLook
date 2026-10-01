@@ -1,96 +1,162 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AppModal } from '../../shared/components/AppModal';
-import { Account, archiveAccount, createAccount, getAccountBalance, listAccounts } from '../../db/repositories/accounts';
-import { ExpenseCategory, createExpenseCategory, listExpenseCategories } from '../../db/repositories/expenseCategories';
-import { createExpense, createSplitExpense, deleteExpense, listExpensesWithDetails } from '../../db/repositories/expenses';
-import { createTransfer, deleteTransfer, listTransfersWithDetails } from '../../db/repositories/transfers';
-import { localDateKey } from '../../shared/utils/date';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { Account } from '../../db/repositories/accounts';
+import { createExpenseCategory } from '../../db/repositories/expenseCategories';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
-
-type ExpenseRow = { id: string; amount: number; type: 'income' | 'expense'; note: string | null; date: string; category_name: string | null; account_name: string | null; split_summary: string | null };
-type Payment = { accountId: string; amount: string };
-type TransferRow = { id: string; amount: number; date: string; note: string | null; from_name: string; to_name: string };
-const today = () => localDateKey();
-const money = (value: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
-const cop = (value: string) => Number(value.replace(/\D/g, ''));
-const periodStart = (period: 'week' | 'month') => { const now = new Date(); if (period === 'week') { const day = now.getDay(); now.setDate(now.getDate() - (day === 0 ? 6 : day - 1)); } else now.setDate(1); return localDateKey(now); };
+import { ExpenseRow, useAccounting } from './hooks/useAccounting';
+import { SummaryCard } from './components/SummaryCard';
+import { AccountList } from './components/AccountList';
+import { MovementForm } from './components/MovementForm';
+import { HistoryList } from './components/HistoryList';
+import { AccountModal } from './components/AccountModal';
+import { TransferModal } from './components/TransferModal';
+import { EditExpenseModal } from './components/EditExpenseModal';
 
 export function AccountingScreen() {
-  const theme = useTheme(); const themed = theme.isLight ? lightStyles : undefined;
-  const [accounts, setAccounts] = useState<Account[]>([]); const [balances, setBalances] = useState<Record<string, number>>({}); const [categories, setCategories] = useState<ExpenseCategory[]>([]); const [rows, setRows] = useState<ExpenseRow[]>([]); const [transfers, setTransfers] = useState<TransferRow[]>([]);
-  const [type, setType] = useState<'expense' | 'income'>('expense'); const [amount, setAmount] = useState(''); const [note, setNote] = useState(''); const [account, setAccount] = useState(''); const [category, setCategory] = useState(''); const [period, setPeriod] = useState<'week' | 'month'>('month'); const [movementDate, setMovementDate] = useState(today()); const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [split, setSplit] = useState(false); const [payments, setPayments] = useState<Payment[]>([]); const [accountModal, setAccountModal] = useState(false); const [transferModal, setTransferModal] = useState(false); const [categoryName, setCategoryName] = useState('');
-  const load = useCallback(async () => {
-    const [loadedAccounts, loadedCategories, loadedRows, loadedTransfers] = await Promise.all([listAccounts(), listExpenseCategories(), listExpensesWithDetails(), listTransfersWithDetails()]);
-    setAccounts(loadedAccounts); setCategories(loadedCategories); setRows(loadedRows as ExpenseRow[]); setTransfers(loadedTransfers as TransferRow[]);
-    const nextBalances = await Promise.all(loadedAccounts.map(async item => [item.id, await getAccountBalance(item.id)] as const)); setBalances(Object.fromEntries(nextBalances));
-    if (!account && loadedAccounts[0]) { setAccount(loadedAccounts[0].id); setPayments([{ accountId: loadedAccounts[0].id, amount: '' }]); }
-    if (!category && loadedCategories[0]) setCategory(loadedCategories[0].id);
-  }, [account, category]);
-  useEffect(() => { load(); }, [load]);
-  const total = cop(amount);
-  const updatePayment = (index: number, patch: Partial<Payment>) => setPayments(items => items.map((item, i) => i === index ? { ...item, ...patch } : item));
-  const submit = async () => {
-    try {
-      if (!Number.isFinite(total) || total <= 0) { Alert.alert('Revisa el monto', 'Ingresa un monto mayor que cero.'); return; }
-      if (type === 'expense' && split) {
-      const validPayments = payments.map(payment => ({ accountId: payment.accountId, amount: cop(payment.amount) })).filter(payment => payment.accountId && Number.isFinite(payment.amount) && payment.amount > 0);
-      if (validPayments.reduce((sum, payment) => sum + payment.amount, 0) !== total) { Alert.alert('El pago no cuadra', 'Las partes deben sumar exactamente el total del gasto.'); return; }
-      const assigned = validPayments.reduce<Record<string, number>>((result, payment) => ({ ...result, [payment.accountId]: (result[payment.accountId] ?? 0) + payment.amount }), {});
-      const insufficient = Object.entries(assigned).find(([accountId, paymentAmount]) => paymentAmount > (balances[accountId] ?? 0) + .00001);
-      if (insufficient) { Alert.alert('Saldo insuficiente', 'Una de las cuentas no tiene suficiente saldo para la parte asignada.'); return; }
-      await createSplitExpense({ amount: total, categoryId: category || undefined, note, date: movementDate, payments: validPayments });
-      } else {
-      if (!account) { Alert.alert('Añade una cuenta', 'Primero agrega un banco, efectivo u otra cuenta para registrar el movimiento.'); return; }
-      if (type === 'expense' && total > (balances[account] ?? 0) + .00001) { Alert.alert('Saldo insuficiente', 'No puedes gastar más de lo disponible en esta cuenta.'); return; }
-      await createExpense({ amount: total, type, accountId: account, categoryId: category || undefined, note, date: movementDate });
-      }
-      setAmount(''); setNote(''); setSplit(false); setPayments(account ? [{ accountId: account, amount: '' }] : []); load();
-    } catch (error) {
-      Alert.alert('No se pudo guardar', error instanceof Error ? error.message : 'Revisa los datos e inténtalo de nuevo.');
+  const theme = useTheme();
+  const themed = theme.isLight ? lightStyles : undefined;
+
+  const {
+    accounts,
+    balances,
+    categories,
+    period,
+    setPeriod,
+    recentRows,
+    recentTransfers,
+    totals,
+    load,
+  } = useAccounting();
+
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [accountModalVisible, setAccountModalVisible] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [transferModalVisible, setTransferModalVisible] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<ExpenseRow | null>(null);
+
+  // Inicializa la cuenta seleccionada cuando cargan las cuentas sin re-ejecutar load()
+  useEffect(() => {
+    if ((!selectedAccountId || !accounts.some(a => a.id === selectedAccountId)) && accounts.length > 0) {
+      setSelectedAccountId(accounts[0].id);
     }
+  }, [accounts, selectedAccountId]);
+
+  const handleAddCategory = async (name: string): Promise<string> => {
+    const id = await createExpenseCategory(name);
+    await load();
+    return id;
   };
-  const recent = useMemo(() => rows.filter(row => row.date >= periodStart(period)), [rows, period]);
-  const totals = useMemo(() => recent.reduce((result, row) => { if (row.type === 'income') result.income += Number(row.amount); else result.expense += Number(row.amount); return result; }, { income: 0, expense: 0 }), [recent]);
-  const addCategory = async () => { if (!categoryName.trim()) return; const id = await createExpenseCategory(categoryName.trim()); setCategoryName(''); setCategory(id); load(); };
-  const paymentDifference = total - payments.reduce((sum, payment) => sum + (cop(payment.amount) || 0), 0);
-  return <SafeAreaView style={[styles.container, themed?.container]}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-    <View style={styles.heading}><View><Text style={styles.eyebrow}>CONTABILIDAD</Text><Text style={[styles.title, themed?.text]}>Tu dinero, claro y simple</Text></View><Pressable onPress={() => setAccountModal(true)} style={styles.addAccount}><Text style={styles.addAccountText}>+ Banco</Text></Pressable></View>
-    <View style={[styles.summary, themed?.card]}><View><Text style={[styles.summaryLabel, themed?.muted]}>Balance local</Text><Text style={[styles.balance, themed?.text]}>{money(totals.income - totals.expense)}</Text></View><View style={styles.summaryRight}><Text style={styles.income}>+ {money(totals.income)}</Text><Text style={styles.expense}>− {money(totals.expense)}</Text></View></View>
-    <View style={styles.sectionHead}><Text style={styles.section}>Tus cuentas</Text>{accounts.length > 1 && <Pressable onPress={() => setTransferModal(true)}><Text style={styles.link}>Transferir / retirar</Text></Pressable>}</View>
-    {accounts.length === 0 ? <View style={styles.emptyCard}><Text style={styles.emptyTitle}>Empieza por añadir un banco</Text><Text style={styles.emptyText}>Registra el nombre de tu banco para usarlo en los movimientos.</Text><Pressable onPress={() => setAccountModal(true)} style={styles.emptyAction}><Text style={styles.emptyActionText}>+ Banco</Text></Pressable></View> : <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.accounts}>{accounts.map(item => <Pressable key={item.id} onPress={() => { setAccount(item.id); if (!split) setPayments([{ accountId: item.id, amount: '' }]); }} onLongPress={() => Alert.alert('Archivar cuenta', `¿Archivar ${item.name}? Se conservarán sus movimientos, pero no estará disponible para nuevos registros.`, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Archivar', style: 'destructive', onPress: async () => { await archiveAccount(item.id); await load(); } }])} style={[styles.accountCard, account === item.id && styles.accountActive]}><Text style={styles.accountKind}>{item.type === 'bank' ? 'BANCO' : item.type === 'cash' ? 'EFECTIVO' : 'OTRA CUENTA'}</Text><Text style={styles.accountName}>{item.name}</Text><Text style={styles.accountBalance}>{money(balances[item.id] ?? 0)}</Text><Text style={styles.accountHint}>Mantén pulsado para archivar</Text></Pressable>)}</ScrollView>}
-    <Text style={styles.section}>Registrar movimiento</Text><View style={styles.typeRow}>{(['expense', 'income'] as const).map(value => <Pressable onPress={() => { setType(value); if (value === 'income') setSplit(false); }} key={value} style={[styles.type, type === value && (value === 'expense' ? styles.typeExpense : styles.typeIncome)]}><Text style={styles.typeText}>{value === 'expense' ? 'Gasto' : 'Ingreso'}</Text></Pressable>)}</View>
-    <TextInput style={styles.amount} value={amount} onChangeText={setAmount} keyboardType="number-pad" placeholder="$ 0" placeholderTextColor="#707687" /><TextInput style={styles.input} value={note} onChangeText={setNote} placeholder="¿En qué fue? (opcional)" placeholderTextColor="#777C8E" />
-    <Text style={styles.fieldLabel}>Fecha</Text><View style={styles.dateChoices}><Pressable onPress={() => setMovementDate(today())} style={[styles.dateChoice, movementDate === today() && styles.chipActive]}><Text style={styles.chipText}>Hoy</Text></Pressable><Pressable onPress={() => { const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1); setMovementDate(localDateKey(yesterday)); }} style={[styles.dateChoice, movementDate !== today() && styles.chipActive]}><Text style={styles.chipText}>Ayer</Text></Pressable><Pressable onPress={() => setDatePickerOpen(true)} style={styles.dateChoice}><Text style={styles.chipText}>{movementDate}</Text></Pressable></View>{datePickerOpen && <DateTimePicker value={new Date(`${movementDate}T12:00:00`)} mode="date" maximumDate={new Date()} onChange={(_, value) => { setDatePickerOpen(false); if (value) setMovementDate(localDateKey(value)); }} />}
-    <Text style={styles.fieldLabel}>Categoría</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{categories.map(item => <Pressable key={item.id} onPress={() => setCategory(item.id)} style={[styles.chip, category === item.id && styles.chipActive]}><Text style={styles.chipText}>{item.name}</Text></Pressable>)}</ScrollView>
-    <View style={styles.inlineCategory}><TextInput value={categoryName} onChangeText={setCategoryName} placeholder="Nueva categoría" placeholderTextColor="#777C8E" style={styles.categoryInput} /><Pressable onPress={addCategory} style={styles.smallButton}><Text style={styles.smallButtonText}>Añadir</Text></Pressable></View>
-    {type === 'expense' && accounts.length > 1 && <Pressable onPress={() => { const next = !split; setSplit(next); if (next) setPayments([{ accountId: account || accounts[0]?.id || '', amount: '' }, { accountId: accounts.find(item => item.id !== account)?.id || '', amount: '' }]); }} style={styles.splitToggle}><View><Text style={styles.splitTitle}>Pago combinado</Text><Text style={styles.splitText}>Usar dos o más cuentas para este gasto.</Text></View><Text style={styles.toggleMark}>{split ? '✓' : '+'}</Text></Pressable>}
-    {split ? <View style={styles.splitBox}><Text style={styles.fieldLabel}>¿De dónde sale el dinero?</Text>{payments.map((payment, index) => <View key={`${index}-${payment.accountId}`} style={styles.payment}><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.paymentAccounts}>{accounts.map(item => <Pressable key={item.id} onPress={() => updatePayment(index, { accountId: item.id })} style={[styles.paymentAccount, payment.accountId === item.id && styles.paymentAccountActive]}><Text style={styles.paymentAccountText}>{item.name}</Text></Pressable>)}</ScrollView><TextInput value={payment.amount} onChangeText={value => updatePayment(index, { amount: value })} keyboardType="number-pad" placeholder="$ parte" placeholderTextColor="#777C8E" style={styles.paymentAmount} />{payments.length > 2 && <Pressable onPress={() => setPayments(items => items.filter((_, itemIndex) => itemIndex !== index))}><Text style={styles.remove}>×</Text></Pressable>}</View>)}<View style={styles.splitFooter}><Pressable onPress={() => setPayments(items => [...items, { accountId: accounts[0]?.id ?? '', amount: '' }])}><Text style={styles.link}>+ Otra parte</Text></Pressable><Text style={[styles.splitDifference, paymentDifference === 0 && styles.splitOk]}>{paymentDifference === 0 ? 'Total completo' : `Faltan ${money(Math.max(0, paymentDifference))}`}</Text></View></View> : <><Text style={styles.fieldLabel}>Cuenta</Text><ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>{accounts.map(item => <Pressable key={item.id} onPress={() => { setAccount(item.id); setPayments([{ accountId: item.id, amount: '' }]); }} style={[styles.chip, account === item.id && styles.chipActive]}><Text style={styles.chipText}>{item.name}</Text></Pressable>)}</ScrollView></>}
-    <Pressable onPress={submit} style={styles.submit}><Text style={styles.submitText}>Guardar movimiento</Text></Pressable>
-    <View style={styles.historyHead}><Text style={styles.section}>Resumen</Text><View style={styles.periods}>{(['week', 'month'] as const).map(value => <Pressable onPress={() => setPeriod(value)} key={value} style={[styles.period, period === value && styles.periodActive]}><Text style={styles.periodText}>{value === 'week' ? 'Semana' : 'Mes'}</Text></Pressable>)}</View></View>
-    {recent.length === 0 ? <Text style={styles.empty}>Aún no hay movimientos en este periodo.</Text> : recent.map(item => <View key={item.id} style={styles.row}><View style={styles.rowInfo}><Text style={styles.rowName}>{item.note || item.category_name || 'Movimiento'}</Text><Text style={styles.rowMeta}>{item.split_summary ? `Pago combinado · ${item.split_summary}` : `${item.category_name || 'Sin categoría'} · ${item.account_name || ''}`}</Text></View><Text style={[styles.rowAmount, item.type === 'income' ? styles.income : styles.expense]}>{item.type === 'income' ? '+' : '−'} {money(Number(item.amount))}</Text><Pressable onPress={() => Alert.alert('Eliminar movimiento', 'Esta acción ajustará el saldo de la cuenta.', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: async () => { await deleteExpense(item.id); await load(); } }])}><Text style={styles.remove}>×</Text></Pressable></View>)}
-    {transfers.filter(item => item.date >= periodStart(period)).map(item => <View key={`transfer-${item.id}`} style={styles.row}><View style={styles.rowInfo}><Text style={styles.rowName}>{item.note || 'Transferencia entre cuentas'}</Text><Text style={styles.rowMeta}>{item.from_name} → {item.to_name}</Text></View><Text style={[styles.rowAmount, styles.transferAmount]}>↔ {money(Number(item.amount))}</Text><Pressable onPress={() => Alert.alert('Eliminar transferencia', 'El dinero volverá al saldo anterior de ambas cuentas.', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Eliminar', style: 'destructive', onPress: async () => { await deleteTransfer(item.id); await load(); } }])}><Text style={styles.remove}>×</Text></Pressable></View>)}
-  </ScrollView><AccountModal visible={accountModal} onClose={() => setAccountModal(false)} onSaved={async () => { await load(); setAccountModal(false); }} /><TransferModal visible={transferModal} accounts={accounts} onClose={() => setTransferModal(false)} onSaved={async () => { await load(); setTransferModal(false); }} /></SafeAreaView>;
-}
 
-function AccountModal({ visible, onClose, onSaved }: { visible: boolean; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState<Account['type']>('bank');
-  const save = async () => { if (!name.trim()) return; await createAccount(name.trim(), type); setName(''); await onSaved(); };
-  return <AppModal visible={visible} title="Agregar cuenta" onClose={onClose}><Text style={styles.modalHelp}>Crea un banco, efectivo u otra cuenta para registrar movimientos y transferencias.</Text><View style={styles.chips}>{(['bank', 'cash', 'other'] as const).map(value => <Pressable key={value} onPress={() => setType(value)} style={[styles.chip, type === value && styles.chipActive]}><Text style={styles.chipText}>{value === 'bank' ? 'Banco' : value === 'cash' ? 'Efectivo' : 'Otra'}</Text></Pressable>)}</View><TextInput value={name} onChangeText={setName} placeholder={type === 'cash' ? 'Ej. Billetera' : 'Ej. Bancolombia'} placeholderTextColor="#777C8E" style={styles.input} /><Pressable onPress={save} style={styles.submit}><Text style={styles.submitText}>Guardar cuenta</Text></Pressable></AppModal>;
-}
+  return (
+    <SafeAreaView style={[styles.container, themed?.container]}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.heading}>
+          <View>
+            <Text style={styles.eyebrow}>CONTABILIDAD</Text>
+            <Text style={[styles.title, themed?.text]}>Tu dinero, claro y simple</Text>
+          </View>
+          <Pressable
+            onPress={() => {
+              setEditingAccount(null);
+              setAccountModalVisible(true);
+            }}
+            style={styles.addAccount}
+          >
+            <Text style={styles.addAccountText}>+ Banco</Text>
+          </Pressable>
+        </View>
 
-function TransferModal({ visible, accounts, onClose, onSaved }: { visible: boolean; accounts: Account[]; onClose: () => void; onSaved: () => Promise<void> }) {
-  const [from, setFrom] = useState(''); const [to, setTo] = useState(''); const [amount, setAmount] = useState(''); const [note, setNote] = useState('');
-  useEffect(() => { if (visible) { setFrom(accounts[0]?.id ?? ''); setTo(accounts[1]?.id ?? ''); } }, [visible, accounts]);
-  const save = async () => { const value = cop(amount); if (!from || !to || from === to || !Number.isFinite(value) || value <= 0) { Alert.alert('Revisa la transferencia', 'Elige dos cuentas distintas y un monto válido.'); return; } try { await createTransfer({ fromAccountId: from, toAccountId: to, amount: value, note, date: today() }); setAmount(''); setNote(''); await onSaved(); } catch (error) { Alert.alert('No se pudo transferir', error instanceof Error ? error.message : 'Revisa el saldo disponible.'); } };
-  return <AppModal visible={visible} title="Transferir o retirar" onClose={onClose}><Text style={styles.modalHelp}>Para retirar efectivo, elige tu banco como origen y Efectivo como destino. No se contabiliza como gasto.</Text><Text style={styles.fieldLabel}>Desde</Text><View style={styles.chips}>{accounts.map(item => <Pressable key={item.id} onPress={() => setFrom(item.id)} style={[styles.chip, from === item.id && styles.chipActive]}><Text style={styles.chipText}>{item.name}</Text></Pressable>)}</View><Text style={styles.fieldLabel}>Hacia</Text><View style={styles.chips}>{accounts.map(item => <Pressable key={item.id} onPress={() => setTo(item.id)} style={[styles.chip, to === item.id && styles.chipActive]}><Text style={styles.chipText}>{item.name}</Text></Pressable>)}</View><TextInput value={amount} onChangeText={setAmount} keyboardType="number-pad" placeholder="$ monto" placeholderTextColor="#777C8E" style={styles.amount} /><TextInput value={note} onChangeText={setNote} placeholder="Nota (opcional)" placeholderTextColor="#777C8E" style={styles.input} /><Pressable onPress={save} style={styles.submit}><Text style={styles.submitText}>Guardar transferencia</Text></Pressable></AppModal>;
+        <SummaryCard totals={totals} period={period} themed={themed} />
+
+        <AccountList
+          accounts={accounts}
+          balances={balances}
+          selectedAccountId={selectedAccountId}
+          onSelectAccount={setSelectedAccountId}
+          onAddAccount={() => {
+            setEditingAccount(null);
+            setAccountModalVisible(true);
+          }}
+          onEditAccount={acc => {
+            setEditingAccount(acc);
+            setAccountModalVisible(true);
+          }}
+          onOpenTransfer={() => setTransferModalVisible(true)}
+        />
+
+        <MovementForm
+          accounts={accounts}
+          categories={categories}
+          balances={balances}
+          selectedAccountId={selectedAccountId}
+          onSelectAccount={setSelectedAccountId}
+          onMovementCreated={load}
+          onAddCategory={handleAddCategory}
+        />
+
+        <HistoryList
+          recentRows={recentRows}
+          recentTransfers={recentTransfers}
+          period={period}
+          onPeriodChange={setPeriod}
+          onEditExpense={setEditingExpense}
+          onRefresh={load}
+        />
+      </ScrollView>
+
+      <AccountModal
+        visible={accountModalVisible}
+        editingAccount={editingAccount}
+        onClose={() => {
+          setAccountModalVisible(false);
+          setEditingAccount(null);
+        }}
+        onSaved={async () => {
+          await load();
+          setAccountModalVisible(false);
+          setEditingAccount(null);
+        }}
+      />
+
+      <TransferModal
+        visible={transferModalVisible}
+        accounts={accounts}
+        onClose={() => setTransferModalVisible(false)}
+        onSaved={async () => {
+          await load();
+          setTransferModalVisible(false);
+        }}
+      />
+
+      <EditExpenseModal
+        visible={Boolean(editingExpense)}
+        expense={editingExpense}
+        accounts={accounts}
+        categories={categories}
+        onClose={() => setEditingExpense(null)}
+        onSaved={async () => {
+          await load();
+          setEditingExpense(null);
+        }}
+      />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0D14' }, content: { padding: 20, gap: 12, paddingBottom: 36 }, heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }, eyebrow: { color: '#A78BFA', fontSize: 12, letterSpacing: 2, fontWeight: '800' }, title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: 2 }, addAccount: { borderRadius: 10, borderWidth: 1, borderColor: '#725A9B', paddingHorizontal: 10, paddingVertical: 8 }, addAccountText: { color: '#D9C9F3', fontSize: 12, fontWeight: '800' }, summary: { backgroundColor: '#1B1F2C', borderRadius: 18, padding: 17, flexDirection: 'row', justifyContent: 'space-between', marginVertical: 4 }, summaryLabel: { color: '#9EA4B6', fontSize: 13 }, balance: { color: '#F8F7FB', fontSize: 23, fontWeight: '800', marginTop: 4 }, summaryRight: { alignItems: 'flex-end', gap: 5, justifyContent: 'center' }, income: { color: '#74D8A1' }, expense: { color: '#F09AA9' }, transferAmount: { color: '#B89BE3' }, sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, section: { color: '#C9B6E8', fontSize: 14, fontWeight: '800', marginTop: 6 }, link: { color: '#B89BE3', fontWeight: '700', fontSize: 12 }, accounts: { gap: 9 }, accountCard: { width: 150, padding: 13, borderRadius: 15, backgroundColor: '#181B25', gap: 5 }, accountActive: { borderWidth: 1, borderColor: '#A78BFA' }, accountKind: { color: '#9096A8', fontSize: 9, fontWeight: '800', letterSpacing: .8 }, accountName: { color: '#F0F1F5', fontWeight: '700' }, accountBalance: { color: '#CFC5E0', fontWeight: '800', fontSize: 14 }, accountHint: { color: '#74798A', fontSize: 9 }, emptyCard: { padding: 16, borderRadius: 16, borderWidth: 1, borderColor: '#2C3040', borderStyle: 'dashed', gap: 7 }, emptyTitle: { color: '#E8E9EE', fontWeight: '700' }, emptyText: { color: '#9298A9', fontSize: 13, lineHeight: 18 }, emptyAction: { alignSelf: 'flex-start', paddingHorizontal: 11, paddingVertical: 8, borderRadius: 9, backgroundColor: '#A78BFA', marginTop: 3 }, emptyActionText: { color: '#171421', fontWeight: '800', fontSize: 12 }, typeRow: { flexDirection: 'row', gap: 8 }, type: { flex: 1, borderRadius: 11, paddingVertical: 10, backgroundColor: '#202433', alignItems: 'center' }, typeExpense: { borderWidth: 1, borderColor: '#E85D75' }, typeIncome: { borderWidth: 1, borderColor: '#64D9A0' }, typeText: { color: '#E7E8ED', fontWeight: '700' }, amount: { height: 58, backgroundColor: '#181B25', borderRadius: 14, paddingHorizontal: 15, color: '#F8F7FB', fontSize: 23, fontWeight: '700' }, input: { height: 47, backgroundColor: '#181B25', borderRadius: 12, paddingHorizontal: 13, color: '#F8F7FB' }, fieldLabel: { color: '#9EA4B6', fontSize: 12, fontWeight: '700' }, dateChoices: { flexDirection: 'row', gap: 8 }, dateChoice: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#202433' }, chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 }, chip: { borderRadius: 18, paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#202433' }, chipActive: { borderWidth: 1, borderColor: '#A78BFA' }, chipText: { color: '#E3E4E9', fontSize: 13 }, inlineCategory: { flexDirection: 'row', gap: 8 }, categoryInput: { flex:1, height: 42, backgroundColor: '#181B25', borderRadius: 11, color: '#F8F7FB', paddingHorizontal: 12 }, smallButton: { justifyContent: 'center', borderRadius: 11, backgroundColor: '#33384B', paddingHorizontal: 12 }, smallButtonText: { color: '#E5E0EF', fontWeight: '700', fontSize: 12 }, splitToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#1A1E2A', borderRadius: 14, padding: 13 }, splitTitle: { color: '#F0F1F5', fontWeight: '700' }, splitText: { color: '#8E94A5', fontSize: 12, marginTop: 3 }, toggleMark: { color: '#C7AFE9', fontSize: 20, fontWeight: '800' }, splitBox: { borderWidth: 1, borderColor: '#32394C', borderRadius: 15, padding: 12, gap: 10 }, payment: { gap: 8, borderBottomWidth: 1, borderColor: '#292E3E', paddingBottom: 10 }, paymentAccounts: { gap: 6 }, paymentAccount: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 9, backgroundColor: '#242838' }, paymentAccountActive: { backgroundColor: '#5D4C7E' }, paymentAccountText: { color: '#E3E4E9', fontSize: 12 }, paymentAmount: { height: 43, backgroundColor: '#181B25', borderRadius: 10, color: '#F8F7FB', paddingHorizontal: 12 }, remove: { color: '#E895A4', fontSize: 23, alignSelf: 'flex-end' }, splitFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, splitDifference: { color: '#E9A4AF', fontSize: 12, fontWeight: '700' }, splitOk: { color: '#78D9A2' }, submit: { backgroundColor: '#A78BFA', borderRadius: 13, alignItems: 'center', padding: 14, marginTop: 2 }, submitText: { color: '#171421', fontWeight: '800' }, historyHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }, periods: { flexDirection: 'row', gap: 4, backgroundColor: '#1B1F2C', borderRadius: 9, padding: 3 }, period: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6 }, periodActive: { backgroundColor: '#363B4F' }, periodText: { color: '#D7D9E0', fontSize: 11 }, row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: '#181B25', borderRadius: 14, padding: 14 }, rowInfo: { flex: 1 }, rowName: { color: '#F2F3F6', fontWeight: '600', fontSize: 15 }, rowMeta: { color: '#858B9B', fontSize: 12, marginTop: 4 }, rowAmount: { fontWeight: '800', fontSize: 14 }, empty: { color: '#858B9B', textAlign: 'center', paddingVertical: 18 }, modalHelp: { color: '#A4AABA', lineHeight: 19, marginBottom: 2 },
+  container: { flex: 1, backgroundColor: '#0B0D14' },
+  content: { padding: 20, gap: 14, paddingBottom: 36 },
+  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  eyebrow: { color: '#A78BFA', fontSize: 12, letterSpacing: 2, fontWeight: '800' },
+  title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: 2 },
+  addAccount: { borderRadius: 10, borderWidth: 1, borderColor: '#725A9B', paddingHorizontal: 10, paddingVertical: 8 },
+  addAccountText: { color: '#D9C9F3', fontSize: 12, fontWeight: '800' },
 });
-const lightStyles = StyleSheet.create({ container: { backgroundColor: light.background }, card: { backgroundColor: light.surface }, text: { color: light.text }, muted: { color: light.muted } });
+
+const lightStyles = StyleSheet.create({
+  container: { backgroundColor: light.background },
+  card: { backgroundColor: light.surface },
+  text: { color: light.text },
+  muted: { color: light.muted },
+});

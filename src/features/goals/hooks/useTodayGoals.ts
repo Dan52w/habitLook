@@ -21,11 +21,12 @@ export function useTodayGoals() {
     const raw: GoalWithProgress[] = await listTodayGoals(today);
 
     setGoals(raw.map((g) => {
+      const capped = Math.min(g.progress_value, g.target_value);
       if (g.target_type === 'count') {
         return {
           id: g.id, title: g.title,
-          progressLabel: `${g.progress_value} / ${g.target_value}`,
-          progressRatio: g.target_value > 0 ? g.progress_value / g.target_value : 0,
+          progressLabel: `${capped} / ${g.target_value}`,
+          progressRatio: g.target_value > 0 ? Math.min(1, capped / g.target_value) : 0,
           color: '#F2A93B',
           targetValue: g.target_value,
           targetType: g.target_type,
@@ -41,7 +42,7 @@ export function useTodayGoals() {
           targetType: g.target_type,
         };
       }
-      const ratio = g.target_value > 0 ? g.progress_value / g.target_value : 0;
+      const ratio = g.target_value > 0 ? Math.min(1, capped / g.target_value) : 0;
       return {
         id: g.id, title: g.title,
         progressLabel: `${Math.round(ratio * 100)}%`,

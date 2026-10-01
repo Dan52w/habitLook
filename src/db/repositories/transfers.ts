@@ -4,11 +4,12 @@ import { getAccountBalance } from './accounts';
 
 export async function createTransfer(input: { fromAccountId: string; toAccountId: string; amount: number; note?: string; date: string }): Promise<void> {
   if (input.fromAccountId === input.toAccountId) throw new Error('Las cuentas deben ser distintas.');
-  if (input.amount > await getAccountBalance(input.fromAccountId) + 0.00001) throw new Error('Saldo insuficiente en la cuenta de origen.');
+  const roundedAmount = Math.round(input.amount);
+  if (roundedAmount > await getAccountBalance(input.fromAccountId)) throw new Error('Saldo insuficiente en la cuenta de origen.');
   const db = await getDb();
   await db.execute(
     'INSERT INTO transfers (id, from_account_id, to_account_id, amount, note, date) VALUES (?, ?, ?, ?, ?, ?)',
-    [uuidv4(), input.fromAccountId, input.toAccountId, input.amount, input.note ?? null, input.date],
+    [uuidv4(), input.fromAccountId, input.toAccountId, roundedAmount, input.note ?? null, input.date],
   );
 }
 
