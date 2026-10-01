@@ -38,3 +38,8 @@ export async function getAccountBalance(accountId: string): Promise<number> {
   );
   return (result.rows?.[0]?.balance ?? 0) as number;
 }
+
+export async function archiveAccount(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute('UPDATE accounts SET is_archived = 1 WHERE id = ?', [id]);
+}

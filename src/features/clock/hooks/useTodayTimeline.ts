@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { listBlocksForDate, TimeBlockWithCategory } from '../../../db/repositories/timeBlocks';
 import { buildRingSegments, mergeSegmentsByCategory, RingSegment } from '../utils/clockMath';
 import { localDateKey } from '../../../shared/utils/date';
+import { updateTodayWidget } from '../../../services/todayWidget';
 
 const DAY_START = 6 * 60; const DAY_END = 18 * 60; const NIGHT_END = 30 * 60;
 const toMinutes = (time: string) => { const [hour, minute] = time.split(':').map(Number); return hour * 60 + minute; };
@@ -38,6 +39,10 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
     const today = localDateKey(now); const nowMinutes = now.getHours() * 60 + now.getMinutes();
     const active = selectedDate === today ? mapped.find(block => nowMinutes >= block.startMinutes && nowMinutes < block.endMinutes) : undefined;
     setCurrentActivity(active ? { name: active.categoryName, color: active.color } : { name: selectedDate === today ? 'Libre' : 'Día seleccionado', color: '#4B4F5A' }); hasLoaded.current = true; setLoading(false);
+    if (selectedDate === today) {
+      const next = mapped.filter(block => block.startMinutes >= nowMinutes).sort((a, b) => a.startMinutes - b.startMinutes)[0];
+      updateTodayWidget(next?.categoryName ?? 'Sin actividad próxima', next ? `Próxima: ${String(Math.floor(next.startMinutes / 60)).padStart(2, '0')}:${String(next.startMinutes % 60).padStart(2, '0')}` : 'Planifica tu día en Ritmo');
+    }
   }, [selectedDate, now]);
   useEffect(() => { load(); }, [load]);
   return { segments, nightSegments, legend, currentActivity, loading, reload: load };

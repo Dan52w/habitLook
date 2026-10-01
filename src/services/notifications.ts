@@ -1,4 +1,4 @@
-import notifee, { AndroidImportance, AndroidNotificationSetting, AuthorizationStatus, RepeatFrequency, TimestampTrigger, TriggerType } from '@notifee/react-native';
+import notifee, { AndroidImportance, AndroidNotificationSetting, AuthorizationStatus, EventType, RepeatFrequency, TimestampTrigger, TriggerType } from '@notifee/react-native';
 import { getSetting } from '../db/repositories/settiengs';
 import { listBlocksForReminders } from '../db/repositories/timeBlocks';
 import { findGoalTitleForCategory } from '../db/repositories/goals';
@@ -23,7 +23,7 @@ export async function scheduleActivityReminder(input: { id: string; title: strin
   }
   const channelId = await notifee.createChannel({ id: 'activities', name: 'Actividades', importance: AndroidImportance.HIGH });
   const trigger: TimestampTrigger = { type: TriggerType.TIMESTAMP, timestamp: triggerAt, ...(input.recurring ? { repeatFrequency: RepeatFrequency.WEEKLY } : {}), alarmManager: { allowWhileIdle: true } };
-  await notifee.createTriggerNotification({ id: `activity-${input.id}`, title: `En ${minutes} min empieza: ${input.title}`, body: input.goalTitle ? `Recuerda tu meta: ${input.goalTitle}` : `Tu actividad empieza a las ${input.startTime}.`, android: { channelId, pressAction: { id: 'default' } } }, trigger);
+  await notifee.createTriggerNotification({ id: `activity-${input.id}`, title: `En ${minutes} min empieza: ${input.title}`, body: input.goalTitle ? `Recuerda tu meta: ${input.goalTitle}` : `Tu actividad empieza a las ${input.startTime}.`, data: { blockId: input.id, date }, android: { channelId, pressAction: { id: 'default' }, actions: [{ title: 'Iniciar', pressAction: { id: 'start' } }, { title: 'Posponer 10 min', pressAction: { id: 'snooze' } }] } }, trigger);
 }
 
 export async function requestReminderPermission() {
@@ -63,6 +63,24 @@ export async function scheduleReminderTest(): Promise<void> {
   const channelId = await notifee.createChannel({ id: 'activities', name: 'Actividades', importance: AndroidImportance.HIGH });
   const trigger: TimestampTrigger = { type: TriggerType.TIMESTAMP, timestamp: Date.now() + 10_000, alarmManager: { allowWhileIdle: true } };
   await notifee.createTriggerNotification({ id: 'activity-test', title: 'Recordatorios activos', body: 'Esta es una prueba de Ritmo.', android: { channelId, pressAction: { id: 'default' } } }, trigger);
+}
+
+export async function handleNotificationAction(type: EventType, detail: any): Promise<void> {
+  if (type !== EventType.ACTION_PRESS) return;
+  const blockId = detail.notification?.data?.blockId as string | undefined;
+  const date = detail.notification?.data?.date as string | undefined;
+  if (detail.pressAction?.id === 'start' && blockId && date) {
+    const { markTimeBlockStarted } = require('../db/repositories/timeBlocks');
+    await markTimeBlockStarted(blockId, date);
+  }
+  if (detail.pressAction?.id === 'snooze') {
+    const channelId = await notifee.createChannel({ id: 'activities', name: 'Actividades', importance: AndroidImportance.HIGH });
+    await notifee.createTriggerNotification({ ...detail.notification, id: `snooze-${Date.now()}`, title: 'Recordatorio pospuesto', android: { channelId, pressAction: { id: 'default' } } }, { type: TriggerType.TIMESTAMP, timestamp: Date.now() + 10 * 60_000, alarmManager: { allowWhileIdle: true } });
+  }
+}
+
+export function observeNotificationActions() {
+  return notifee.onForegroundEvent(({ type, detail }) => handleNotificationAction(type, detail));
 }
 
 export function nextDateForBlock(block: { schedule_date: string | null; is_recurring: number; day_of_week: number | null; start_time: string }) {

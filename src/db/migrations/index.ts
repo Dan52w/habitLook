@@ -165,4 +165,17 @@ export const MIGRATIONS = [
       `CREATE INDEX idx_time_block_exceptions_date ON time_block_exceptions(date);`,
     ],
   },
+  {
+    name: '008_time_block_status',
+    statements: [
+      `CREATE TABLE time_block_status (
+        time_block_id TEXT NOT NULL REFERENCES time_blocks(id) ON DELETE CASCADE,
+        date TEXT NOT NULL,
+        completed INTEGER NOT NULL DEFAULT 0,
+        started_at TEXT,
+        PRIMARY KEY (time_block_id, date)
+      );`,
+      `CREATE INDEX idx_time_block_status_date ON time_block_status(date);`,
+    ],
+  },
 ];

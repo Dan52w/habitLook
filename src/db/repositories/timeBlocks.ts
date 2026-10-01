@@ -81,3 +81,13 @@ export async function updateTimeBlock(input: { id: string; categoryId: string; s
   }
   await db.execute('UPDATE time_blocks SET category_id = ?, start_time = ?, end_time = ? WHERE id = ?', [input.categoryId, input.startTime, input.endTime, input.id]);
 }
+
+export async function markTimeBlockStarted(id: string, date: string): Promise<void> {
+  const db = await getDb();
+  await db.execute('INSERT INTO time_block_status (time_block_id, date, started_at) VALUES (?, ?, datetime(\'now\')) ON CONFLICT(time_block_id, date) DO UPDATE SET started_at = excluded.started_at', [id, date]);
+}
+
+export async function markTimeBlockCompleted(id: string, date: string, completed: boolean): Promise<void> {
+  const db = await getDb();
+  await db.execute('INSERT INTO time_block_status (time_block_id, date, completed) VALUES (?, ?, ?) ON CONFLICT(time_block_id, date) DO UPDATE SET completed = excluded.completed', [id, date, completed ? 1 : 0]);
+}

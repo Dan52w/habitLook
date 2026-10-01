@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
 import { RootTabs } from './navigation/RootTabs';
 import { rescheduleActivityReminders } from '../services/notifications';
+import { observeNotificationActions } from '../services/notifications';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -26,6 +27,7 @@ export default function App() {
     }
 
     initApp();
+    return observeNotificationActions();
   }, [retry]);
 
   if (!ready) {

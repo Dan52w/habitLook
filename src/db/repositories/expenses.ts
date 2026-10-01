@@ -65,6 +65,11 @@ export async function createSplitExpense(input: {
   return id;
 }
 
+export async function deleteExpense(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute('DELETE FROM expenses WHERE id = ?', [id]);
+}
+
 export async function listExpensesWithDetails(dateFrom?: string, dateTo?: string) {
   const db = await getDb();
   const result = await db.execute(

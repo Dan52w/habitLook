@@ -1,6 +1,7 @@
 import { open, type DB } from '@op-engineering/op-sqlite';
 import { getOrCreateDbKey } from './key';
 import { MIGRATIONS } from './migrations';
+import { v4 as uuidv4 } from 'uuid';
 
 let dbInstance: DB | null = null;
 let dbPromise: Promise<DB> | null = null;
@@ -18,9 +19,21 @@ async function initializeDb(): Promise<DB> {
 
   await db.execute('PRAGMA foreign_keys = ON');
   await runMigrations(db);
+  await seedFirstRun(db);
 
   dbInstance = db;
   return db;
+}
+
+async function seedFirstRun(db: DB) {
+  const existing = await db.execute('SELECT COUNT(*) AS count FROM categories');
+  if (Number(existing.rows?.[0]?.count ?? 0) > 0) return;
+  await db.transaction(async tx => {
+    const study = uuidv4(); const exercise = uuidv4(); const cash = uuidv4();
+    await tx.execute('INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)', [study, 'Estudio', '#A78BFA', '📚']);
+    await tx.execute('INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)', [exercise, 'Ejercicio', '#64D9A0', '🏃']);
+    await tx.execute('INSERT INTO accounts (id, name, type, color) VALUES (?, ?, ?, ?)', [cash, 'Efectivo', 'cash', '#64D9A0']);
+  });
 }
 
 async function runMigrations(db: DB) {
