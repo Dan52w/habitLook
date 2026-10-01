@@ -1,15 +1,17 @@
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { light, useTheme } from '../theme/ThemeProvider';
 
 type Props = { visible: boolean; title: string; onClose: () => void; children: React.ReactNode };
 
 export function AppModal({ visible, title, onClose, children }: Props) {
+  const theme = useTheme();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.backdrop}>
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, theme.isLight && lightStyles.sheet]}>
           <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
+            <Text style={[styles.title, theme.isLight && lightStyles.title]}>{title}</Text>
             <Pressable accessibilityRole="button" onPress={onClose} hitSlop={12}><Text style={styles.close}>×</Text></Pressable>
           </View>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>{children}</ScrollView>
@@ -27,3 +29,4 @@ const styles = StyleSheet.create({
   close: { color: '#B8A2DE', fontSize: 32, lineHeight: 32 },
   content: { padding: 20, paddingBottom: 44, gap: 14 },
 });
+const lightStyles = StyleSheet.create({ sheet: { backgroundColor: light.surface }, title: { color: light.text } });

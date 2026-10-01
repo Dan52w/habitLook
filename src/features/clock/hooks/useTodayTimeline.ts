@@ -41,7 +41,7 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
     setCurrentActivity(active ? { name: active.categoryName, color: active.color } : { name: selectedDate === today ? 'Libre' : 'Día seleccionado', color: '#4B4F5A' }); hasLoaded.current = true; setLoading(false);
     if (selectedDate === today) {
       const next = mapped.filter(block => block.startMinutes >= nowMinutes).sort((a, b) => a.startMinutes - b.startMinutes)[0];
-      updateTodayWidget(next?.categoryName ?? 'Sin actividad próxima', next ? `Próxima: ${String(Math.floor(next.startMinutes / 60)).padStart(2, '0')}:${String(next.startMinutes % 60).padStart(2, '0')}` : 'Planifica tu día en Ritmo');
+      updateTodayWidget(next?.categoryName ?? 'Sin actividad próxima', next ? `Próxima: ${String(Math.floor(next.startMinutes / 60)).padStart(2, '0')}:${String(next.startMinutes % 60).padStart(2, '0')}` : 'Planifica tu día en HabitLook');
     }
   }, [selectedDate, now]);
   useEffect(() => { load(); }, [load]);

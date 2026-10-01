@@ -1,17 +1,19 @@
 import React from 'react';
 import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 
 type Props = { title: string; progressLabel: string; progressRatio: number; color: string; onPress?: () => void; onUndo?: () => void; onDelete?: () => void };
 
 export function GoalProgressCard({ title, progressLabel, progressRatio, color, onPress, onUndo, onDelete }: Props) {
+  const theme = useTheme();
   const pct = Math.max(0, Math.min(1, progressRatio)) * 100;
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable style={[styles.card, theme.isLight && lightStyles.card]} onPress={onPress}>
       <View style={styles.row}>
-        <Text style={styles.title}>{title}</Text>
-        <View style={styles.actions}><Text style={styles.label}>{progressLabel}</Text>{onUndo && <Pressable accessibilityLabel={`Deshacer avance de ${title}`} onPress={onUndo} hitSlop={10}><Text style={styles.undo}>↶</Text></Pressable>}{onDelete && <Pressable accessibilityLabel={`Eliminar ${title}`} onPress={onDelete} hitSlop={10}><Text style={styles.delete}>×</Text></Pressable>}</View>
+        <Text style={[styles.title, theme.isLight && lightStyles.text]}>{title}</Text>
+        <View style={styles.actions}><Text style={[styles.label, theme.isLight && lightStyles.muted]}>{progressLabel}</Text>{onUndo && <Pressable accessibilityLabel={`Deshacer avance de ${title}`} onPress={onUndo} hitSlop={10}><Text style={styles.undo}>↶</Text></Pressable>}{onDelete && <Pressable accessibilityLabel={`Eliminar ${title}`} onPress={onDelete} hitSlop={10}><Text style={styles.delete}>×</Text></Pressable>}</View>
       </View>
-      <View style={styles.track}>
+      <View style={[styles.track, theme.isLight && lightStyles.track]}>
         <View style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]} />
       </View>
     </Pressable>
@@ -29,3 +31,4 @@ const styles = StyleSheet.create({
   track: { height: 8, borderRadius: 4, backgroundColor: '#2A2D3A', overflow: 'hidden' },
   fill: { height: '100%', borderRadius: 4 },
 });
+const lightStyles = StyleSheet.create({ card: { backgroundColor: light.surface }, text: { color: light.text }, muted: { color: light.muted }, track: { backgroundColor: light.surfaceMuted } });

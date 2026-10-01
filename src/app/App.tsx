@@ -6,6 +6,7 @@ import { getDb } from '../db/client';
 import { RootTabs } from './navigation/RootTabs';
 import { rescheduleActivityReminders } from '../services/notifications';
 import { observeNotificationActions } from '../services/notifications';
+import { ThemeProvider } from '../shared/theme/ThemeProvider';
 
 export default function App() {
   const [ready, setReady] = useState(false);
@@ -43,10 +44,6 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <RootTabs />
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <SafeAreaProvider><ThemeProvider><NavigationContainer><RootTabs /></NavigationContainer></ThemeProvider></SafeAreaProvider>
   );
 }

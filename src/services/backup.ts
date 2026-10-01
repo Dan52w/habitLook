@@ -16,7 +16,7 @@ export async function createBackup(): Promise<Backup> {
 
 export async function exportBackup(): Promise<void> {
   const backup = await createBackup();
-  const filename = `ritmo-respaldo-${backup.exportedAt.slice(0, 10)}.json`;
+  const filename = `habitlook-respaldo-${backup.exportedAt.slice(0, 10)}.json`;
   const path = `${RNFS.DocumentDirectoryPath}/${filename}`;
   await RNFS.writeFile(path, JSON.stringify(backup, null, 2), 'utf8');
   await Share.open({ url: `file://${path}`, type: 'application/json', filename, failOnCancel: false });
@@ -24,7 +24,7 @@ export async function exportBackup(): Promise<void> {
 
 function parseBackup(raw: string): Backup {
   const backup = JSON.parse(raw) as Backup;
-  if (backup.version !== 1 || !backup.data || TABLES.some(table => !Array.isArray(backup.data[table]))) throw new Error('El archivo no es un respaldo compatible de Ritmo.');
+  if (backup.version !== 1 || !backup.data || TABLES.some(table => !Array.isArray(backup.data[table]))) throw new Error('El archivo no es un respaldo compatible de HabitLook.');
   return backup;
 }
 

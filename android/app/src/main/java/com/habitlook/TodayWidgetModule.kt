@@ -15,7 +15,7 @@ class TodayWidgetModule(context: ReactApplicationContext) : ReactContextBaseJava
   @ReactMethod fun update(data: ReadableMap) {
     val prefs = reactApplicationContext.getSharedPreferences("today_widget", 0).edit()
     prefs.putString("activity", data.getString("activity") ?: "Sin actividad próxima")
-    prefs.putString("time", data.getString("time") ?: "Planifica tu día en Ritmo")
+    prefs.putString("time", data.getString("time") ?: "Planifica tu día en HabitLook")
     prefs.apply()
     val context = reactApplicationContext
     val manager = AppWidgetManager.getInstance(context)

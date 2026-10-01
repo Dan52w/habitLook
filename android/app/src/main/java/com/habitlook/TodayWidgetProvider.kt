@@ -14,7 +14,7 @@ class TodayWidgetProvider : AppWidgetProvider() {
   override fun onUpdate(context: Context, manager: AppWidgetManager, ids: IntArray) {
     val prefs = context.getSharedPreferences("today_widget", Context.MODE_PRIVATE)
     val activity = prefs.getString("activity", "Sin actividad próxima") ?: "Sin actividad próxima"
-    val time = prefs.getString("time", "Planifica tu día en Ritmo") ?: "Planifica tu día en Ritmo"
+    val time = prefs.getString("time", "Planifica tu día en HabitLook") ?: "Planifica tu día en HabitLook"
     val clock = SimpleDateFormat("HH:mm", Locale("es", "CO")).format(Date())
     ids.forEach { id ->
       val views = RemoteViews(context.packageName, R.layout.today_widget)

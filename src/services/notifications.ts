@@ -62,7 +62,7 @@ export async function openBatterySettings() {
 export async function scheduleReminderTest(): Promise<void> {
   const channelId = await notifee.createChannel({ id: 'activities', name: 'Actividades', importance: AndroidImportance.HIGH });
   const trigger: TimestampTrigger = { type: TriggerType.TIMESTAMP, timestamp: Date.now() + 10_000, alarmManager: { allowWhileIdle: true } };
-  await notifee.createTriggerNotification({ id: 'activity-test', title: 'Recordatorios activos', body: 'Esta es una prueba de Ritmo.', android: { channelId, pressAction: { id: 'default' } } }, trigger);
+  await notifee.createTriggerNotification({ id: 'activity-test', title: 'Recordatorios activos', body: 'Esta es una prueba de HabitLook.', android: { channelId, pressAction: { id: 'default' } } }, trigger);
 }
 
 export async function handleNotificationAction(type: EventType, detail: any): Promise<void> {

@@ -5,17 +5,19 @@ import { AccountingScreen } from '../../features/accounting/AccountingScreen';
 import { NotesScreen } from '../../features/notes/NotesScreen';
 import { ProfileScreen } from '../../features/profile/ProfileScreen';
 import { ClockTabIcon, WalletTabIcon, NotesTabIcon, ProfileTabIcon } from '../../shared/components/icons/TabIcons';
+import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
 const Tab = createBottomTabNavigator();
 
 export function RootTabs() {
+  const theme = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: '#9B8FBF',
         tabBarInactiveTintColor: '#5B5F6B',
-        tabBarStyle: { backgroundColor: '#0F1119', borderTopColor: '#1F2230' },
+        tabBarStyle: { backgroundColor: theme.isLight ? light.surface : '#0F1119', borderTopColor: theme.isLight ? light.border : '#1F2230' },
       }}
     >
       <Tab.Screen name="Inicio" component={ClockScreen} options={{ tabBarIcon: ({ color }) => <ClockTabIcon color={color} /> }} />
