@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import android.app.PendingIntent
+import com.akmonstudios.habitlook.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
