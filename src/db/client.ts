@@ -20,7 +20,7 @@ export async function getDb(): Promise<DB> {
 
 async function initializeDb(): Promise<DB> {
   const encryptionKey = await getOrCreateDbKey();
-  const db = open({ name: 'ritmo.db', encryptionKey });
+  const db = open({ name: 'habitlook.db', encryptionKey });
 
   await db.execute('PRAGMA foreign_keys = ON');
   await runMigrations(db);
@@ -34,10 +34,21 @@ async function seedFirstRun(db: DB) {
   const existing = await db.execute('SELECT COUNT(*) AS count FROM categories');
   if (Number(existing.rows?.[0]?.count ?? 0) > 0) return;
   await db.transaction(async tx => {
-    const study = uuidv4(); const exercise = uuidv4(); const cash = uuidv4();
-    await tx.execute('INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)', [study, 'Estudio', '#A78BFA', '📚']);
-    await tx.execute('INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)', [exercise, 'Ejercicio', '#64D9A0', '🏃']);
-    await tx.execute('INSERT INTO accounts (id, name, type, color) VALUES (?, ?, ?, ?)', [cash, 'Efectivo', 'cash', '#64D9A0']);
+    const study = uuidv4();
+    const exercise = uuidv4();
+    const cash = uuidv4();
+    await tx.execute(
+      'INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)',
+      [study, 'Estudio', '#A78BFA', '📚'],
+    );
+    await tx.execute(
+      'INSERT INTO categories (id, name, color, emoji) VALUES (?, ?, ?, ?)',
+      [exercise, 'Ejercicio', '#64D9A0', '🏃'],
+    );
+    await tx.execute(
+      'INSERT INTO accounts (id, name, type, color) VALUES (?, ?, ?, ?)',
+      [cash, 'Efectivo', 'cash', '#64D9A0'],
+    );
   });
 }
 
@@ -55,9 +66,11 @@ async function runMigrations(db: DB) {
 
   for (const migration of MIGRATIONS) {
     if (appliedNames.has(migration.name)) continue;
-    await db.transaction(async (tx) => {
+    await db.transaction(async tx => {
       for (const statement of migration.statements) await tx.execute(statement);
-      await tx.execute('INSERT INTO _migrations (name) VALUES (?)', [migration.name]);
+      await tx.execute('INSERT INTO _migrations (name) VALUES (?)', [
+        migration.name,
+      ]);
     });
   }
 }

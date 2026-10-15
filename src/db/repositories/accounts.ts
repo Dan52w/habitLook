@@ -1,93 +1,88 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getDb } from '../client';
 
+export type AccountType = 'bank' | 'cash' | 'other';
+
 export type Account = {
   id: string;
   name: string;
-  type: 'bank' | 'cash' | 'other';
+  type: AccountType;
   color: string | null;
   is_archived: number;
   created_at: string;
 };
 
-export async function createAccount(name: string, type: Account['type'], color?: string) {
-  const db = await getDb();
-  const id = uuidv4();
-  await db.execute('INSERT INTO accounts (id, name, type, color) VALUES (?, ?, ?, ?)', [id, name, type, color ?? null]);
-  return id;
-}
+const ACCOUNT_COLORS = [
+  '#A78BFA',
+  '#64D9A0',
+  '#7CC7FF',
+  '#F5B86B',
+  '#F08CA0',
+  '#E895A4',
+];
 
-export async function listAccounts(includeArchived = false): Promise<Account[]> {
+export async function listAccounts(
+  includeArchived = false,
+): Promise<Account[]> {
   const db = await getDb();
-  const query = includeArchived
-    ? 'SELECT * FROM accounts ORDER BY created_at ASC'
-    : 'SELECT * FROM accounts WHERE is_archived = 0 ORDER BY created_at ASC';
-  const result = await db.execute(query);
+  const result = await db.execute(
+    `SELECT * FROM accounts ${
+      includeArchived ? '' : 'WHERE is_archived = 0'
+    } ORDER BY created_at ASC`,
+  );
   return (result.rows ?? []) as Account[];
 }
 
-export async function getAccountBalance(accountId: string): Promise<number> {
+export async function createAccount(
+  name: string,
+  type: AccountType,
+): Promise<Account> {
   const db = await getDb();
-  const result = await db.execute(
-    `SELECT
-      COALESCE((SELECT SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) FROM expenses WHERE account_id = ?), 0)
-      - COALESCE((SELECT SUM(amount) FROM expense_splits WHERE account_id = ?), 0)
-      + COALESCE((SELECT SUM(amount) FROM transfers WHERE to_account_id = ?), 0)
-      - COALESCE((SELECT SUM(amount) FROM transfers WHERE from_account_id = ?), 0) AS balance`,
-    [accountId, accountId, accountId, accountId],
+  const id = uuidv4();
+  const existing = await listAccounts(true);
+  const color = ACCOUNT_COLORS[existing.length % ACCOUNT_COLORS.length];
+  await db.execute(
+    'INSERT INTO accounts (id, name, type, color) VALUES (?, ?, ?, ?)',
+    [id, name, type, color],
   );
-  return (result.rows?.[0]?.balance ?? 0) as number;
+  return {
+    id,
+    name,
+    type,
+    color,
+    is_archived: 0,
+    created_at: new Date().toISOString(),
+  };
 }
 
-export async function getAllAccountBalances(): Promise<Record<string, number>> {
+export async function updateAccount(
+  id: string,
+  name: string,
+  type: AccountType,
+): Promise<void> {
   const db = await getDb();
-  const result = await db.execute(`
-    SELECT
-      a.id,
-      COALESCE(e.direct_net, 0)
-      - COALESCE(s.split_sum, 0)
-      + COALESCE(t_in.transfer_in, 0)
-      - COALESCE(t_out.transfer_out, 0) AS balance
-    FROM accounts a
-    LEFT JOIN (
-      SELECT account_id, SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) AS direct_net
-      FROM expenses WHERE account_id IS NOT NULL GROUP BY account_id
-    ) e ON e.account_id = a.id
-    LEFT JOIN (
-      SELECT account_id, SUM(amount) AS split_sum
-      FROM expense_splits GROUP BY account_id
-    ) s ON s.account_id = a.id
-    LEFT JOIN (
-      SELECT to_account_id, SUM(amount) AS transfer_in
-      FROM transfers GROUP BY to_account_id
-    ) t_in ON t_in.to_account_id = a.id
-    LEFT JOIN (
-      SELECT from_account_id, SUM(amount) AS transfer_out
-      FROM transfers GROUP BY from_account_id
-    ) t_out ON t_out.from_account_id = a.id
-  `);
-  const record: Record<string, number> = {};
-  for (const row of (result.rows ?? []) as any[]) {
-    record[row.id] = Math.round(row.balance ?? 0);
-  }
-  return record;
+  await db.execute('UPDATE accounts SET name = ?, type = ? WHERE id = ?', [
+    name,
+    type,
+    id,
+  ]);
 }
 
-export async function updateAccount(id: string, name: string, type: Account['type'], color?: string): Promise<void> {
+export async function deleteAccount(
+  id: string,
+): Promise<{ deleted: boolean; reason?: 'archived' }> {
   const db = await getDb();
-  await db.execute('UPDATE accounts SET name = ?, type = ?, color = ? WHERE id = ?', [name.trim(), type, color ?? null, id]);
-}
-
-export async function deleteAccount(id: string): Promise<{ deleted: boolean; reason?: string }> {
-  const db = await getDb();
-  const check = await db.execute(`
-    SELECT
-      (SELECT COUNT(*) FROM expenses WHERE account_id = ?) +
-      (SELECT COUNT(*) FROM expense_splits WHERE account_id = ?) +
-      (SELECT COUNT(*) FROM transfers WHERE from_account_id = ? OR to_account_id = ?) AS total_count
-  `, [id, id, id, id]);
-  const count = Number(check.rows?.[0]?.total_count ?? 0);
-  if (count > 0) {
+  const usage = await db.execute(
+    `SELECT
+       (SELECT COUNT(*) FROM expenses WHERE account_id = ?) +
+       (SELECT COUNT(*) FROM expense_splits WHERE account_id = ?) +
+       (SELECT COUNT(*) FROM transfers WHERE from_account_id = ? OR to_account_id = ?) AS n`,
+    [id, id, id, id],
+  );
+  const movements = Number(
+    (usage.rows?.[0] as { n?: number } | undefined)?.n ?? 0,
+  );
+  if (movements > 0) {
     await db.execute('UPDATE accounts SET is_archived = 1 WHERE id = ?', [id]);
     return { deleted: false, reason: 'archived' };
   }
@@ -95,7 +90,34 @@ export async function deleteAccount(id: string): Promise<{ deleted: boolean; rea
   return { deleted: true };
 }
 
-export async function archiveAccount(id: string): Promise<void> {
+export async function getAccountBalance(accountId: string): Promise<number> {
   const db = await getDb();
-  await db.execute('UPDATE accounts SET is_archived = 1 WHERE id = ?', [id]);
+  const result = await db.execute(
+    `SELECT
+       COALESCE((SELECT SUM(amount) FROM expenses WHERE type = 'income' AND account_id = ?), 0) AS income,
+       COALESCE((SELECT SUM(amount) FROM expenses WHERE type = 'expense' AND account_id = ?), 0) AS expense,
+       COALESCE((SELECT SUM(amount) FROM expense_splits WHERE account_id = ?), 0) AS splits,
+       COALESCE((SELECT SUM(amount) FROM transfers WHERE to_account_id = ?), 0) AS transfers_in,
+       COALESCE((SELECT SUM(amount) FROM transfers WHERE from_account_id = ?), 0) AS transfers_out`,
+    [accountId, accountId, accountId, accountId, accountId],
+  );
+  const row = (result.rows?.[0] ?? {}) as Record<string, number>;
+  return (
+    Number(row.income ?? 0) -
+    Number(row.expense ?? 0) -
+    Number(row.splits ?? 0) +
+    Number(row.transfers_in ?? 0) -
+    Number(row.transfers_out ?? 0)
+  );
+}
+
+export async function getAllAccountBalances(): Promise<Record<string, number>> {
+  const accounts = await listAccounts(true);
+  const balances: Record<string, number> = {};
+  await Promise.all(
+    accounts.map(async account => {
+      balances[account.id] = await getAccountBalance(account.id);
+    }),
+  );
+  return balances;
 }

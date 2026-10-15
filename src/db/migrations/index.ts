@@ -178,4 +178,19 @@ export const MIGRATIONS = [
       `CREATE INDEX idx_time_block_status_date ON time_block_status(date);`,
     ],
   },
+  {
+    // Categorías de gasto iniciales para que un usuario nuevo pueda registrar
+    // movimientos sin configurar nada. Cada fila se inserta solo si no existe.
+    name: '009_expense_category_seeds',
+    statements: [
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-comida', 'Comida', '#F5B86B', '🍽️' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-comida');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-transporte', 'Transporte', '#58BDEB', '🚌' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-transporte');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-salud', 'Salud', '#64D9A0', '🩺' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-salud');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-hogar', 'Hogar', '#A78BFA', '🏠' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-hogar');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-ocio', 'Ocio', '#F08CA0', '🎮' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-ocio');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-educacion', 'Educación', '#7CC7FF', '📚' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-educacion');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-compras', 'Compras', '#E8C15A', '🛒' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-compras');`,
+      `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-otros', 'Otros', '#9AA0B0', '📦' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-otros');`,
+    ],
+  },
 ];

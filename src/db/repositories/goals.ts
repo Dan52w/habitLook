@@ -1,6 +1,7 @@
 import { getDb } from '../client';
 import { v4 as uuidv4 } from 'uuid';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
+import type { DB } from '@op-engineering/op-sqlite';
 
 export type GoalWithProgress = {
   id: string;
@@ -20,7 +21,9 @@ function startOfWeek(dateStr: string): string {
   return localDateKey(d);
 }
 
-export async function listTodayGoals(todayDate: string): Promise<GoalWithProgress[]> {
+export async function listTodayGoals(
+  todayDate: string,
+): Promise<GoalWithProgress[]> {
   const db = await getDb();
   const weekStart = startOfWeek(todayDate);
 
@@ -40,7 +43,7 @@ export async function listTodayGoals(todayDate: string): Promise<GoalWithProgres
             END as completed
      FROM goals g
      ORDER BY g.title ASC`,
-    [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate]
+    [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate],
   );
   return (result.rows ?? []) as GoalWithProgress[];
 }
@@ -55,18 +58,36 @@ export async function createGoal(input: {
   const db = await getDb();
   await db.execute(
     'INSERT INTO goals (id, category_id, title, target_type, target_value, period) VALUES (?, ?, ?, ?, ?, ?)',
-    [uuidv4(), input.categoryId, input.title.trim(), input.targetType, input.targetValue, input.period],
+    [
+      uuidv4(),
+      input.categoryId,
+      input.title.trim(),
+      input.targetType,
+      input.targetValue,
+      input.period,
+    ],
   );
 }
 
-export async function addGoalProgress(goalId: string, date: string, delta: number, targetValue: number): Promise<void> {
+export async function addGoalProgress(
+  goalId: string,
+  date: string,
+  delta: number,
+  targetValue: number,
+): Promise<void> {
   const db = await getDb();
-  const goalInfo = await db.execute('SELECT target_type, target_value, period FROM goals WHERE id = ?', [goalId]);
+  const goalInfo = await db.execute(
+    'SELECT target_type, target_value, period FROM goals WHERE id = ?',
+    [goalId],
+  );
   const goal = goalInfo.rows?.[0];
   const targetType = goal?.target_type ?? 'count';
   const period = goal?.period ?? 'daily';
 
-  const current = await db.execute('SELECT value, completed FROM goal_progress WHERE goal_id = ? AND date = ?', [goalId, date]);
+  const current = await db.execute(
+    'SELECT value, completed FROM goal_progress WHERE goal_id = ? AND date = ?',
+    [goalId, date],
+  );
   const currentValue = Number(current.rows?.[0]?.value ?? 0);
 
   if (targetType === 'boolean') {
@@ -75,7 +96,7 @@ export async function addGoalProgress(goalId: string, date: string, delta: numbe
         const weekStart = startOfWeek(date);
         const weeklySum = await db.execute(
           'SELECT COALESCE(SUM(value), 0) AS total FROM goal_progress WHERE goal_id = ? AND date >= ? AND date <= ?',
-          [goalId, weekStart, date]
+          [goalId, weekStart, date],
         );
         if (Number(weeklySum.rows?.[0]?.total ?? 0) >= 1) return;
       } else if (currentValue >= 1) {
@@ -85,9 +106,15 @@ export async function addGoalProgress(goalId: string, date: string, delta: numbe
     const nextValue = delta > 0 ? 1 : 0;
     const completed = nextValue >= 1 ? 1 : 0;
     if (current.rows?.length) {
-      await db.execute('UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?', [nextValue, completed, goalId, date]);
+      await db.execute(
+        'UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?',
+        [nextValue, completed, goalId, date],
+      );
     } else {
-      await db.execute('INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)', [uuidv4(), goalId, date, nextValue, completed]);
+      await db.execute(
+        'INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)',
+        [uuidv4(), goalId, date, nextValue, completed],
+      );
     }
     return;
   }
@@ -97,7 +124,7 @@ export async function addGoalProgress(goalId: string, date: string, delta: numbe
     const weekStart = startOfWeek(date);
     const weeklySumRes = await db.execute(
       'SELECT COALESCE(SUM(value), 0) AS total FROM goal_progress WHERE goal_id = ? AND date >= ? AND date <= ? AND date != ?',
-      [goalId, weekStart, date, date]
+      [goalId, weekStart, date, date],
     );
     const otherDays = Number(weeklySumRes.rows?.[0]?.total ?? 0);
     if (delta > 0) {
@@ -116,9 +143,15 @@ export async function addGoalProgress(goalId: string, date: string, delta: numbe
   }
   const completed = nextValue >= targetValue ? 1 : 0;
   if (current.rows?.length) {
-    await db.execute('UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?', [nextValue, completed, goalId, date]);
+    await db.execute(
+      'UPDATE goal_progress SET value = ?, completed = ? WHERE goal_id = ? AND date = ?',
+      [nextValue, completed, goalId, date],
+    );
   } else {
-    await db.execute('INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)', [uuidv4(), goalId, date, nextValue, completed]);
+    await db.execute(
+      'INSERT INTO goal_progress (id, goal_id, date, value, completed) VALUES (?, ?, ?, ?, ?)',
+      [uuidv4(), goalId, date, nextValue, completed],
+    );
   }
 }
 
@@ -127,8 +160,82 @@ export async function deleteGoal(goalId: string): Promise<void> {
   await db.execute('DELETE FROM goals WHERE id = ?', [goalId]);
 }
 
-export async function findGoalTitleForCategory(categoryId: string): Promise<string | null> {
+export async function findGoalTitleForCategory(
+  categoryId: string,
+): Promise<string | null> {
   const db = await getDb();
-  const result = await db.execute('SELECT title FROM goals WHERE category_id = ? ORDER BY title ASC LIMIT 1', [categoryId]);
+  const result = await db.execute(
+    'SELECT title FROM goals WHERE category_id = ? ORDER BY title ASC LIMIT 1',
+    [categoryId],
+  );
   return (result.rows?.[0]?.title ?? null) as string | null;
+}
+
+function addDays(dateKey: string, days: number): string {
+  const d = dateFromKey(dateKey);
+  d.setDate(d.getDate() + days);
+  return localDateKey(d);
+}
+
+async function weeklyTotal(
+  db: DB,
+  goalId: string,
+  weekStart: string,
+): Promise<number> {
+  const weekEnd = addDays(weekStart, 6);
+  const result = await db.execute(
+    'SELECT COALESCE(SUM(value), 0) AS total FROM goal_progress WHERE goal_id = ? AND date >= ? AND date <= ?',
+    [goalId, weekStart, weekEnd],
+  );
+  return Number(
+    (result.rows?.[0] as { total?: number } | undefined)?.total ?? 0,
+  );
+}
+
+/**
+ * Racha actual de una meta: días (o semanas) consecutivos cumpliéndola.
+ * Si el período en curso aún no se cumple, la racha se cuenta desde el
+ * anterior: la racha sigue "viva" hasta que se rompe un período completo.
+ */
+export async function getGoalStreak(goalId: string): Promise<number> {
+  const db = await getDb();
+  const info = await db.execute(
+    'SELECT period, target_value FROM goals WHERE id = ?',
+    [goalId],
+  );
+  const row = info.rows?.[0] as
+    | { period?: string; target_value?: number }
+    | undefined;
+  if (!row) return 0;
+  const target = Number(row.target_value ?? 0);
+  if (target <= 0) return 0;
+
+  if (row.period === 'weekly') {
+    let weekStart = startOfWeek(localDateKey());
+    if ((await weeklyTotal(db, goalId, weekStart)) < target) {
+      weekStart = addDays(weekStart, -7);
+    }
+    let streak = 0;
+    while ((await weeklyTotal(db, goalId, weekStart)) >= target) {
+      streak++;
+      weekStart = addDays(weekStart, -7);
+    }
+    return streak;
+  }
+
+  const doneRows = await db.execute(
+    'SELECT date FROM goal_progress WHERE goal_id = ? AND completed = 1 ORDER BY date DESC LIMIT 500',
+    [goalId],
+  );
+  const done = new Set(
+    (doneRows.rows ?? []).map(row => String((row as Record<string, unknown>).date)),
+  );
+  let cursor = localDateKey();
+  if (!done.has(cursor)) cursor = addDays(cursor, -1);
+  let streak = 0;
+  while (done.has(cursor)) {
+    streak++;
+    cursor = addDays(cursor, -1);
+  }
+  return streak;
 }

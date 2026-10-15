@@ -15,15 +15,30 @@ export type Note = {
   note_date: string | null;
 };
 
-export async function createNote(text: string, categoryId?: string, timeBlockId?: string, noteDate?: string): Promise<void> {
+export async function createNote(
+  text: string,
+  categoryId?: string,
+  timeBlockId?: string,
+  noteDate?: string,
+): Promise<void> {
   const db = await getDb();
   await db.execute(
     'INSERT INTO notes (id, category_id, text, time_block_id, note_date) VALUES (?, ?, ?, ?, ?)',
-    [uuidv4(), categoryId ?? null, text.trim(), timeBlockId ?? null, noteDate ?? localDateKey()],
+    [
+      uuidv4(),
+      categoryId ?? null,
+      text.trim(),
+      timeBlockId ?? null,
+      noteDate ?? localDateKey(),
+    ],
   );
 }
 
-export async function listNotes(search = '', categoryId?: string, noteDate?: string): Promise<Note[]> {
+export async function listNotes(
+  search = '',
+  categoryId?: string,
+  noteDate?: string,
+): Promise<Note[]> {
   const db = await getDb();
   const trimmedSearch = search.trim();
   const result = await db.execute(
@@ -36,7 +51,15 @@ export async function listNotes(search = '', categoryId?: string, noteDate?: str
        AND (? IS NULL OR n.category_id = ?)
        AND (? IS NULL OR n.note_date = ? OR (n.note_date IS NULL AND substr(n.created_at, 1, 10) = ?))
      ORDER BY n.created_at DESC`,
-    [trimmedSearch, trimmedSearch, categoryId ?? null, categoryId ?? null, noteDate ?? null, noteDate ?? null, noteDate ?? null],
+    [
+      trimmedSearch,
+      trimmedSearch,
+      categoryId ?? null,
+      categoryId ?? null,
+      noteDate ?? null,
+      noteDate ?? null,
+      noteDate ?? null,
+    ],
   );
   return (result.rows ?? []) as Note[];
 }
@@ -44,4 +67,9 @@ export async function listNotes(search = '', categoryId?: string, noteDate?: str
 export async function deleteNote(id: string): Promise<void> {
   const db = await getDb();
   await db.execute('DELETE FROM notes WHERE id = ?', [id]);
+}
+
+export async function updateNote(id: string, text: string): Promise<void> {
+  const db = await getDb();
+  await db.execute('UPDATE notes SET text = ? WHERE id = ?', [text.trim(), id]);
 }

@@ -49,16 +49,23 @@ export async function scheduleActivityReminder(input: {
     }
     const startsAt = new Date(`${date}T${input.startTime}:00`).getTime();
     const plannedTrigger = startsAt - minutes * 60_000;
-    triggerAt = plannedTrigger <= now ? Math.max(now + 5_000, startsAt - 30_000) : plannedTrigger;
+    triggerAt =
+      plannedTrigger <= now
+        ? Math.max(now + 5_000, startsAt - 30_000)
+        : plannedTrigger;
   } else {
     const startsAt = new Date(`${date}T${input.startTime}:00`).getTime();
     if (startsAt <= now) return;
     const plannedTrigger = startsAt - minutes * 60_000;
-    triggerAt = plannedTrigger <= now ? Math.max(now + 5_000, startsAt - 30_000) : plannedTrigger;
+    triggerAt =
+      plannedTrigger <= now
+        ? Math.max(now + 5_000, startsAt - 30_000)
+        : plannedTrigger;
   }
 
   const settings = await notifee.getNotificationSettings();
-  const hasExactAlarm = settings.android?.alarm === AndroidNotificationSetting.ENABLED;
+  const hasExactAlarm =
+    settings.android?.alarm === AndroidNotificationSetting.ENABLED;
   const channelId = await ensureActivityChannel();
 
   const trigger: TimestampTrigger = {
@@ -85,7 +92,7 @@ export async function scheduleActivityReminder(input: {
         ],
       },
     },
-    trigger
+    trigger,
   );
 }
 
@@ -93,12 +100,16 @@ export async function requestReminderPermission() {
   return notifee.requestPermission();
 }
 
-export type ReminderPermissionStatus = { notifications: boolean; exactAlarms: boolean };
+export type ReminderPermissionStatus = {
+  notifications: boolean;
+  exactAlarms: boolean;
+};
 
 export async function getReminderPermissionStatus(): Promise<ReminderPermissionStatus> {
   const settings = await notifee.getNotificationSettings();
   return {
-    notifications: settings.authorizationStatus >= AuthorizationStatus.AUTHORIZED,
+    notifications:
+      settings.authorizationStatus >= AuthorizationStatus.AUTHORIZED,
     exactAlarms: settings.android?.alarm === AndroidNotificationSetting.ENABLED,
   };
 }
@@ -137,18 +148,22 @@ export async function scheduleReminderTest(): Promise<void> {
       body: 'Esta es una prueba de HabitLook.',
       android: { channelId, pressAction: { id: 'default' } },
     },
-    trigger
+    trigger,
   );
 }
 
-export async function handleNotificationAction(type: EventType, detail: any): Promise<void> {
+export async function handleNotificationAction(
+  type: EventType,
+  detail: any,
+): Promise<void> {
   if (type !== EventType.ACTION_PRESS) return;
   const blockId = detail.notification?.data?.blockId as string | undefined;
-  const date = detail.notification?.data?.date as string | undefined;
 
-  if (detail.pressAction?.id === 'start' && blockId && date) {
+  if (detail.pressAction?.id === 'start' && blockId) {
     const { markTimeBlockStarted } = require('../db/repositories/timeBlocks');
-    await markTimeBlockStarted(blockId, date);
+    // Se usa la fecha actual y no la guardada en la notificación: en las
+    // series semanales la fecha original queda congelada en la primera ocurrencia.
+    await markTimeBlockStarted(blockId, localDateKey());
   }
 
   if (detail.pressAction?.id === 'snooze') {
@@ -164,13 +179,15 @@ export async function handleNotificationAction(type: EventType, detail: any): Pr
         type: TriggerType.TIMESTAMP,
         timestamp: Date.now() + 10 * 60_000,
         alarmManager: { allowWhileIdle: true },
-      }
+      },
     );
   }
 }
 
 export function observeNotificationActions() {
-  return notifee.onForegroundEvent(({ type, detail }) => handleNotificationAction(type, detail));
+  return notifee.onForegroundEvent(({ type, detail }) =>
+    handleNotificationAction(type, detail),
+  );
 }
 
 export function nextDateForBlock(block: {
@@ -186,22 +203,28 @@ export function nextDateForBlock(block: {
   candidate.setDate(now.getDate() + ((targetDay - now.getDay() + 7) % 7));
   const [hour, minute] = block.start_time.split(':').map(Number);
   candidate.setHours(hour, minute, 0, 0);
-  if (candidate.getTime() <= Date.now()) candidate.setDate(candidate.getDate() + 7);
+  if (candidate.getTime() <= Date.now())
+    candidate.setDate(candidate.getDate() + 7);
   return localDateKey(candidate);
 }
 
 export async function rescheduleActivityReminders() {
+  const minutes = Number((await getSetting('reminder_minutes')) ?? '15');
+
+  // Cancela primero todos los recordatorios de actividades: evita duplicados
+  // y hace que "No avisar" (0 min) realmente silencie los ya programados.
+  const existingTriggerIds = await notifee.getTriggerNotificationIds();
+  const staleIds = existingTriggerIds.filter(id => id.startsWith('activity-'));
+  if (staleIds.length > 0) {
+    await Promise.all(
+      staleIds.map(id => notifee.cancelTriggerNotification(id)),
+    );
+  }
+
+  if (!minutes) return;
+
   await ensureActivityChannel();
   const blocks = await listBlocksForReminders();
-  const expectedNotificationIds = new Set(blocks.map(block => `activity-${block.id}`));
-  const existingTriggerIds = await notifee.getTriggerNotificationIds();
-  const staleIds = existingTriggerIds.filter(
-    id => id.startsWith('activity-') && !expectedNotificationIds.has(id)
-  );
-
-  if (staleIds.length > 0) {
-    await Promise.all(staleIds.map(id => notifee.cancelTriggerNotification(id)));
-  }
 
   await Promise.all(
     blocks.map(async block => {
@@ -215,6 +238,6 @@ export async function rescheduleActivityReminders() {
         goalTitle,
         recurring: Boolean(block.is_recurring),
       });
-    })
+    }),
   );
 }
