@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Account, getAllAccountBalances, listAccounts } from '../../../db/repositories/accounts';
-import { ExpenseCategory, listExpenseCategories } from '../../../db/repositories/expenseCategories';
+import {
+  Account,
+  getAllAccountBalances,
+  listAccounts,
+} from '../../../db/repositories/accounts';
+import {
+  ExpenseCategory,
+  listExpenseCategories,
+} from '../../../db/repositories/expenseCategories';
 import { listExpensesWithDetails } from '../../../db/repositories/expenses';
 import { listTransfersWithDetails } from '../../../db/repositories/transfers';
 import { periodStart } from '../../../shared/utils/date';
@@ -39,14 +46,19 @@ export function useAccounting() {
   const [period, setPeriod] = useState<'week' | 'month'>('month');
 
   const load = useCallback(async () => {
-    const [loadedAccounts, loadedCategories, loadedRows, loadedTransfers, allBalances] =
-      await Promise.all([
-        listAccounts(),
-        listExpenseCategories(),
-        listExpensesWithDetails(),
-        listTransfersWithDetails(),
-        getAllAccountBalances(),
-      ]);
+    const [
+      loadedAccounts,
+      loadedCategories,
+      loadedRows,
+      loadedTransfers,
+      allBalances,
+    ] = await Promise.all([
+      listAccounts(),
+      listExpenseCategories(),
+      listExpensesWithDetails(),
+      listTransfersWithDetails(),
+      getAllAccountBalances(),
+    ]);
 
     setAccounts(loadedAccounts);
     setCategories(loadedCategories);
@@ -62,19 +74,19 @@ export function useAccounting() {
   useFocusEffect(
     useCallback(() => {
       load();
-    }, [load])
+    }, [load]),
   );
 
   const startDate = useMemo(() => periodStart(period), [period]);
 
   const recentRows = useMemo(
     () => rows.filter(row => row.date >= startDate),
-    [rows, startDate]
+    [rows, startDate],
   );
 
   const recentTransfers = useMemo(
     () => transfers.filter(item => item.date >= startDate),
-    [transfers, startDate]
+    [transfers, startDate],
   );
 
   const totals = useMemo(() => {
@@ -87,7 +99,7 @@ export function useAccounting() {
         }
         return result;
       },
-      { income: 0, expense: 0 }
+      { income: 0, expense: 0 },
     );
   }, [recentRows]);
 

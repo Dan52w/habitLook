@@ -1,10 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { AppModal } from '../../../shared/components/AppModal';
 import { Account } from '../../../db/repositories/accounts';
 import { ExpenseCategory } from '../../../db/repositories/expenseCategories';
-import { deleteExpense, updateExpense } from '../../../db/repositories/expenses';
+import {
+  deleteExpense,
+  updateExpense,
+} from '../../../db/repositories/expenses';
 import { ExpenseRow } from '../hooks/useAccounting';
 import { cop } from '../utils/currency';
 import { localDateKey } from '../../../shared/utils/date';
@@ -53,7 +63,10 @@ export function EditExpenseModal({
       return;
     }
     if (!accountId) {
-      Alert.alert('Elige una cuenta', 'Debes seleccionar una cuenta para el movimiento.');
+      Alert.alert(
+        'Elige una cuenta',
+        'Debes seleccionar una cuenta para el movimiento.',
+      );
       return;
     }
 
@@ -69,7 +82,12 @@ export function EditExpenseModal({
       });
       await onSaved();
     } catch (error) {
-      Alert.alert('No se pudo guardar', error instanceof Error ? error.message : 'Revisa los datos e inténtalo de nuevo.');
+      Alert.alert(
+        'No se pudo guardar',
+        error instanceof Error
+          ? error.message
+          : 'Revisa los datos e inténtalo de nuevo.',
+      );
     }
   };
 
@@ -88,13 +106,15 @@ export function EditExpenseModal({
             await onSaved();
           },
         },
-      ]
+      ],
     );
   };
 
   return (
     <AppModal visible={visible} title="Editar movimiento" onClose={onClose}>
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Monto</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Monto
+      </Text>
       <TextInput
         style={[
           styles.amount,
@@ -111,7 +131,9 @@ export function EditExpenseModal({
         placeholderTextColor={theme.colors.muted}
       />
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Descripción</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Descripción
+      </Text>
       <TextInput
         style={[
           styles.input,
@@ -127,7 +149,9 @@ export function EditExpenseModal({
         placeholderTextColor={theme.colors.muted}
       />
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Fecha</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Fecha
+      </Text>
       <Pressable
         onPress={() => setDatePickerOpen(true)}
         style={[
@@ -154,8 +178,14 @@ export function EditExpenseModal({
         />
       )}
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Cuenta</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Cuenta
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         {accounts.map(acc => {
           const isActive = accountId === acc.id;
           return (
@@ -165,7 +195,9 @@ export function EditExpenseModal({
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isActive ? theme.colors.chipActive : theme.colors.chip,
+                  backgroundColor: isActive
+                    ? theme.colors.chipActive
+                    : theme.colors.chip,
                   borderColor: isActive ? theme.colors.accent : 'transparent',
                 },
               ]}
@@ -190,14 +222,22 @@ export function EditExpenseModal({
         })}
       </ScrollView>
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Categoría</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Categoría
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         <Pressable
           onPress={() => setCategoryId('')}
           style={[
             styles.chip,
             {
-              backgroundColor: !categoryId ? theme.colors.chipActive : theme.colors.chip,
+              backgroundColor: !categoryId
+                ? theme.colors.chipActive
+                : theme.colors.chip,
               borderColor: !categoryId ? theme.colors.accent : 'transparent',
             },
           ]}
@@ -227,7 +267,9 @@ export function EditExpenseModal({
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isActive ? theme.colors.chipActive : theme.colors.chip,
+                  backgroundColor: isActive
+                    ? theme.colors.chipActive
+                    : theme.colors.chip,
                   borderColor: isActive ? theme.colors.accent : 'transparent',
                 },
               ]}
@@ -256,7 +298,12 @@ export function EditExpenseModal({
         onPress={save}
         style={[styles.submit, { backgroundColor: theme.colors.accent }]}
       >
-        <Text style={[styles.submitText, { color: theme.isLight ? '#FFFDF8' : '#171421' }]}>
+        <Text
+          style={[
+            styles.submitText,
+            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+          ]}
+        >
           Guardar cambios
         </Text>
       </Pressable>
@@ -297,7 +344,12 @@ const styles = StyleSheet.create({
   },
   dateText: { fontSize: 14 },
   chips: { flexDirection: 'row', gap: 8, marginVertical: 6 },
-  chip: { borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, borderWidth: 1 },
+  chip: {
+    borderRadius: 18,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderWidth: 1,
+  },
   chipText: { fontSize: 13 },
   submit: {
     borderRadius: 13,

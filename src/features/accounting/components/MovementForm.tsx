@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Account } from '../../../db/repositories/accounts';
 import { ExpenseCategory } from '../../../db/repositories/expenseCategories';
-import { createExpense, createSplitExpense } from '../../../db/repositories/expenses';
+import {
+  createExpense,
+  createSplitExpense,
+} from '../../../db/repositories/expenses';
 import { localDateKey } from '../../../shared/utils/date';
 import { cop, money } from '../utils/currency';
 import { useTheme } from '../../../shared/theme/ThemeProvider';
@@ -41,11 +52,19 @@ export function MovementForm({
   const [split, setSplit] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [newCatName, setNewCatName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Las categorías cargan de forma asíncrona: sincroniza la selección por defecto.
+  useEffect(() => {
+    if (!category && categories[0]) setCategory(categories[0].id);
+  }, [categories, category]);
 
   const total = cop(amount);
 
   const updatePayment = (index: number, patch: Partial<Payment>) => {
-    setPayments(items => items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+    setPayments(items =>
+      items.map((item, i) => (i === index ? { ...item, ...patch } : item)),
+    );
   };
 
   const handleAddCategory = async () => {
@@ -56,6 +75,8 @@ export function MovementForm({
   };
 
   const submit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       if (!Number.isFinite(total) || total <= 0) {
         Alert.alert('Revisa el monto', 'Ingresa un monto mayor que cero.');
@@ -64,23 +85,43 @@ export function MovementForm({
 
       if (type === 'expense' && split) {
         const validPayments = payments
-          .map(payment => ({ accountId: payment.accountId, amount: cop(payment.amount) }))
-          .filter(payment => payment.accountId && Number.isFinite(payment.amount) && payment.amount > 0);
+          .map(payment => ({
+            accountId: payment.accountId,
+            amount: cop(payment.amount),
+          }))
+          .filter(
+            payment =>
+              payment.accountId &&
+              Number.isFinite(payment.amount) &&
+              payment.amount > 0,
+          );
 
-        if (validPayments.reduce((sum, payment) => sum + payment.amount, 0) !== total) {
-          Alert.alert('El pago no cuadra', 'Las partes deben sumar exactamente el total del gasto.');
+        if (
+          validPayments.reduce((sum, payment) => sum + payment.amount, 0) !==
+          total
+        ) {
+          Alert.alert(
+            'El pago no cuadra',
+            'Las partes deben sumar exactamente el total del gasto.',
+          );
           return;
         }
 
         const assigned = validPayments.reduce<Record<string, number>>(
-          (res, p) => ({ ...res, [p.accountId]: (res[p.accountId] ?? 0) + p.amount }),
-          {}
+          (res, p) => ({
+            ...res,
+            [p.accountId]: (res[p.accountId] ?? 0) + p.amount,
+          }),
+          {},
         );
         const insufficient = Object.entries(assigned).find(
-          ([accId, pAmt]) => pAmt > (balances[accId] ?? 0)
+          ([accId, pAmt]) => pAmt > (balances[accId] ?? 0),
         );
         if (insufficient) {
-          Alert.alert('Saldo insuficiente', 'Una de las cuentas no tiene suficiente saldo para la parte asignada.');
+          Alert.alert(
+            'Saldo insuficiente',
+            'Una de las cuentas no tiene suficiente saldo para la parte asignada.',
+          );
           return;
         }
 
@@ -93,12 +134,18 @@ export function MovementForm({
         });
       } else {
         if (!selectedAccountId) {
-          Alert.alert('Añade una cuenta', 'Primero agrega un banco, efectivo u otra cuenta para registrar el movimiento.');
+          Alert.alert(
+            'Añade una cuenta',
+            'Primero agrega un banco, efectivo u otra cuenta para registrar el movimiento.',
+          );
           return;
         }
 
         if (type === 'expense' && total > (balances[selectedAccountId] ?? 0)) {
-          Alert.alert('Saldo insuficiente', 'No puedes gastar más de lo disponible en esta cuenta.');
+          Alert.alert(
+            'Saldo insuficiente',
+            'No puedes gastar más de lo disponible en esta cuenta.',
+          );
           return;
         }
 
@@ -115,18 +162,30 @@ export function MovementForm({
       setAmount('');
       setNote('');
       setSplit(false);
-      setPayments(selectedAccountId ? [{ accountId: selectedAccountId, amount: '' }] : []);
+      setPayments(
+        selectedAccountId ? [{ accountId: selectedAccountId, amount: '' }] : [],
+      );
       await onMovementCreated();
     } catch (error) {
-      Alert.alert('No se pudo guardar', error instanceof Error ? error.message : 'Revisa los datos e inténtalo de nuevo.');
+      Alert.alert(
+        'No se pudo guardar',
+        error instanceof Error
+          ? error.message
+          : 'Revisa los datos e inténtalo de nuevo.',
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const paymentDifference = total - payments.reduce((sum, p) => sum + (cop(p.amount) || 0), 0);
+  const paymentDifference =
+    total - payments.reduce((sum, p) => sum + (cop(p.amount) || 0), 0);
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.section, { color: theme.colors.accentLight }]}>Registrar movimiento</Text>
+      <Text style={[styles.section, { color: theme.colors.accentLight }]}>
+        Registrar movimiento
+      </Text>
       <View style={styles.typeRow}>
         {(['expense', 'income'] as const).map(val => {
           const isSelected = type === val;
@@ -207,15 +266,21 @@ export function MovementForm({
         placeholderTextColor={theme.colors.muted}
       />
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Fecha</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Fecha
+      </Text>
       <View style={styles.dateChoices}>
         <Pressable
           onPress={() => setMovementDate(today())}
           style={[
             styles.dateChoice,
             {
-              backgroundColor: movementDate === today() ? theme.colors.chipActive : theme.colors.chip,
-              borderColor: movementDate === today() ? theme.colors.accent : 'transparent',
+              backgroundColor:
+                movementDate === today()
+                  ? theme.colors.chipActive
+                  : theme.colors.chip,
+              borderColor:
+                movementDate === today() ? theme.colors.accent : 'transparent',
             },
           ]}
         >
@@ -223,7 +288,12 @@ export function MovementForm({
             style={[
               styles.chipText,
               {
-                color: movementDate === today() ? (theme.isLight ? '#22201C' : '#F8F7FB') : theme.colors.textSecondary,
+                color:
+                  movementDate === today()
+                    ? theme.isLight
+                      ? '#22201C'
+                      : '#F8F7FB'
+                    : theme.colors.textSecondary,
                 fontWeight: movementDate === today() ? '700' : '500',
               },
             ]}
@@ -240,8 +310,12 @@ export function MovementForm({
           style={[
             styles.dateChoice,
             {
-              backgroundColor: movementDate !== today() ? theme.colors.chipActive : theme.colors.chip,
-              borderColor: movementDate !== today() ? theme.colors.accent : 'transparent',
+              backgroundColor:
+                movementDate !== today()
+                  ? theme.colors.chipActive
+                  : theme.colors.chip,
+              borderColor:
+                movementDate !== today() ? theme.colors.accent : 'transparent',
             },
           ]}
         >
@@ -249,7 +323,12 @@ export function MovementForm({
             style={[
               styles.chipText,
               {
-                color: movementDate !== today() ? (theme.isLight ? '#22201C' : '#F8F7FB') : theme.colors.textSecondary,
+                color:
+                  movementDate !== today()
+                    ? theme.isLight
+                      ? '#22201C'
+                      : '#F8F7FB'
+                    : theme.colors.textSecondary,
                 fontWeight: movementDate !== today() ? '700' : '500',
               },
             ]}
@@ -264,7 +343,9 @@ export function MovementForm({
             { backgroundColor: theme.colors.chip, borderColor: 'transparent' },
           ]}
         >
-          <Text style={[styles.chipText, { color: theme.colors.textSecondary }]}>
+          <Text
+            style={[styles.chipText, { color: theme.colors.textSecondary }]}
+          >
             {movementDate}
           </Text>
         </Pressable>
@@ -282,8 +363,14 @@ export function MovementForm({
         />
       )}
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Categoría</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Categoría
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         {categories.map(item => {
           const isSelected = category === item.id;
           return (
@@ -293,7 +380,9 @@ export function MovementForm({
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isSelected ? theme.colors.chipActive : theme.colors.chip,
+                  backgroundColor: isSelected
+                    ? theme.colors.chipActive
+                    : theme.colors.chip,
                   borderColor: isSelected ? theme.colors.accent : 'transparent',
                 },
               ]}
@@ -302,7 +391,11 @@ export function MovementForm({
                 style={[
                   styles.chipText,
                   {
-                    color: isSelected ? (theme.isLight ? '#22201C' : '#F8F7FB') : theme.colors.textSecondary,
+                    color: isSelected
+                      ? theme.isLight
+                        ? '#22201C'
+                        : '#F8F7FB'
+                      : theme.colors.textSecondary,
                     fontWeight: isSelected ? '700' : '500',
                   },
                 ]}
@@ -331,9 +424,14 @@ export function MovementForm({
         />
         <Pressable
           onPress={handleAddCategory}
-          style={[styles.smallButton, { backgroundColor: theme.isLight ? '#DDD4C4' : '#33384B' }]}
+          style={[
+            styles.smallButton,
+            { backgroundColor: theme.isLight ? '#DDD4C4' : '#33384B' },
+          ]}
         >
-          <Text style={[styles.smallButtonText, { color: theme.colors.text }]}>Añadir</Text>
+          <Text style={[styles.smallButtonText, { color: theme.colors.text }]}>
+            Añadir
+          </Text>
         </Pressable>
       </View>
 
@@ -344,24 +442,40 @@ export function MovementForm({
             setSplit(next);
             if (next) {
               setPayments([
-                { accountId: selectedAccountId || accounts[0]?.id || '', amount: '' },
-                { accountId: accounts.find(item => item.id !== selectedAccountId)?.id || '', amount: '' },
+                {
+                  accountId: selectedAccountId || accounts[0]?.id || '',
+                  amount: '',
+                },
+                {
+                  accountId:
+                    accounts.find(item => item.id !== selectedAccountId)?.id ||
+                    '',
+                  amount: '',
+                },
               ]);
             }
           }}
           style={[
             styles.splitToggle,
             {
-              backgroundColor: theme.isLight ? theme.colors.surfaceMuted : '#1A1E2A',
+              backgroundColor: theme.isLight
+                ? theme.colors.surfaceMuted
+                : '#1A1E2A',
               borderColor: theme.colors.border,
             },
           ]}
         >
           <View>
-            <Text style={[styles.splitTitle, { color: theme.colors.text }]}>Pago combinado</Text>
-            <Text style={[styles.splitText, { color: theme.colors.muted }]}>Usar dos o más cuentas para este gasto.</Text>
+            <Text style={[styles.splitTitle, { color: theme.colors.text }]}>
+              Pago combinado
+            </Text>
+            <Text style={[styles.splitText, { color: theme.colors.muted }]}>
+              Usar dos o más cuentas para este gasto.
+            </Text>
           </View>
-          <Text style={[styles.toggleMark, { color: theme.colors.accent }]}>{split ? '✓' : '+'}</Text>
+          <Text style={[styles.toggleMark, { color: theme.colors.accent }]}>
+            {split ? '✓' : '+'}
+          </Text>
         </Pressable>
       )}
 
@@ -375,9 +489,14 @@ export function MovementForm({
             },
           ]}
         >
-          <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>¿De dónde sale el dinero?</Text>
+          <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+            ¿De dónde sale el dinero?
+          </Text>
           {payments.map((payment, index) => (
-            <View key={`${index}-${payment.accountId}`} style={[styles.payment, { borderColor: theme.colors.border }]}>
+            <View
+              key={`${index}-${payment.accountId}`}
+              style={[styles.payment, { borderColor: theme.colors.border }]}
+            >
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -388,12 +507,18 @@ export function MovementForm({
                   return (
                     <Pressable
                       key={item.id}
-                      onPress={() => updatePayment(index, { accountId: item.id })}
+                      onPress={() =>
+                        updatePayment(index, { accountId: item.id })
+                      }
                       style={[
                         styles.paymentAccount,
                         {
-                          backgroundColor: isActive ? theme.colors.chipActive : theme.colors.chip,
-                          borderColor: isActive ? theme.colors.accent : 'transparent',
+                          backgroundColor: isActive
+                            ? theme.colors.chipActive
+                            : theme.colors.chip,
+                          borderColor: isActive
+                            ? theme.colors.accent
+                            : 'transparent',
                         },
                       ]}
                     >
@@ -401,7 +526,11 @@ export function MovementForm({
                         style={[
                           styles.paymentAccountText,
                           {
-                            color: isActive ? (theme.isLight ? '#22201C' : '#F8F7FB') : theme.colors.textSecondary,
+                            color: isActive
+                              ? theme.isLight
+                                ? '#22201C'
+                                : '#F8F7FB'
+                              : theme.colors.textSecondary,
                             fontWeight: isActive ? '700' : '500',
                           },
                         ]}
@@ -428,7 +557,13 @@ export function MovementForm({
                 ]}
               />
               {payments.length > 2 && (
-                <Pressable onPress={() => setPayments(items => items.filter((_, idx) => idx !== index))}>
+                <Pressable
+                  onPress={() =>
+                    setPayments(items =>
+                      items.filter((_, idx) => idx !== index),
+                    )
+                  }
+                >
                   <Text style={styles.remove}>×</Text>
                 </Pressable>
               )}
@@ -437,12 +572,22 @@ export function MovementForm({
           <View style={styles.splitFooter}>
             <Pressable
               onPress={() =>
-                setPayments(items => [...items, { accountId: accounts[0]?.id ?? '', amount: '' }])
+                setPayments(items => [
+                  ...items,
+                  { accountId: accounts[0]?.id ?? '', amount: '' },
+                ])
               }
             >
-              <Text style={[styles.link, { color: theme.colors.accent }]}>+ Otra parte</Text>
+              <Text style={[styles.link, { color: theme.colors.accent }]}>
+                + Otra parte
+              </Text>
             </Pressable>
-            <Text style={[styles.splitDifference, paymentDifference === 0 && styles.splitOk]}>
+            <Text
+              style={[
+                styles.splitDifference,
+                paymentDifference === 0 && styles.splitOk,
+              ]}
+            >
               {paymentDifference === 0
                 ? 'Total completo'
                 : `Faltan ${money(Math.max(0, paymentDifference))}`}
@@ -451,8 +596,14 @@ export function MovementForm({
         </View>
       ) : (
         <>
-          <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Cuenta</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+            Cuenta
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.chips}
+          >
             {accounts.map(item => {
               const isSelected = selectedAccountId === item.id;
               return (
@@ -462,8 +613,12 @@ export function MovementForm({
                   style={[
                     styles.chip,
                     {
-                      backgroundColor: isSelected ? theme.colors.chipActive : theme.colors.chip,
-                      borderColor: isSelected ? theme.colors.accent : 'transparent',
+                      backgroundColor: isSelected
+                        ? theme.colors.chipActive
+                        : theme.colors.chip,
+                      borderColor: isSelected
+                        ? theme.colors.accent
+                        : 'transparent',
                     },
                   ]}
                 >
@@ -471,7 +626,11 @@ export function MovementForm({
                     style={[
                       styles.chipText,
                       {
-                        color: isSelected ? (theme.isLight ? '#22201C' : '#F8F7FB') : theme.colors.textSecondary,
+                        color: isSelected
+                          ? theme.isLight
+                            ? '#22201C'
+                            : '#F8F7FB'
+                          : theme.colors.textSecondary,
                         fontWeight: isSelected ? '700' : '500',
                       },
                     ]}
@@ -487,10 +646,22 @@ export function MovementForm({
 
       <Pressable
         onPress={submit}
-        style={[styles.submit, { backgroundColor: theme.colors.accent }]}
+        disabled={submitting}
+        style={[
+          styles.submit,
+          {
+            backgroundColor: theme.colors.accent,
+            opacity: submitting ? 0.6 : 1,
+          },
+        ]}
       >
-        <Text style={[styles.submitText, { color: theme.isLight ? '#FFFDF8' : '#171421' }]}>
-          Guardar movimiento
+        <Text
+          style={[
+            styles.submitText,
+            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+          ]}
+        >
+          {submitting ? 'Guardando…' : 'Guardar movimiento'}
         </Text>
       </Pressable>
     </View>
@@ -501,7 +672,13 @@ const styles = StyleSheet.create({
   container: { gap: 10 },
   section: { fontSize: 14, fontWeight: '800', marginTop: 6 },
   typeRow: { flexDirection: 'row', gap: 8 },
-  type: { flex: 1, borderRadius: 11, paddingVertical: 10, borderWidth: 1, alignItems: 'center' },
+  type: {
+    flex: 1,
+    borderRadius: 11,
+    paddingVertical: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
   typeText: { fontWeight: '700' },
   amount: {
     height: 58,
@@ -520,13 +697,33 @@ const styles = StyleSheet.create({
   },
   fieldLabel: { fontSize: 12, fontWeight: '700' },
   dateChoices: { flexDirection: 'row', gap: 8 },
-  dateChoice: { borderRadius: 12, paddingHorizontal: 13, paddingVertical: 9, borderWidth: 1 },
+  dateChoice: {
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderWidth: 1,
+  },
   chips: { flexDirection: 'row', gap: 8 },
-  chip: { borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, borderWidth: 1 },
+  chip: {
+    borderRadius: 18,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderWidth: 1,
+  },
   chipText: { fontSize: 13 },
   inlineCategory: { flexDirection: 'row', gap: 8 },
-  categoryInput: { flex: 1, height: 42, borderRadius: 11, borderWidth: 1, paddingHorizontal: 12 },
-  smallButton: { justifyContent: 'center', borderRadius: 11, paddingHorizontal: 14 },
+  categoryInput: {
+    flex: 1,
+    height: 42,
+    borderRadius: 11,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
+  smallButton: {
+    justifyContent: 'center',
+    borderRadius: 11,
+    paddingHorizontal: 14,
+  },
   smallButtonText: { fontWeight: '700', fontSize: 12 },
   splitToggle: {
     flexDirection: 'row',
@@ -542,11 +739,25 @@ const styles = StyleSheet.create({
   splitBox: { borderWidth: 1, borderRadius: 15, padding: 12, gap: 10 },
   payment: { gap: 8, borderBottomWidth: 1, paddingBottom: 10 },
   paymentAccounts: { gap: 6 },
-  paymentAccount: { paddingHorizontal: 11, paddingVertical: 7, borderRadius: 9, borderWidth: 1 },
+  paymentAccount: {
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 9,
+    borderWidth: 1,
+  },
   paymentAccountText: { fontSize: 12 },
-  paymentAmount: { height: 43, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12 },
+  paymentAmount: {
+    height: 43,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+  },
   remove: { color: '#E85D75', fontSize: 23, alignSelf: 'flex-end' },
-  splitFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  splitFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   link: { fontWeight: '700', fontSize: 12 },
   splitDifference: { color: '#E85D75', fontSize: 12, fontWeight: '700' },
   splitOk: { color: '#2E9F68' },

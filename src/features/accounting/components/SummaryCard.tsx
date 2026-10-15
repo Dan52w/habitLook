@@ -15,7 +15,9 @@ export function SummaryCard({ totals, period, themed }: Props) {
   return (
     <View style={[styles.summary, themed?.card]}>
       <View>
-        <Text style={[styles.summaryLabel, themed?.muted]}>Balance {periodLabel}</Text>
+        <Text style={[styles.summaryLabel, themed?.muted]}>
+          Balance {periodLabel}
+        </Text>
         <Text style={[styles.balance, themed?.text]}>{money(balance)}</Text>
       </View>
       <View style={styles.summaryRight}>

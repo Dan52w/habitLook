@@ -37,7 +37,10 @@ export function AccountingScreen() {
 
   // Inicializa la cuenta seleccionada cuando cargan las cuentas sin re-ejecutar load()
   useEffect(() => {
-    if ((!selectedAccountId || !accounts.some(a => a.id === selectedAccountId)) && accounts.length > 0) {
+    if (
+      (!selectedAccountId || !accounts.some(a => a.id === selectedAccountId)) &&
+      accounts.length > 0
+    ) {
       setSelectedAccountId(accounts[0].id);
     }
   }, [accounts, selectedAccountId]);
@@ -50,11 +53,16 @@ export function AccountingScreen() {
 
   return (
     <SafeAreaView style={[styles.container, themed?.container]}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.heading}>
           <View>
             <Text style={styles.eyebrow}>CONTABILIDAD</Text>
-            <Text style={[styles.title, themed?.text]}>Tu dinero, claro y simple</Text>
+            <Text style={[styles.title, themed?.text]}>
+              Tu dinero, claro y simple
+            </Text>
           </View>
           <Pressable
             onPress={() => {
@@ -147,10 +155,25 @@ export function AccountingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
   content: { padding: 20, gap: 14, paddingBottom: 36 },
-  heading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  eyebrow: { color: '#A78BFA', fontSize: 12, letterSpacing: 2, fontWeight: '800' },
+  heading: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  eyebrow: {
+    color: '#A78BFA',
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '800',
+  },
   title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: 2 },
-  addAccount: { borderRadius: 10, borderWidth: 1, borderColor: '#725A9B', paddingHorizontal: 10, paddingVertical: 8 },
+  addAccount: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#725A9B',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
   addAccountText: { color: '#D9C9F3', fontSize: 12, fontWeight: '800' },
 });
 

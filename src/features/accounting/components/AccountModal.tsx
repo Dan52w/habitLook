@@ -1,7 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { AppModal } from '../../../shared/components/AppModal';
-import { Account, createAccount, deleteAccount, updateAccount } from '../../../db/repositories/accounts';
+import {
+  Account,
+  createAccount,
+  deleteAccount,
+  updateAccount,
+} from '../../../db/repositories/accounts';
 import { useTheme } from '../../../shared/theme/ThemeProvider';
 
 type Props = {
@@ -11,7 +23,12 @@ type Props = {
   onSaved: () => Promise<void>;
 };
 
-export function AccountModal({ visible, editingAccount, onClose, onSaved }: Props) {
+export function AccountModal({
+  visible,
+  editingAccount,
+  onClose,
+  onSaved,
+}: Props) {
   const theme = useTheme();
   const [name, setName] = useState('');
   const [type, setType] = useState<Account['type']>('bank');
@@ -28,7 +45,10 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
 
   const save = async () => {
     if (!name.trim()) {
-      Alert.alert('Nombre requerido', 'Por favor ingresa un nombre para la cuenta o banco.');
+      Alert.alert(
+        'Nombre requerido',
+        'Por favor ingresa un nombre para la cuenta o banco.',
+      );
       return;
     }
     try {
@@ -40,7 +60,12 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
       setName('');
       await onSaved();
     } catch (error) {
-      Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo guardar la cuenta.');
+      Alert.alert(
+        'Error',
+        error instanceof Error
+          ? error.message
+          : 'No se pudo guardar la cuenta.',
+      );
     }
   };
 
@@ -60,16 +85,21 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
               if (!result.deleted && result.reason === 'archived') {
                 Alert.alert(
                   'Cuenta archivada',
-                  'La cuenta tenía movimientos registrados, por lo que fue archivada para mantener la integridad de los saldos.'
+                  'La cuenta tenía movimientos registrados, por lo que fue archivada para mantener la integridad de los saldos.',
                 );
               }
               await onSaved();
             } catch (error) {
-              Alert.alert('Error', error instanceof Error ? error.message : 'No se pudo eliminar la cuenta.');
+              Alert.alert(
+                'Error',
+                error instanceof Error
+                  ? error.message
+                  : 'No se pudo eliminar la cuenta.',
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -91,7 +121,9 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
           : 'Crea un banco, efectivo u otra cuenta para registrar movimientos y transferencias.'}
       </Text>
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Tipo de cuenta</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Tipo de cuenta
+      </Text>
       <View style={styles.chips}>
         {(['bank', 'cash', 'other'] as const).map(value => {
           const isActive = type === value;
@@ -105,9 +137,7 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
                   backgroundColor: isActive
                     ? theme.colors.chipActive
                     : theme.colors.chip,
-                  borderColor: isActive
-                    ? theme.colors.accent
-                    : 'transparent',
+                  borderColor: isActive ? theme.colors.accent : 'transparent',
                 },
               ]}
             >
@@ -124,14 +154,20 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
                   },
                 ]}
               >
-                {value === 'bank' ? 'Banco' : value === 'cash' ? 'Efectivo' : 'Otra'}
+                {value === 'bank'
+                  ? 'Banco'
+                  : value === 'cash'
+                  ? 'Efectivo'
+                  : 'Otra'}
               </Text>
             </Pressable>
           );
         })}
       </View>
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Nombre</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Nombre
+      </Text>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -152,7 +188,12 @@ export function AccountModal({ visible, editingAccount, onClose, onSaved }: Prop
         onPress={save}
         style={[styles.submit, { backgroundColor: theme.colors.accent }]}
       >
-        <Text style={[styles.submitText, { color: theme.isLight ? '#FFFDF8' : '#171421' }]}>
+        <Text
+          style={[
+            styles.submitText,
+            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+          ]}
+        >
           {editingAccount ? 'Guardar cambios' : 'Guardar cuenta'}
         </Text>
       </Pressable>
@@ -170,7 +211,12 @@ const styles = StyleSheet.create({
   modalHelp: { lineHeight: 19, marginBottom: 4, fontSize: 13 },
   fieldLabel: { fontSize: 12, fontWeight: '700', marginTop: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
-  chip: { borderRadius: 18, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1 },
+  chip: {
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderWidth: 1,
+  },
   chipText: { fontSize: 13 },
   input: {
     height: 48,

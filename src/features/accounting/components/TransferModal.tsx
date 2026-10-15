@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { AppModal } from '../../../shared/components/AppModal';
 import { Account } from '../../../db/repositories/accounts';
 import { createTransfer } from '../../../db/repositories/transfers';
@@ -33,7 +40,10 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
   const save = async () => {
     const value = cop(amount);
     if (!from || !to || from === to || !Number.isFinite(value) || value <= 0) {
-      Alert.alert('Revisa la transferencia', 'Elige dos cuentas distintas y un monto válido.');
+      Alert.alert(
+        'Revisa la transferencia',
+        'Elige dos cuentas distintas y un monto válido.',
+      );
       return;
     }
 
@@ -51,7 +61,7 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
     } catch (error) {
       Alert.alert(
         'No se pudo transferir',
-        error instanceof Error ? error.message : 'Revisa el saldo disponible.'
+        error instanceof Error ? error.message : 'Revisa el saldo disponible.',
       );
     }
   };
@@ -59,10 +69,13 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
   return (
     <AppModal visible={visible} title="Transferir o retirar" onClose={onClose}>
       <Text style={[styles.modalHelp, { color: theme.colors.muted }]}>
-        Para retirar efectivo, elige tu banco como origen y Efectivo como destino. No se contabiliza como gasto.
+        Para retirar efectivo, elige tu banco como origen y Efectivo como
+        destino. No se contabiliza como gasto.
       </Text>
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Desde</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Desde
+      </Text>
       <View style={styles.chips}>
         {accounts.map(item => {
           const isActive = from === item.id;
@@ -73,7 +86,9 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isActive ? theme.colors.chipActive : theme.colors.chip,
+                  backgroundColor: isActive
+                    ? theme.colors.chipActive
+                    : theme.colors.chip,
                   borderColor: isActive ? theme.colors.accent : 'transparent',
                 },
               ]}
@@ -98,7 +113,9 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
         })}
       </View>
 
-      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>Hacia</Text>
+      <Text style={[styles.fieldLabel, { color: theme.colors.muted }]}>
+        Hacia
+      </Text>
       <View style={styles.chips}>
         {accounts.map(item => {
           const isActive = to === item.id;
@@ -109,7 +126,9 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
               style={[
                 styles.chip,
                 {
-                  backgroundColor: isActive ? theme.colors.chipActive : theme.colors.chip,
+                  backgroundColor: isActive
+                    ? theme.colors.chipActive
+                    : theme.colors.chip,
                   borderColor: isActive ? theme.colors.accent : 'transparent',
                 },
               ]}
@@ -169,7 +188,12 @@ export function TransferModal({ visible, accounts, onClose, onSaved }: Props) {
         onPress={save}
         style={[styles.submit, { backgroundColor: theme.colors.accent }]}
       >
-        <Text style={[styles.submitText, { color: theme.isLight ? '#FFFDF8' : '#171421' }]}>
+        <Text
+          style={[
+            styles.submitText,
+            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+          ]}
+        >
           Guardar transferencia
         </Text>
       </Pressable>
@@ -181,7 +205,12 @@ const styles = StyleSheet.create({
   modalHelp: { lineHeight: 19, marginBottom: 2, fontSize: 13 },
   fieldLabel: { fontSize: 12, fontWeight: '700', marginTop: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 6 },
-  chip: { borderRadius: 18, paddingHorizontal: 13, paddingVertical: 9, borderWidth: 1 },
+  chip: {
+    borderRadius: 18,
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderWidth: 1,
+  },
   chipText: { fontSize: 13 },
   amount: {
     height: 58,

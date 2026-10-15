@@ -60,7 +60,9 @@ export function HistoryList({
   return (
     <View style={styles.container}>
       <View style={styles.historyHead}>
-        <Text style={[styles.section, theme.isLight && lightStyles.section]}>Resumen</Text>
+        <Text style={[styles.section, theme.isLight && lightStyles.section]}>
+          Resumen
+        </Text>
         <View style={[styles.periods, theme.isLight && lightStyles.periods]}>
           {(['week', 'month'] as const).map(value => (
             <Pressable
@@ -76,7 +78,9 @@ export function HistoryList({
                 style={[
                   styles.periodText,
                   theme.isLight && lightStyles.periodText,
-                  theme.isLight && period === value && lightStyles.periodTextActive,
+                  theme.isLight &&
+                    period === value &&
+                    lightStyles.periodTextActive,
                 ]}
               >
                 {value === 'week' ? 'Semana' : 'Mes'}
@@ -99,13 +103,19 @@ export function HistoryList({
               style={[styles.row, theme.isLight && lightStyles.row]}
             >
               <View style={styles.rowInfo}>
-                <Text style={[styles.rowName, theme.isLight && lightStyles.rowName]}>
+                <Text
+                  style={[styles.rowName, theme.isLight && lightStyles.rowName]}
+                >
                   {item.note || item.category_name || 'Movimiento'}
                 </Text>
-                <Text style={[styles.rowMeta, theme.isLight && lightStyles.rowMeta]}>
+                <Text
+                  style={[styles.rowMeta, theme.isLight && lightStyles.rowMeta]}
+                >
                   {item.split_summary
                     ? `Pago combinado · ${item.split_summary}`
-                    : `${item.category_name || 'Sin categoría'} · ${item.account_name || ''}`}
+                    : `${item.category_name || 'Sin categoría'} · ${
+                        item.account_name || ''
+                      }`}
                 </Text>
               </View>
               <Text
@@ -114,7 +124,8 @@ export function HistoryList({
                   item.type === 'income' ? styles.income : styles.expense,
                 ]}
               >
-                {item.type === 'income' ? '+' : '−'} {money(Number(item.amount))}
+                {item.type === 'income' ? '+' : '−'}{' '}
+                {money(Number(item.amount))}
               </Text>
               <Pressable
                 accessibilityLabel="Editar movimiento"
@@ -139,10 +150,14 @@ export function HistoryList({
               style={[styles.row, theme.isLight && lightStyles.row]}
             >
               <View style={styles.rowInfo}>
-                <Text style={[styles.rowName, theme.isLight && lightStyles.rowName]}>
+                <Text
+                  style={[styles.rowName, theme.isLight && lightStyles.rowName]}
+                >
                   {item.note || 'Transferencia entre cuentas'}
                 </Text>
-                <Text style={[styles.rowMeta, theme.isLight && lightStyles.rowMeta]}>
+                <Text
+                  style={[styles.rowMeta, theme.isLight && lightStyles.rowMeta]}
+                >
                   {item.from_name} → {item.to_name}
                 </Text>
               </View>
@@ -166,13 +181,32 @@ export function HistoryList({
 
 const styles = StyleSheet.create({
   container: { gap: 10 },
-  historyHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  historyHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
   section: { color: '#C9B6E8', fontSize: 14, fontWeight: '800' },
-  periods: { flexDirection: 'row', gap: 4, backgroundColor: '#1B1F2C', borderRadius: 9, padding: 3 },
+  periods: {
+    flexDirection: 'row',
+    gap: 4,
+    backgroundColor: '#1B1F2C',
+    borderRadius: 9,
+    padding: 3,
+  },
   period: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6 },
   periodActive: { backgroundColor: '#363B4F' },
   periodText: { color: '#D7D9E0', fontSize: 11 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: '#181B25', borderRadius: 14, padding: 14 },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    backgroundColor: '#181B25',
+    borderRadius: 14,
+    padding: 14,
+  },
   rowInfo: { flex: 1 },
   rowName: { color: '#F2F3F6', fontWeight: '600', fontSize: 15 },
   rowMeta: { color: '#858B9B', fontSize: 12, marginTop: 4 },
@@ -191,7 +225,11 @@ const lightStyles = StyleSheet.create({
   periodActive: { backgroundColor: '#E2DCD2' },
   periodText: { color: light.muted },
   periodTextActive: { color: light.text, fontWeight: '700' },
-  row: { backgroundColor: light.surface, borderWidth: 1, borderColor: light.border },
+  row: {
+    backgroundColor: light.surface,
+    borderWidth: 1,
+    borderColor: light.border,
+  },
   rowName: { color: light.text },
   rowMeta: { color: light.muted },
   empty: { color: light.muted },
