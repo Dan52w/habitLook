@@ -152,8 +152,17 @@ export function ProfileScreen() {
     }
   };
 
-  const exportData = async () => {
-    try {
+  const openAiAssistant = () => {
+    showAlert({
+      title: 'Próximamente',
+      message:
+        'El asistente de IA de HabitLook está en camino: te ayudará a mejorar tus hábitos con sugerencias personalizadas, siempre con tu consentimiento explícito y sin enviar tus datos.',
+      type: 'info',
+      buttonText: 'Entendido',
+    });
+  };
+
+  const exportData = async () => {    try {
       await exportBackup();
     } catch (error) {
       showAlert({
@@ -242,14 +251,47 @@ export function ProfileScreen() {
             <Text
               style={[styles.heroTitle, theme.isLight && lightStyles.heroTitle]}
             >
-              HabitLook Local
+              HabitLook
             </Text>
             <Text
               style={[styles.heroText, theme.isLight && lightStyles.heroText]}
             >
-              Sin cuenta · Sin conexión necesaria · 100% privado
+              Tu bóveda personal · Sin cuenta · 100% privado
             </Text>
           </View>
+        </View>
+
+        <View style={[styles.aiCard, theme.isLight && lightStyles.aiCard]}>
+          <View style={styles.titleLine}>
+            <View style={styles.aiTitleRow}>
+              <Text style={styles.aiIcon}>✨</Text>
+              <Text
+                style={[styles.aiTitle, theme.isLight && lightStyles.aiTitle]}
+              >
+                Asistente IA
+              </Text>
+            </View>
+            <SoonBadge isLight={theme.isLight} />
+          </View>
+          <Text
+            style={[styles.aiText, theme.isLight && lightStyles.aiText]}
+          >
+            Sugerencias inteligentes sobre tus hábitos, rutinas y gastos.
+            Siempre local primero y con tu permiso explícito.
+          </Text>
+          <Pressable
+            onPress={openAiAssistant}
+            style={[styles.aiButton, theme.isLight && lightStyles.aiButton]}
+          >
+            <Text
+              style={[
+                styles.aiButtonText,
+                theme.isLight && lightStyles.aiButtonText,
+              ]}
+            >
+              Probar el asistente
+            </Text>
+          </Pressable>
         </View>
 
         <Text style={[styles.section, theme.isLight && lightStyles.section]}>
@@ -483,23 +525,6 @@ export function ProfileScreen() {
             <Text
               style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
             >
-              Asistentes de IA
-            </Text>
-            <SoonBadge isLight={theme.isLight} />
-          </View>
-          <Text
-            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
-          >
-            No hay análisis ni envío automático de información. Cuando esté
-            disponible, pedirá consentimiento explícito.
-          </Text>
-        </View>
-
-        <View style={[styles.card, theme.isLight && lightStyles.card]}>
-          <View style={styles.titleLine}>
-            <Text
-              style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
-            >
               Tiempo de pantalla
             </Text>
             <SoonBadge isLight={theme.isLight} />
@@ -585,12 +610,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#181B25',
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#262C3E',
     padding: 16,
     marginVertical: 4,
   },
   heroInfo: { flex: 1 },
   heroTitle: { color: '#F5F6F9', fontSize: 16, fontWeight: '700' },
   heroText: { color: '#9DA3B2', marginTop: 3, fontSize: 12, lineHeight: 16 },
+  aiCard: {
+    backgroundColor: '#211C33',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#4A3D6B',
+    padding: 16,
+    gap: 10,
+  },
+  aiTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  aiIcon: { fontSize: 20 },
+  aiTitle: { color: '#EDE9FB', fontWeight: '800', fontSize: 16 },
+  aiText: { color: '#B9B0D6', fontSize: 13, lineHeight: 19 },
+  aiButton: {
+    backgroundColor: '#A78BFA',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  aiButtonText: { color: '#171421', fontWeight: '800', fontSize: 14 },
   section: {
     color: '#C9B6E8',
     fontSize: 13,
@@ -599,7 +646,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     marginTop: 8,
   },
-  card: { backgroundColor: '#181B25', borderRadius: 16, padding: 15, gap: 8 },
+  card: {
+    backgroundColor: '#181B25',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#262C3E',
+    padding: 15,
+    gap: 8,
+  },
   reminderChoices: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -673,6 +727,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#181B25',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#262C3E',
     padding: 15,
   },
   rowTitle: { color: '#F2F3F6', fontWeight: '700' },
@@ -690,6 +746,14 @@ const lightStyles = StyleSheet.create({
   },
   heroTitle: { color: light.text },
   heroText: { color: light.muted },
+  aiCard: {
+    backgroundColor: '#F1EAFB',
+    borderColor: '#C9B3E8',
+  },
+  aiTitle: { color: '#4A3573' },
+  aiText: { color: '#6B5B8A' },
+  aiButton: { backgroundColor: light.accent },
+  aiButtonText: { color: '#FFFFFF' },
   section: { color: light.accent },
   card: {
     backgroundColor: light.surface,

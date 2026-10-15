@@ -41,6 +41,7 @@ import {
   doIntervalsOverlap,
   normalizeTimeString,
 } from '../utils/timeValidation';
+import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 
 const COLORS = [
   '#A78BFA',
@@ -112,6 +113,7 @@ function TimeField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const theme = useTheme();
   const [rawH = '00', rawM = '00'] = (value || '00:00').split(':');
   const [hour, setHour] = useState(rawH);
   const [minute, setMinute] = useState(rawM);
@@ -137,7 +139,7 @@ function TimeField({
   };
 
   return (
-    <View style={styles.timeField}>
+    <View style={[styles.timeField, theme.isLight && lightStyles.timeField]}>
       <TextInput
         value={hour}
         onChangeText={val => {
@@ -149,10 +151,10 @@ function TimeField({
         keyboardType="number-pad"
         maxLength={2}
         placeholder="00"
-        placeholderTextColor="#75798B"
-        style={styles.timePart}
+        placeholderTextColor={theme.isLight ? "#8A8474" : "#75798B"}
+        style={[styles.timePart, theme.isLight && lightStyles.timePart]}
       />
-      <Text style={styles.colon}>:</Text>
+      <Text style={[styles.colon, theme.isLight && lightStyles.colon]}>:</Text>
       <TextInput
         value={minute}
         onChangeText={val => {
@@ -164,8 +166,8 @@ function TimeField({
         keyboardType="number-pad"
         maxLength={2}
         placeholder="00"
-        placeholderTextColor="#75798B"
-        style={styles.timePart}
+        placeholderTextColor={theme.isLight ? "#8A8474" : "#75798B"}
+        style={[styles.timePart, theme.isLight && lightStyles.timePart]}
       />
     </View>
   );
@@ -179,6 +181,7 @@ export function PlanManager({
   suggestedStart = '08:00',
   suggestedEnd = '09:00',
 }: Props) {
+  const theme = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [blocks, setBlocks] = useState<TimeBlockWithCategory[]>([]);
   const [name, setName] = useState('');
@@ -431,11 +434,11 @@ export function PlanManager({
 
   return (
     <AppModal visible={visible} title="Planificar" onClose={onClose}>
-      <View style={styles.date}>
-        <Text style={styles.dateOverline}>PLAN DEL DÍA</Text>
-        <Text style={styles.dateText}>{labelDate(date)}</Text>
+      <View style={[styles.date, theme.isLight && lightStyles.date]}>
+        <Text style={[styles.dateOverline, theme.isLight && lightStyles.dateOverline]}>PLAN DEL DÍA</Text>
+        <Text style={[styles.dateText, theme.isLight && lightStyles.dateText]}>{labelDate(date)}</Text>
       </View>
-      <Text style={styles.label}>Categorías</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Categorías</Text>
       <View style={styles.categories}>
         {categories.map(category => (
           <Pressable
@@ -443,19 +446,23 @@ export function PlanManager({
             onPress={() => setSelected(category.id)}
             style={[
               styles.category,
+              theme.isLight && lightStyles.category,
               selected === category.id && styles.categoryActive,
+              selected === category.id &&
+                theme.isLight &&
+                lightStyles.categoryActive,
             ]}
           >
             <Text>{category.emoji || '•'}</Text>
             <View style={[styles.dot, { backgroundColor: category.color }]} />
-            <Text numberOfLines={1} style={styles.categoryText}>
+            <Text numberOfLines={1} style={[styles.categoryText, theme.isLight && lightStyles.categoryText]}>
               {category.name}
             </Text>
             <Pressable
               accessibilityLabel={`Editar ${category.name}`}
               onPress={() => beginEditCategory(category)}
             >
-              <Text style={styles.edit}>✎</Text>
+              <Text style={[styles.edit, theme.isLight && lightStyles.edit]}>✎</Text>
             </Pressable>
             <Pressable
               onPress={() =>
@@ -478,7 +485,7 @@ export function PlanManager({
                 )
               }
             >
-              <Text style={styles.remove}>×</Text>
+              <Text style={[styles.remove, theme.isLight && lightStyles.remove]}>×</Text>
             </Pressable>
           </Pressable>
         ))}
@@ -490,8 +497,8 @@ export function PlanManager({
           placeholder={
             editingCategory ? 'Nombre de categoría' : 'Nueva categoría'
           }
-          placeholderTextColor="#75798B"
-          style={styles.input}
+          placeholderTextColor={theme.isLight ? "#8A8474" : "#75798B"}
+          style={[styles.input, theme.isLight && lightStyles.input]}
         />
         <Pressable
           style={styles.add}
@@ -515,6 +522,7 @@ export function PlanManager({
               styles.color,
               { backgroundColor: item },
               color === item && styles.colorSelected,
+              color === item && theme.isLight && lightStyles.colorSelected,
             ]}
           />
         ))}
@@ -528,29 +536,29 @@ export function PlanManager({
           <Pressable
             key={item}
             onPress={() => setEmoji(item)}
-            style={[styles.emoji, emoji === item && styles.emojiSelected]}
+            style={[styles.emoji, theme.isLight && lightStyles.emoji, emoji === item && styles.emojiSelected, emoji === item && theme.isLight && lightStyles.emojiSelected]}
           >
             <Text>{item}</Text>
           </Pressable>
         ))}
       </ScrollView>
-      <View style={styles.divider} />
-      <Text style={styles.label}>Nueva actividad</Text>
-      <Text style={styles.help}>
+      <View style={[styles.divider, theme.isLight && lightStyles.divider]} />
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Nueva actividad</Text>
+      <Text style={[styles.help, theme.isLight && lightStyles.help]}>
         Elige la categoría y el horario para este día.
       </Text>
       <View style={styles.timeRow}>
         <View>
-          <Text style={styles.timeLabel}>Inicio</Text>
+          <Text style={[styles.timeLabel, theme.isLight && lightStyles.timeLabel]}>Inicio</Text>
           <TimeField value={start} onChange={setStart} />
         </View>
-        <Text style={styles.to}>a</Text>
+        <Text style={[styles.to, theme.isLight && lightStyles.to]}>a</Text>
         <View>
-          <Text style={styles.timeLabel}>Fin</Text>
+          <Text style={[styles.timeLabel, theme.isLight && lightStyles.timeLabel]}>Fin</Text>
           <TimeField value={end} onChange={setEnd} />
         </View>
       </View>
-      <Text style={styles.timeLabel}>Horas libres sugeridas</Text>
+      <Text style={[styles.timeLabel, theme.isLight && lightStyles.timeLabel]}>Horas libres sugeridas</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -563,9 +571,9 @@ export function PlanManager({
               setStart(slot.start);
               setEnd(slot.end);
             }}
-            style={styles.suggestion}
+            style={[styles.suggestion, theme.isLight && lightStyles.suggestion]}
           >
-            <Text style={styles.timeChoiceText}>
+            <Text style={[styles.timeChoiceText, theme.isLight && lightStyles.timeChoiceText]}>
               {slot.start}–{slot.end}
             </Text>
           </Pressable>
@@ -603,10 +611,10 @@ export function PlanManager({
           {editingBlock ? 'Guardar cambios' : 'Guardar actividad'}
         </Text>
       </Pressable>
-      <View style={styles.repeat}>
+      <View style={[styles.repeat, theme.isLight && lightStyles.repeat]}>
         <View>
-          <Text style={styles.repeatTitle}>Repetir cada semana</Text>
-          <Text style={styles.help}>Se repetirá este mismo día y horario.</Text>
+          <Text style={[styles.repeatTitle, theme.isLight && lightStyles.repeatTitle]}>Repetir cada semana</Text>
+          <Text style={[styles.help, theme.isLight && lightStyles.help]}>Se repetirá este mismo día y horario.</Text>
         </View>
         <Switch
           value={recurring}
@@ -615,16 +623,16 @@ export function PlanManager({
           thumbColor={recurring ? '#CDB7F2' : '#BAC0CE'}
         />
       </View>
-      <Text style={styles.label}>Actividades de este día</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Actividades de este día</Text>
       {blocks.length === 0 ? (
-        <Text style={styles.none}>Todavía no hay actividades programadas.</Text>
+        <Text style={[styles.none, theme.isLight && lightStyles.none]}>Todavía no hay actividades programadas.</Text>
       ) : (
         blocks.map(block => (
-          <View key={block.id} style={styles.block}>
+          <View key={block.id} style={[styles.block, theme.isLight && lightStyles.block]}>
             <View
               style={[styles.dot, { backgroundColor: block.category_color }]}
             />
-            <Text style={styles.blockText}>
+            <Text style={[styles.blockText, theme.isLight && lightStyles.blockText]}>
               {block.start_time}–{block.end_time} · {block.category_name}
               {block.is_recurring ? ' · semanal' : ''}
             </Text>
@@ -632,7 +640,7 @@ export function PlanManager({
               accessibilityLabel="Editar actividad"
               onPress={() => beginEditBlock(block)}
             >
-              <Text style={styles.edit}>✎</Text>
+              <Text style={[styles.edit, theme.isLight && lightStyles.edit]}>✎</Text>
             </Pressable>
             <Pressable
               onPress={() => {
@@ -667,7 +675,7 @@ export function PlanManager({
                 }
               }}
             >
-              <Text style={styles.remove}>×</Text>
+              <Text style={[styles.remove, theme.isLight && lightStyles.remove]}>×</Text>
             </Pressable>
           </View>
         ))
@@ -791,4 +799,38 @@ const styles = StyleSheet.create({
     padding: 13,
     borderRadius: 12,
   },
+});
+
+const lightStyles = StyleSheet.create({
+  label: { color: light.accent },
+  date: { backgroundColor: light.surfaceMuted },
+  dateOverline: { color: light.accent },
+  dateText: { color: light.text },
+  help: { color: light.muted },
+  category: { backgroundColor: light.surfaceMuted },
+  categoryActive: { borderColor: light.accent },
+  categoryText: { color: light.text },
+  remove: { color: light.muted },
+  input: { backgroundColor: light.input, color: light.text },
+  colorSelected: { borderColor: light.text },
+  divider: { backgroundColor: light.border },
+  repeat: {
+    backgroundColor: light.surface,
+    borderWidth: 1,
+    borderColor: light.border,
+  },
+  repeatTitle: { color: light.text },
+  block: { backgroundColor: light.surfaceMuted },
+  blockText: { color: light.text },
+  none: { color: light.muted },
+  emoji: { backgroundColor: light.surfaceMuted },
+  emojiSelected: { borderColor: light.accent },
+  edit: { color: light.accent },
+  timeLabel: { color: light.muted },
+  to: { color: light.muted },
+  timeField: { backgroundColor: light.surfaceMuted },
+  timePart: { color: light.text },
+  colon: { color: light.accent },
+  suggestion: { backgroundColor: '#E4EFE8' },
+  timeChoiceText: { color: light.textSecondary },
 });

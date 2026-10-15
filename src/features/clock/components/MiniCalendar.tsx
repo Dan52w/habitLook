@@ -5,6 +5,7 @@ import {
   TimeBlockWithCategory,
 } from '../../../db/repositories/timeBlocks';
 import { dateFromKey, localDateKey } from '../../../shared/utils/date';
+import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
@@ -31,6 +32,7 @@ export function MiniCalendar({
   onSelect,
   refreshKey = 0,
 }: Props) {
+  const theme = useTheme();
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(dateFromKey(selectedDate)),
   );
@@ -70,7 +72,7 @@ export function MiniCalendar({
   const selectedEvents = events[selectedDate] ?? [];
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, theme.isLight && lightStyles.card]}>
       <View style={styles.header}>
         <Pressable
           onPress={() =>
@@ -81,11 +83,17 @@ export function MiniCalendar({
             })
           }
         >
-          <Text style={styles.arrow}>‹</Text>
+          <Text style={[styles.arrow, theme.isLight && lightStyles.arrow]}>
+            ‹
+          </Text>
         </Pressable>
         <View>
-          <Text style={styles.overline}>CALENDARIO SEMANAL</Text>
-          <Text style={styles.range}>
+          <Text
+            style={[styles.overline, theme.isLight && lightStyles.overline]}
+          >
+            CALENDARIO SEMANAL
+          </Text>
+          <Text style={[styles.range, theme.isLight && lightStyles.range]}>
             {formatLongDate(days[0])} — {formatLongDate(days[6])}
           </Text>
         </View>
@@ -98,7 +106,9 @@ export function MiniCalendar({
             })
           }
         >
-          <Text style={styles.arrow}>›</Text>
+          <Text style={[styles.arrow, theme.isLight && lightStyles.arrow]}>
+            ›
+          </Text>
         </Pressable>
       </View>
 
@@ -111,17 +121,40 @@ export function MiniCalendar({
             <Pressable
               key={key}
               onPress={() => onSelect(key)}
-              style={[styles.day, selected && styles.selected]}
+              style={[
+                styles.day,
+                selected && styles.selected,
+                selected && theme.isLight && lightStyles.selected,
+              ]}
             >
-              <Text style={[styles.dayName, selected && styles.selectedText]}>
+              <Text
+                style={[
+                  styles.dayName,
+                  theme.isLight && lightStyles.dayName,
+                  selected && styles.selectedText,
+                  selected && theme.isLight && lightStyles.selectedText,
+                ]}
+              >
                 {DAY_NAMES[index]}
               </Text>
-              <Text style={[styles.dayNumber, selected && styles.selectedText]}>
+              <Text
+                style={[
+                  styles.dayNumber,
+                  theme.isLight && lightStyles.dayNumber,
+                  selected && styles.selectedText,
+                  selected && theme.isLight && lightStyles.selectedText,
+                ]}
+              >
                 {day.getDate()}
               </Text>
               {hasEvents && (
                 <View
-                  style={[styles.eventDot, selected && styles.eventDotSelected]}
+                  style={[
+                    styles.eventDot,
+                    theme.isLight && lightStyles.eventDot,
+                    selected && styles.eventDotSelected,
+                    selected && theme.isLight && lightStyles.eventDotSelected,
+                  ]}
                 />
               )}
             </Pressable>
@@ -129,12 +162,14 @@ export function MiniCalendar({
         })}
       </View>
 
-      <View style={styles.list}>
-        <Text style={styles.listTitle}>
+      <View style={[styles.list, theme.isLight && lightStyles.list]}>
+        <Text style={[styles.listTitle, theme.isLight && lightStyles.listTitle]}>
           Plan de {formatLongDate(dateFromKey(selectedDate))}
         </Text>
         {selectedEvents.length === 0 ? (
-          <Text style={styles.empty}>No hay actividades para este día.</Text>
+          <Text style={[styles.empty, theme.isLight && lightStyles.empty]}>
+            No hay actividades para este día.
+          </Text>
         ) : (
           selectedEvents.map(event => (
             <View key={event.id} style={styles.event}>
@@ -144,10 +179,21 @@ export function MiniCalendar({
                   { backgroundColor: event.category_color },
                 ]}
               />
-              <Text style={styles.eventTime}>
+              <Text
+                style={[
+                  styles.eventTime,
+                  theme.isLight && lightStyles.eventTime,
+                ]}
+              >
                 {event.start_time}–{event.end_time}
               </Text>
-              <Text numberOfLines={1} style={styles.eventName}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.eventName,
+                  theme.isLight && lightStyles.eventName,
+                ]}
+              >
                 {event.category_name}
               </Text>
             </View>
@@ -227,4 +273,22 @@ const styles = StyleSheet.create({
   color: { width: 7, height: 7, borderRadius: 4 },
   eventTime: { color: '#AAB0C0', fontSize: 12, fontVariant: ['tabular-nums'] },
   eventName: { color: '#EFF0F4', fontSize: 12, fontWeight: '600', flex: 1 },
+});
+
+const lightStyles = StyleSheet.create({
+  card: { backgroundColor: light.surface, borderColor: light.border },
+  arrow: { color: light.accent },
+  overline: { color: light.accent },
+  range: { color: light.text },
+  selected: { backgroundColor: light.accent },
+  dayName: { color: light.muted },
+  dayNumber: { color: light.text },
+  selectedText: { color: '#FFFFFF' },
+  eventDot: { backgroundColor: light.accent },
+  eventDotSelected: { backgroundColor: '#FFFFFF' },
+  list: { backgroundColor: light.surfaceMuted },
+  listTitle: { color: light.accent },
+  empty: { color: light.muted },
+  eventTime: { color: light.muted },
+  eventName: { color: light.text },
 });

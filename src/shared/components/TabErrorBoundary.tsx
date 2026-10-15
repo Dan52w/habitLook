@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { light, useTheme } from '../theme/ThemeProvider';
 
 type Props = {
   children: React.ReactNode;
@@ -27,21 +28,35 @@ export class TabErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
-      return (
-        <View style={styles.container}>
-          <Text style={styles.icon}>⚠️</Text>
-          <Text style={styles.title}>Algo salió mal aquí</Text>
-          <Text style={styles.message}>
-            Esta sección tuvo un problema inesperado. Tus datos están a salvo.
-          </Text>
-          <Pressable style={styles.button} onPress={this.retry}>
-            <Text style={styles.buttonText}>Reintentar</Text>
-          </Pressable>
-        </View>
-      );
+      return <ErrorFallback onRetry={this.retry} />;
     }
     return this.props.children;
   }
+}
+
+function ErrorFallback({ onRetry }: { onRetry: () => void }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.container, theme.isLight && lightStyles.container]}>
+      <Text style={styles.icon}>⚠️</Text>
+      <Text style={[styles.title, theme.isLight && lightStyles.title]}>
+        Algo salió mal aquí
+      </Text>
+      <Text style={[styles.message, theme.isLight && lightStyles.message]}>
+        Esta sección tuvo un problema inesperado. Tus datos están a salvo.
+      </Text>
+      <Pressable
+        style={[styles.button, theme.isLight && lightStyles.button]}
+        onPress={onRetry}
+      >
+        <Text
+          style={[styles.buttonText, theme.isLight && lightStyles.buttonText]}
+        >
+          Reintentar
+        </Text>
+      </Pressable>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -69,4 +84,12 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   buttonText: { color: '#171421', fontWeight: '800', fontSize: 14 },
+});
+
+const lightStyles = StyleSheet.create({
+  container: { backgroundColor: light.background },
+  title: { color: light.text },
+  message: { color: light.muted },
+  button: { backgroundColor: light.accent },
+  buttonText: { color: '#FFFFFF' },
 });
