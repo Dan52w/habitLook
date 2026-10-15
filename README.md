@@ -162,7 +162,7 @@ Para agregar un cambio de esquema: crea la migración `010_...` en el arreglo `M
 
 ## 📲 Exportar a iOS (iPhone)
 
-El proyecto iOS ya está configurado y listo para compilar. Pasos para llevarlo a un iPhone real o a TestFlight:
+El proyecto iOS ya está configurado y listo para compilar. Pasos para llevarlo a un iPhone real o a TestFlight.
 
 ### 1. Preparar el entorno (solo macOS)
 1. Instala **Xcode** desde la App Store y ábrelo una vez para aceptar la licencia.
@@ -209,6 +209,14 @@ pnpm android
 ```
 
 Para un APK/AAB de release: `cd android && ./gradlew bundleRelease`. Necesitas configurar tu keystore de firma en `android/gradle.properties` (no incluido en el repo).
+
+---
+
+## 📱 Probar en dispositivos reales
+
+Guía paso a paso para instalar la app en tu teléfono y compartirla con amigos
+antes del lanzamiento: [docs/probar-en-dispositivos.md](docs/probar-en-dispositivos.md)
+(APK debug/release en Windows, TestFlight en iPhone, checklist previo).
 
 ---
 
