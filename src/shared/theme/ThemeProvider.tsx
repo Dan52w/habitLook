@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { useColorScheme } from 'react-native';
 import { getSetting, setSetting } from '../../db/repositories/settings';
 
@@ -74,10 +80,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         setSetting('theme_mode', next).catch(() => undefined);
       },
     }),
-    [mode, isLight, colors]
+    [mode, isLight, colors],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export const useTheme = () => useContext(ThemeContext);

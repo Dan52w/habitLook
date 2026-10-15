@@ -1,5 +1,8 @@
 export function localDateKey(date = new Date()): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
 /** Construye una fecha local; evita que YYYY-MM-DD se interprete como UTC. */
@@ -12,7 +15,10 @@ export function weekdayFromKey(dateKey: string): number {
   return dateFromKey(dateKey).getDay();
 }
 
-export function periodStart(period: 'week' | 'month', referenceDate = new Date()): string {
+export function periodStart(
+  period: 'week' | 'month',
+  referenceDate = new Date(),
+): string {
   const date = new Date(referenceDate.getTime());
   if (period === 'week') {
     const day = date.getDay();

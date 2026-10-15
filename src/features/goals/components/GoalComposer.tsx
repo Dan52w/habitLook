@@ -16,7 +16,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [category, setCategory] = useState('');
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<'duration' | 'count' | 'boolean'>('duration');
+  const [type, setType] = useState<'duration' | 'count' | 'boolean'>(
+    'duration',
+  );
   const [period, setPeriod] = useState<'daily' | 'weekly'>('daily');
   const [target, setTarget] = useState('30');
 
@@ -24,16 +26,19 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
     if (visible) {
       listCategories().then(items => {
         setCategories(items);
-        if (!category && items[0]) {
-          setCategory(items[0].id);
-        }
+        setCategory(current => current || items[0]?.id || current);
       });
     }
   }, [visible]);
 
   const save = async () => {
     const targetValue = type === 'boolean' ? 1 : Number(target);
-    if (!title.trim() || !category || !Number.isFinite(targetValue) || targetValue <= 0) {
+    if (
+      !title.trim() ||
+      !category ||
+      !Number.isFinite(targetValue) ||
+      targetValue <= 0
+    ) {
       return;
     }
     await createGoal({
@@ -50,7 +55,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
 
   return (
     <AppModal visible={visible} title="Nueva meta" onClose={onClose}>
-      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Categoría</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>
+        Categoría
+      </Text>
       <View style={styles.chips}>
         {categories.map(item => (
           <Pressable
@@ -64,14 +71,18 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
             ]}
           >
             <View style={[styles.dot, { backgroundColor: item.color }]} />
-            <Text style={[styles.chipText, theme.isLight && lightStyles.chipText]}>
+            <Text
+              style={[styles.chipText, theme.isLight && lightStyles.chipText]}
+            >
               {item.name}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={[styles.label, theme.isLight && lightStyles.label]}>¿Qué quieres lograr?</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>
+        ¿Qué quieres lograr?
+      </Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
@@ -80,7 +91,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
         style={[styles.input, theme.isLight && lightStyles.input]}
       />
 
-      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Medición</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>
+        Medición
+      </Text>
       <View style={styles.chips}>
         {(
           [
@@ -99,7 +112,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
               theme.isLight && type === value && lightStyles.chipActive,
             ]}
           >
-            <Text style={[styles.chipText, theme.isLight && lightStyles.chipText]}>
+            <Text
+              style={[styles.chipText, theme.isLight && lightStyles.chipText]}
+            >
               {label}
             </Text>
           </Pressable>
@@ -108,7 +123,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
 
       {type !== 'boolean' && (
         <>
-          <Text style={[styles.label, theme.isLight && lightStyles.label]}>Objetivo</Text>
+          <Text style={[styles.label, theme.isLight && lightStyles.label]}>
+            Objetivo
+          </Text>
           <TextInput
             value={target}
             keyboardType="decimal-pad"
@@ -119,7 +136,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
         </>
       )}
 
-      <Text style={[styles.label, theme.isLight && lightStyles.label]}>Frecuencia</Text>
+      <Text style={[styles.label, theme.isLight && lightStyles.label]}>
+        Frecuencia
+      </Text>
       <View style={styles.chips}>
         {(
           [
@@ -137,7 +156,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
               theme.isLight && period === value && lightStyles.chipActive,
             ]}
           >
-            <Text style={[styles.chipText, theme.isLight && lightStyles.chipText]}>
+            <Text
+              style={[styles.chipText, theme.isLight && lightStyles.chipText]}
+            >
               {label}
             </Text>
           </Pressable>

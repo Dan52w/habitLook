@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getSetting, setSetting } from '../../db/repositories/settings';
 import {
@@ -18,7 +26,9 @@ import { HabitLookLogo } from '../../shared/components/HabitLookLogo';
 
 const SoonBadge = ({ isLight }: { isLight: boolean }) => (
   <View style={[styles.soon, isLight && lightStyles.soon]}>
-    <Text style={[styles.soonText, isLight && lightStyles.soonText]}>PRÓXIMAMENTE</Text>
+    <Text style={[styles.soonText, isLight && lightStyles.soonText]}>
+      PRÓXIMAMENTE
+    </Text>
   </View>
 );
 
@@ -33,7 +43,7 @@ const REMINDER_OPTIONS: [string, string][] = [
 
 export function ProfileScreen() {
   const theme = useTheme();
-  const { showAlert, showConfirm, showDialog } = useAppDialog();
+  const { showAlert, showDialog } = useAppDialog();
   const [reminder, setReminder] = useState('15');
   const [notificationStatus, setNotificationStatus] = useState({
     notifications: false,
@@ -57,24 +67,35 @@ export function ProfileScreen() {
       if (!allowed) {
         showDialog({
           title: 'Permiso necesario',
-          message: 'Activa las notificaciones para recibir recordatorios de tus actividades.',
+          message:
+            'Activa las notificaciones para recibir recordatorios de tus actividades.',
           type: 'warning',
           buttons: [
             { text: 'Cancelar', style: 'cancel' },
-            { text: 'Abrir ajustes', style: 'default', onPress: openNotificationPermissionSettings },
+            {
+              text: 'Abrir ajustes',
+              style: 'default',
+              onPress: openNotificationPermissionSettings,
+            },
           ],
         });
         return;
       }
       const status = await getReminderPermissionStatus();
-      if (!status.exactAlarms) {
+      // Las alarmas exactas solo existen en Android; en iOS este permiso no aplica.
+      if (Platform.OS === 'android' && !status.exactAlarms) {
         showDialog({
           title: 'Alarmas exactas',
-          message: 'Para que los recordatorios suenen con total precisión en Android, permite las alarmas exactas.',
+          message:
+            'Para que los recordatorios suenen con total precisión en Android, permite las alarmas exactas.',
           type: 'warning',
           buttons: [
             { text: 'Continuar', style: 'cancel' },
-            { text: 'Abrir ajustes', style: 'default', onPress: openExactAlarmSettings },
+            {
+              text: 'Abrir ajustes',
+              style: 'default',
+              onPress: openExactAlarmSettings,
+            },
           ],
         });
       }
@@ -104,7 +125,11 @@ export function ProfileScreen() {
         type: 'warning',
         buttons: [
           { text: 'Cancelar', style: 'cancel' },
-          { text: 'Abrir ajustes', style: 'default', onPress: openNotificationPermissionSettings },
+          {
+            text: 'Abrir ajustes',
+            style: 'default',
+            onPress: openNotificationPermissionSettings,
+          },
         ],
       });
       return;
@@ -113,7 +138,8 @@ export function ProfileScreen() {
       await scheduleReminderTest();
       showAlert({
         title: 'Prueba programada',
-        message: 'Deberías recibir una notificación en 10 segundos, incluso con la app cerrada.',
+        message:
+          'Deberías recibir una notificación en 10 segundos, incluso con la app cerrada.',
         type: 'success',
       });
     } catch {
@@ -140,7 +166,8 @@ export function ProfileScreen() {
   const importData = () => {
     showDialog({
       title: 'Importar respaldo',
-      message: 'Fusionar conserva los datos actuales; reemplazar los elimina y los sustituye por el respaldo.',
+      message:
+        'Fusionar conserva los datos actuales; reemplazar los elimina y los sustituye por el respaldo.',
       type: 'warning',
       buttons: [
         { text: 'Cancelar', style: 'cancel' },
@@ -156,10 +183,14 @@ export function ProfileScreen() {
                 type: 'success',
               });
             } catch (error) {
-              if (error instanceof Error && /cancel/i.test(error.message)) return;
+              if (error instanceof Error && /cancel/i.test(error.message))
+                return;
               showAlert({
                 title: 'No se pudo importar',
-                message: error instanceof Error ? error.message : 'El archivo no es válido.',
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : 'El archivo no es válido.',
                 type: 'error',
               });
             }
@@ -177,10 +208,14 @@ export function ProfileScreen() {
                 type: 'success',
               });
             } catch (error) {
-              if (error instanceof Error && /cancel/i.test(error.message)) return;
+              if (error instanceof Error && /cancel/i.test(error.message))
+                return;
               showAlert({
                 title: 'No se pudo importar',
-                message: error instanceof Error ? error.message : 'El archivo no es válido.',
+                message:
+                  error instanceof Error
+                    ? error.message
+                    : 'El archivo no es válido.',
                 type: 'error',
               });
             }
@@ -191,30 +226,51 @@ export function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, theme.isLight && lightStyles.container]}>
+    <SafeAreaView
+      style={[styles.container, theme.isLight && lightStyles.container]}
+    >
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>PERFIL</Text>
-        <Text style={[styles.title, theme.isLight && lightStyles.title]}>Tu espacio, tus reglas</Text>
+        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>
+          PERFIL
+        </Text>
+        <Text style={[styles.title, theme.isLight && lightStyles.title]}>
+          Tu espacio, tus reglas
+        </Text>
 
         <View style={[styles.hero, theme.isLight && lightStyles.hero]}>
           <HabitLookLogo size={48} />
           <View style={styles.heroInfo}>
-            <Text style={[styles.heroTitle, theme.isLight && lightStyles.heroTitle]}>HabitLook Local</Text>
-            <Text style={[styles.heroText, theme.isLight && lightStyles.heroText]}>
+            <Text
+              style={[styles.heroTitle, theme.isLight && lightStyles.heroTitle]}
+            >
+              HabitLook Local
+            </Text>
+            <Text
+              style={[styles.heroText, theme.isLight && lightStyles.heroText]}
+            >
               Sin cuenta · Sin conexión necesaria · 100% privado
             </Text>
           </View>
         </View>
 
-        <Text style={[styles.section, theme.isLight && lightStyles.section]}>Privacidad</Text>
+        <Text style={[styles.section, theme.isLight && lightStyles.section]}>
+          Privacidad
+        </Text>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
-          <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Bóveda local cifrada</Text>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-            Tus categorías, metas, notas y gastos se guardan cifrados en este dispositivo.
+          <Text
+            style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+          >
+            Bóveda local cifrada
+          </Text>
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            Tus categorías, metas, notas y gastos se guardan cifrados en este
+            dispositivo.
           </Text>
           <View style={styles.status}>
             <View style={styles.statusDot} />
@@ -224,22 +280,42 @@ export function ProfileScreen() {
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
           <View style={styles.titleLine}>
-            <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Respaldo en la nube</Text>
+            <Text
+              style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+            >
+              Respaldo en la nube
+            </Text>
             <SoonBadge isLight={theme.isLight} />
           </View>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-            No se envía ningún dato fuera del teléfono. La copia cifrada estará disponible más adelante.
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            No se envía ningún dato fuera del teléfono. La copia cifrada estará
+            disponible más adelante.
           </Text>
         </View>
 
-        <Text style={[styles.section, theme.isLight && lightStyles.section]}>Ajustes</Text>
+        <Text style={[styles.section, theme.isLight && lightStyles.section]}>
+          Ajustes
+        </Text>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
           <View style={styles.titleLine}>
             <View>
-              <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Apariencia</Text>
-              <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-                {theme.isLight ? 'Modo claro (marfil suave)' : 'Modo oscuro (obsidiana)'}
+              <Text
+                style={[
+                  styles.cardTitle,
+                  theme.isLight && lightStyles.cardTitle,
+                ]}
+              >
+                Apariencia
+              </Text>
+              <Text
+                style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+              >
+                {theme.isLight
+                  ? 'Modo claro (marfil suave)'
+                  : 'Modo oscuro (obsidiana)'}
               </Text>
             </View>
             <Switch
@@ -252,8 +328,14 @@ export function ProfileScreen() {
         </View>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
-          <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Recordatorios de actividades</Text>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
+          <Text
+            style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+          >
+            Recordatorios de actividades
+          </Text>
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
             Te avisaremos antes de cada actividad nueva que programes.
           </Text>
           <View style={styles.reminderChoices}>
@@ -265,7 +347,9 @@ export function ProfileScreen() {
                   styles.reminder,
                   theme.isLight && lightStyles.reminder,
                   reminder === value && styles.reminderActive,
-                  theme.isLight && reminder === value && lightStyles.reminderActive,
+                  theme.isLight &&
+                    reminder === value &&
+                    lightStyles.reminderActive,
                 ]}
               >
                 <Text
@@ -273,7 +357,9 @@ export function ProfileScreen() {
                     styles.reminderText,
                     theme.isLight && lightStyles.reminderText,
                     reminder === value && styles.reminderTextActive,
-                    theme.isLight && reminder === value && lightStyles.reminderTextActive,
+                    theme.isLight &&
+                      reminder === value &&
+                      lightStyles.reminderTextActive,
                   ]}
                 >
                   {label}
@@ -284,9 +370,16 @@ export function ProfileScreen() {
         </View>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
-          <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Estado de notificaciones</Text>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-            Comprueba aquí los permisos que necesita HabitLook para avisarte a tiempo.
+          <Text
+            style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+          >
+            Estado de notificaciones
+          </Text>
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            Comprueba aquí los permisos que necesita HabitLook para avisarte a
+            tiempo.
           </Text>
           <View style={styles.status}>
             <View
@@ -302,97 +395,152 @@ export function ProfileScreen() {
                 !notificationStatus.notifications && styles.statusTextOff,
               ]}
             >
-              Notificaciones: {notificationStatus.notifications ? 'permitidas' : 'pendientes'}
+              Notificaciones:{' '}
+              {notificationStatus.notifications ? 'permitidas' : 'pendientes'}
             </Text>
           </View>
-          <View style={styles.status}>
-            <View
-              style={[styles.statusDot, !notificationStatus.exactAlarms && styles.statusDotOff]}
-            />
-            <Text
-              style={[
-                styles.statusText,
-                theme.isLight && lightStyles.statusText,
-                !notificationStatus.exactAlarms && styles.statusTextOff,
-              ]}
-            >
-              Alarmas exactas: {notificationStatus.exactAlarms ? 'permitidas' : 'pendientes'}
-            </Text>
-          </View>
+          {Platform.OS === 'android' && (
+            <View style={styles.status}>
+              <View
+                style={[
+                  styles.statusDot,
+                  !notificationStatus.exactAlarms && styles.statusDotOff,
+                ]}
+              />
+              <Text
+                style={[
+                  styles.statusText,
+                  theme.isLight && lightStyles.statusText,
+                  !notificationStatus.exactAlarms && styles.statusTextOff,
+                ]}
+              >
+                Alarmas exactas:{' '}
+                {notificationStatus.exactAlarms ? 'permitidas' : 'pendientes'}
+              </Text>
+            </View>
+          )}
           <View style={styles.statusActions}>
             <Pressable
               onPress={openNotificationPermissionSettings}
-              style={[styles.statusButton, theme.isLight && lightStyles.statusButton]}
+              style={[
+                styles.statusButton,
+                theme.isLight && lightStyles.statusButton,
+              ]}
             >
               <Text
-                style={[styles.statusButtonText, theme.isLight && lightStyles.statusButtonText]}
+                style={[
+                  styles.statusButtonText,
+                  theme.isLight && lightStyles.statusButtonText,
+                ]}
               >
                 Notificaciones
               </Text>
             </Pressable>
-            <Pressable
-              onPress={openExactAlarmSettings}
-              style={[styles.statusButton, theme.isLight && lightStyles.statusButton]}
-            >
-              <Text
-                style={[styles.statusButtonText, theme.isLight && lightStyles.statusButtonText]}
+            {Platform.OS === 'android' && (
+              <Pressable
+                onPress={openExactAlarmSettings}
+                style={[
+                  styles.statusButton,
+                  theme.isLight && lightStyles.statusButton,
+                ]}
               >
-                Alarmas
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={openBatterySettings}
-              style={[styles.statusButton, theme.isLight && lightStyles.statusButton]}
-            >
-              <Text
-                style={[styles.statusButtonText, theme.isLight && lightStyles.statusButtonText]}
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    theme.isLight && lightStyles.statusButtonText,
+                  ]}
+                >
+                  Alarmas
+                </Text>
+              </Pressable>
+            )}
+            {Platform.OS === 'android' && (
+              <Pressable
+                onPress={openBatterySettings}
+                style={[
+                  styles.statusButton,
+                  theme.isLight && lightStyles.statusButton,
+                ]}
               >
-                Batería
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    theme.isLight && lightStyles.statusButtonText,
+                  ]}
+                >
+                  Batería
+                </Text>
+              </Pressable>
+            )}
           </View>
           <Pressable onPress={testReminder} style={styles.testButton}>
             <Text style={styles.testButtonText}>Probar en 10 segundos</Text>
           </Pressable>
         </View>
 
-        <Text style={[styles.section, theme.isLight && lightStyles.section]}>Funciones futuras</Text>
+        <Text style={[styles.section, theme.isLight && lightStyles.section]}>
+          Funciones futuras
+        </Text>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
           <View style={styles.titleLine}>
-            <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Asistentes de IA</Text>
+            <Text
+              style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+            >
+              Asistentes de IA
+            </Text>
             <SoonBadge isLight={theme.isLight} />
           </View>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-            No hay análisis ni envío automático de información. Cuando esté disponible, pedirá
-            consentimiento explícito.
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            No hay análisis ni envío automático de información. Cuando esté
+            disponible, pedirá consentimiento explícito.
           </Text>
         </View>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
           <View style={styles.titleLine}>
-            <Text style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}>Tiempo de pantalla</Text>
+            <Text
+              style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+            >
+              Tiempo de pantalla
+            </Text>
             <SoonBadge isLight={theme.isLight} />
           </View>
-          <Text style={[styles.cardText, theme.isLight && lightStyles.cardText]}>
-            La lectura se incorporará desde los permisos del sistema, siempre de forma local y
-            opcional.
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            La lectura se incorporará desde los permisos del sistema, siempre de
+            forma local y opcional.
           </Text>
         </View>
 
-        <Text style={[styles.section, theme.isLight && lightStyles.section]}>Datos</Text>
+        <Text style={[styles.section, theme.isLight && lightStyles.section]}>
+          Datos
+        </Text>
 
         <Pressable
           style={[styles.row, theme.isLight && lightStyles.row]}
           onPress={exportData}
         >
           <View>
-            <Text style={[styles.rowTitle, theme.isLight && lightStyles.rowTitle]}>Exportar mis datos</Text>
-            <Text style={[styles.rowText, theme.isLight && lightStyles.rowText]}>
-              Copia cifrada local en JSON portable
+            <Text
+              style={[styles.rowTitle, theme.isLight && lightStyles.rowTitle]}
+            >
+              Exportar mis datos
+            </Text>
+            <Text
+              style={[styles.rowText, theme.isLight && lightStyles.rowText]}
+            >
+              Copia local en JSON portable (sin cifrar)
             </Text>
           </View>
-          <Text style={[styles.rowAction, theme.isLight && lightStyles.rowAction]}>Exportar</Text>
+          <Text
+            style={[styles.rowAction, theme.isLight && lightStyles.rowAction]}
+          >
+            Exportar
+          </Text>
         </Pressable>
 
         <Pressable
@@ -400,17 +548,27 @@ export function ProfileScreen() {
           onPress={importData}
         >
           <View>
-            <Text style={[styles.rowTitle, theme.isLight && lightStyles.rowTitle]}>Importar respaldo</Text>
-            <Text style={[styles.rowText, theme.isLight && lightStyles.rowText]}>
+            <Text
+              style={[styles.rowTitle, theme.isLight && lightStyles.rowTitle]}
+            >
+              Importar respaldo
+            </Text>
+            <Text
+              style={[styles.rowText, theme.isLight && lightStyles.rowText]}
+            >
               Restaura o fusiona un archivo de HabitLook
             </Text>
           </View>
-          <Text style={[styles.rowAction, theme.isLight && lightStyles.rowAction]}>Importar</Text>
+          <Text
+            style={[styles.rowAction, theme.isLight && lightStyles.rowAction]}
+          >
+            Importar
+          </Text>
         </Pressable>
 
         <Text style={[styles.footnote, theme.isLight && lightStyles.footnote]}>
-          HabitLook funciona sin iniciar sesión. Las suscripciones y servicios en línea no forman
-          parte de esta versión local.
+          HabitLook funciona sin iniciar sesión. Las suscripciones y servicios
+          en línea no forman parte de esta versión local.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -419,8 +577,18 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
-  content: { paddingHorizontal: 18, paddingVertical: 16, gap: 12, paddingBottom: 40 },
-  eyebrow: { color: '#A78BFA', fontSize: 12, letterSpacing: 2, fontWeight: '800' },
+  content: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 12,
+    paddingBottom: 40,
+  },
+  eyebrow: {
+    color: '#A78BFA',
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '800',
+  },
   title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: -8 },
   hero: {
     flexDirection: 'row',
@@ -443,21 +611,51 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   card: { backgroundColor: '#181B25', borderRadius: 16, padding: 15, gap: 8 },
-  reminderChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 3 },
-  reminder: { backgroundColor: '#252A39', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10 },
+  reminderChoices: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+    marginTop: 3,
+  },
+  reminder: {
+    backgroundColor: '#252A39',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
   reminderActive: { backgroundColor: '#A78BFA' },
   reminderText: { color: '#DDE0E8', fontSize: 12, fontWeight: '700' },
   reminderTextActive: { color: '#171421' },
-  titleLine: { flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center' },
+  titleLine: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+    alignItems: 'center',
+  },
   cardTitle: { color: '#F2F3F6', fontWeight: '700', fontSize: 15 },
   cardText: { color: '#A1A6B6', fontSize: 13, lineHeight: 19 },
   status: { flexDirection: 'row', gap: 7, alignItems: 'center' },
-  statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#64D9A0' },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#64D9A0',
+  },
   statusDotOff: { backgroundColor: '#E895A4' },
   statusText: { color: '#79D8A2', fontSize: 12, fontWeight: '700' },
   statusTextOff: { color: '#E895A4' },
-  statusActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 3 },
-  statusButton: { backgroundColor: '#252A39', borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
+  statusActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 7,
+    marginTop: 3,
+  },
+  statusButton: {
+    backgroundColor: '#252A39',
+    borderRadius: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+  },
   statusButtonText: { color: '#DDE0E8', fontSize: 11, fontWeight: '700' },
   testButton: {
     alignItems: 'center',
@@ -467,8 +665,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   testButtonText: { color: '#171421', fontWeight: '800', fontSize: 12 },
-  soon: { backgroundColor: '#38313F', borderRadius: 7, paddingHorizontal: 7, paddingVertical: 4 },
-  soonText: { color: '#DAB7F0', fontSize: 9, fontWeight: '800', letterSpacing: 0.5 },
+  soon: {
+    backgroundColor: '#38313F',
+    borderRadius: 7,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+  },
+  soonText: {
+    color: '#DAB7F0',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',

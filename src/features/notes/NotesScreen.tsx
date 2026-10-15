@@ -1,9 +1,25 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Category, listCategories } from '../../db/repositories/categories';
-import { createNote, deleteNote, listNotes, Note } from '../../db/repositories/notes';
-import { listBlocksForDate, TimeBlockWithCategory } from '../../db/repositories/timeBlocks';
+import {
+  createNote,
+  deleteNote,
+  listNotes,
+  updateNote,
+  Note,
+} from '../../db/repositories/notes';
+import {
+  listBlocksForDate,
+  TimeBlockWithCategory,
+} from '../../db/repositories/timeBlocks';
 import { MiniCalendar } from '../clock/components/MiniCalendar';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { useFocusEffect } from '@react-navigation/native';
@@ -48,22 +64,28 @@ export function NotesScreen() {
   const [selectedDate, setSelectedDate] = useState(today());
   const [allDates, setAllDates] = useState(false);
   const [calendarRevision, setCalendarRevision] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   const load = useCallback(async () => {
     const isGlobal = allDates || search.trim().length > 0;
-    const loadedNotes = await listNotes(search, filter, isGlobal ? undefined : selectedDate);
+    const loadedNotes = await listNotes(
+      search,
+      filter,
+      isGlobal ? undefined : selectedDate,
+    );
     setNotes(loadedNotes);
   }, [search, filter, selectedDate, allDates]);
 
   const loadContext = useCallback(() => {
-    Promise.all([listCategories(), listBlocksForDate(selectedDate)]).then(
-      ([items, selectedBlocks]) => {
+    Promise.all([listCategories(), listBlocksForDate(selectedDate)])
+      .then(([items, selectedBlocks]) => {
         setCategories(items);
         setBlocks(selectedBlocks);
         setTimeBlockId(undefined);
-      }
-    );
+      })
+      .catch(() => undefined);
   }, [selectedDate]);
 
   useEffect(() => {
@@ -74,7 +96,7 @@ export function NotesScreen() {
     useCallback(() => {
       loadContext();
       load();
-    }, [loadContext, load])
+    }, [loadContext, load]),
   );
 
   useEffect(() => {
@@ -82,13 +104,40 @@ export function NotesScreen() {
   }, [load]);
 
   const save = async () => {
-    if (!text.trim()) return;
-    const linkedBlock = blocks.find(block => block.id === timeBlockId);
-    await createNote(text, linkedBlock?.category_id ?? filter, timeBlockId, selectedDate);
+    if (!text.trim() || saving) return;
+    setSaving(true);
+    try {
+      if (editingId) {
+        await updateNote(editingId, text);
+        setEditingId(null);
+      } else {
+        const linkedBlock = blocks.find(block => block.id === timeBlockId);
+        await createNote(
+          text,
+          linkedBlock?.category_id ?? filter,
+          timeBlockId,
+          selectedDate,
+        );
+      }
+      setText('');
+      setTimeBlockId(undefined);
+      setCalendarRevision(value => value + 1);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const beginEditNote = (note: Note) => {
+    setEditingId(note.id);
+    setText(note.text);
+    setTimeBlockId(note.time_block_id ?? undefined);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
     setText('');
     setTimeBlockId(undefined);
-    setCalendarRevision(value => value + 1);
-    await load();
   };
 
   const handleDeleteNote = (noteId: string) => {
@@ -106,14 +155,20 @@ export function NotesScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, theme.isLight && lightStyles.container]}>
+    <SafeAreaView
+      style={[styles.container, theme.isLight && lightStyles.container]}
+    >
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>NOTAS</Text>
-        <Text style={[styles.title, theme.isLight && lightStyles.title]}>Ideas que no se escapan</Text>
+        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>
+          NOTAS
+        </Text>
+        <Text style={[styles.title, theme.isLight && lightStyles.title]}>
+          Ideas que no se escapan
+        </Text>
 
         <View style={styles.dateSelectorRow}>
           <Pressable
@@ -125,18 +180,33 @@ export function NotesScreen() {
             ]}
           >
             <View>
-              <Text style={[styles.dateLabel, theme.isLight && lightStyles.dateLabel]}>
+              <Text
+                style={[
+                  styles.dateLabel,
+                  theme.isLight && lightStyles.dateLabel,
+                ]}
+              >
                 {selectedDate === today() ? 'HOY' : 'DÍA ELEGIDO'}
               </Text>
-              <Text style={[styles.dateValue, theme.isLight && lightStyles.dateValue]}>
-                {new Date(`${selectedDate}T12:00:00`).toLocaleDateString('es-CO', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
+              <Text
+                style={[
+                  styles.dateValue,
+                  theme.isLight && lightStyles.dateValue,
+                ]}
+              >
+                {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(
+                  'es-CO',
+                  {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  },
+                )}
               </Text>
             </View>
-            <Text style={[styles.chevron, theme.isLight && lightStyles.chevron]}>
+            <Text
+              style={[styles.chevron, theme.isLight && lightStyles.chevron]}
+            >
               {calendarOpen ? '⌃' : '⌄'}
             </Text>
           </Pressable>
@@ -172,16 +242,31 @@ export function NotesScreen() {
         )}
 
         <View style={[styles.composer, theme.isLight && lightStyles.composer]}>
+          {editingId && (
+            <View style={styles.editingBar}>
+              <Text style={styles.editingText}>Editando nota</Text>
+              <Pressable onPress={cancelEdit} hitSlop={10}>
+                <Text style={styles.editingCancel}>Cancelar</Text>
+              </Pressable>
+            </View>
+          )}
           <TextInput
             value={text}
             onChangeText={setText}
             multiline
-            placeholder="Escribe una nota rápida…"
+            placeholder={
+              editingId ? 'Edita tu nota…' : 'Escribe una nota rápida…'
+            }
             placeholderTextColor={theme.isLight ? light.muted : '#777C8E'}
             style={[styles.textarea, theme.isLight && lightStyles.textarea]}
           />
 
-          <Text style={[styles.associationLabel, theme.isLight && lightStyles.associationLabel]}>
+          <Text
+            style={[
+              styles.associationLabel,
+              theme.isLight && lightStyles.associationLabel,
+            ]}
+          >
             Asociar a planificación · opcional
           </Text>
 
@@ -203,7 +288,9 @@ export function NotesScreen() {
                 style={[
                   styles.planChipText,
                   theme.isLight && lightStyles.planChipText,
-                  !timeBlockId && theme.isLight && lightStyles.planChipTextActive,
+                  !timeBlockId &&
+                    theme.isLight &&
+                    lightStyles.planChipTextActive,
                 ]}
               >
                 Sin asociación
@@ -217,15 +304,24 @@ export function NotesScreen() {
                   styles.planChip,
                   theme.isLight && lightStyles.planChip,
                   timeBlockId === block.id && styles.planChipActive,
-                  theme.isLight && timeBlockId === block.id && lightStyles.planChipActive,
+                  theme.isLight &&
+                    timeBlockId === block.id &&
+                    lightStyles.planChipActive,
                 ]}
               >
-                <View style={[styles.dot, { backgroundColor: block.category_color }]} />
+                <View
+                  style={[
+                    styles.dot,
+                    { backgroundColor: block.category_color },
+                  ]}
+                />
                 <Text
                   style={[
                     styles.planChipText,
                     theme.isLight && lightStyles.planChipText,
-                    timeBlockId === block.id && theme.isLight && lightStyles.planChipTextActive,
+                    timeBlockId === block.id &&
+                      theme.isLight &&
+                      lightStyles.planChipTextActive,
                   ]}
                 >
                   {block.start_time} · {block.category_name}
@@ -234,8 +330,18 @@ export function NotesScreen() {
             ))}
           </ScrollView>
 
-          <Pressable onPress={save} style={styles.save}>
-            <Text style={styles.saveText}>Guardar nota</Text>
+          <Pressable
+            onPress={save}
+            style={[styles.save, saving && styles.saveDisabled]}
+            disabled={saving}
+          >
+            <Text style={styles.saveText}>
+              {saving
+                ? 'Guardando…'
+                : editingId
+                ? 'Guardar cambios'
+                : 'Guardar nota'}
+            </Text>
           </Pressable>
         </View>
 
@@ -274,12 +380,16 @@ export function NotesScreen() {
           {categories.map(category => (
             <Pressable
               key={category.id}
-              onPress={() => setFilter(filter === category.id ? undefined : category.id)}
+              onPress={() =>
+                setFilter(filter === category.id ? undefined : category.id)
+              }
               style={[
                 styles.filter,
                 theme.isLight && lightStyles.filter,
                 filter === category.id && styles.filterActive,
-                theme.isLight && filter === category.id && lightStyles.filterActive,
+                theme.isLight &&
+                  filter === category.id &&
+                  lightStyles.filterActive,
               ]}
             >
               <View style={[styles.dot, { backgroundColor: category.color }]} />
@@ -287,7 +397,9 @@ export function NotesScreen() {
                 style={[
                   styles.filterText,
                   theme.isLight && lightStyles.filterText,
-                  filter === category.id && theme.isLight && lightStyles.filterTextActive,
+                  filter === category.id &&
+                    theme.isLight &&
+                    lightStyles.filterTextActive,
                 ]}
               >
                 {category.name}
@@ -298,21 +410,34 @@ export function NotesScreen() {
 
         {notes.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={[styles.emptyTitle, theme.isLight && lightStyles.emptyTitle]}>
+            <Text
+              style={[
+                styles.emptyTitle,
+                theme.isLight && lightStyles.emptyTitle,
+              ]}
+            >
               Todavía no hay notas
             </Text>
-            <Text style={[styles.emptyText, theme.isLight && lightStyles.emptyText]}>
+            <Text
+              style={[styles.emptyText, theme.isLight && lightStyles.emptyText]}
+            >
               Puedes vincularlas a una actividad planificada o dejarlas libres.
             </Text>
           </View>
         ) : (
           notes.map(note => (
-            <View key={note.id} style={[styles.note, theme.isLight && lightStyles.note]}>
+            <View
+              key={note.id}
+              style={[styles.note, theme.isLight && lightStyles.note]}
+            >
               <View style={styles.noteHeader}>
                 {note.category_name ? (
                   <View style={styles.category}>
                     <View
-                      style={[styles.dot, { backgroundColor: note.category_color ?? '#6B7280' }]}
+                      style={[
+                        styles.dot,
+                        { backgroundColor: note.category_color ?? '#6B7280' },
+                      ]}
                     />
                     <Text
                       style={[
@@ -324,25 +449,41 @@ export function NotesScreen() {
                     </Text>
                   </View>
                 ) : (
-                  <Text style={[styles.date, theme.isLight && lightStyles.date]}>
+                  <Text
+                    style={[styles.date, theme.isLight && lightStyles.date]}
+                  >
                     {formatNoteDate(note)}
                   </Text>
                 )}
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => handleDeleteNote(note.id)}
-                >
-                  <Text style={styles.delete}>Eliminar</Text>
-                </Pressable>
+                <View style={styles.noteActions}>
+                  <Pressable hitSlop={10} onPress={() => beginEditNote(note)}>
+                    <Text style={styles.edit}>Editar</Text>
+                  </Pressable>
+                  <Pressable
+                    hitSlop={10}
+                    onPress={() => handleDeleteNote(note.id)}
+                  >
+                    <Text style={styles.delete}>Eliminar</Text>
+                  </Pressable>
+                </View>
               </View>
 
-              <Text style={[styles.noteText, theme.isLight && lightStyles.noteText]}>
+              <Text
+                style={[styles.noteText, theme.isLight && lightStyles.noteText]}
+              >
                 {note.text}
               </Text>
 
               {note.time_block_id && (
-                <View style={[styles.linked, theme.isLight && lightStyles.linked]}>
-                  <Text style={[styles.linkedText, theme.isLight && lightStyles.linkedText]}>
+                <View
+                  style={[styles.linked, theme.isLight && lightStyles.linked]}
+                >
+                  <Text
+                    style={[
+                      styles.linkedText,
+                      theme.isLight && lightStyles.linkedText,
+                    ]}
+                  >
                     Plan: {note.block_start_time}–{note.block_end_time}
                   </Text>
                 </View>
@@ -361,8 +502,18 @@ export function NotesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
-  content: { paddingHorizontal: 18, paddingVertical: 16, gap: 14, paddingBottom: 40 },
-  eyebrow: { color: '#A78BFA', fontSize: 12, letterSpacing: 2, fontWeight: '800' },
+  content: {
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 14,
+    paddingBottom: 40,
+  },
+  eyebrow: {
+    color: '#A78BFA',
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '800',
+  },
   title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: -9 },
   dateSelectorRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   dateSelector: {
@@ -383,14 +534,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  allDatesToggleActive: { borderWidth: 1, borderColor: '#A78BFA', backgroundColor: '#2A2342' },
+  allDatesToggleActive: {
+    borderWidth: 1,
+    borderColor: '#A78BFA',
+    backgroundColor: '#2A2342',
+  },
   allDatesText: { color: '#8E94A5', fontSize: 12, fontWeight: '700' },
   allDatesTextActive: { color: '#D9C9F3' },
-  dateLabel: { color: '#A78BFA', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
-  dateValue: { color: '#EDEEF3', fontWeight: '600', textTransform: 'capitalize', marginTop: 3 },
+  dateLabel: {
+    color: '#A78BFA',
+    fontWeight: '800',
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  dateValue: {
+    color: '#EDEEF3',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    marginTop: 3,
+  },
   chevron: { color: '#C9B6E8', fontSize: 23 },
-  composer: { backgroundColor: '#181B25', borderRadius: 18, padding: 14, gap: 10 },
-  textarea: { color: '#F6F7FA', minHeight: 72, fontSize: 15, textAlignVertical: 'top' },
+  composer: {
+    backgroundColor: '#181B25',
+    borderRadius: 18,
+    padding: 14,
+    gap: 10,
+  },
+  textarea: {
+    color: '#F6F7FA',
+    minHeight: 72,
+    fontSize: 15,
+    textAlignVertical: 'top',
+  },
   associationLabel: { color: '#AAB0C0', fontSize: 11, fontWeight: '700' },
   planChips: { gap: 7 },
   planChip: {
@@ -411,6 +586,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
+  saveDisabled: { opacity: 0.6 },
   saveText: { color: '#171421', fontWeight: '800' },
   search: {
     height: 47,
@@ -433,7 +609,11 @@ const styles = StyleSheet.create({
   filterText: { color: '#DDE0E8', fontSize: 13 },
   dot: { width: 7, height: 7, borderRadius: 4 },
   note: { backgroundColor: '#181B25', borderRadius: 16, padding: 15, gap: 9 },
-  noteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  noteHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   category: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   categoryText: { color: '#CFC4DF', fontSize: 12, fontWeight: '700' },
   noteText: { color: '#F2F3F6', fontSize: 15, lineHeight: 21 },
@@ -447,6 +627,19 @@ const styles = StyleSheet.create({
   linkedText: { color: '#C9B6E8', fontSize: 11, fontWeight: '700' },
   date: { color: '#7C8192', fontSize: 12 },
   delete: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
+  edit: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
+  noteActions: { flexDirection: 'row', gap: 14, alignItems: 'center' },
+  editingBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#2A2440',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  editingText: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
+  editingCancel: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
   empty: { alignItems: 'center', paddingTop: 70 },
   emptyTitle: { color: '#ECEEF3', fontSize: 16, fontWeight: '700' },
   emptyText: { color: '#9298A9', textAlign: 'center', marginTop: 8 },

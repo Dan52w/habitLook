@@ -1,13 +1,19 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Circle, Defs, LinearGradient, Stop, Path, G } from 'react-native-svg';
+import Svg, {
+  Circle,
+  Defs,
+  LinearGradient,
+  Stop,
+  Path,
+  G,
+} from 'react-native-svg';
 
 type Props = {
   size?: number;
-  glow?: boolean;
 };
 
-export function HabitLookLogo({ size = 44, glow = true }: Props) {
+export function HabitLookLogo({ size = 44 }: Props) {
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox="0 0 100 100">
@@ -73,7 +79,15 @@ export function HabitLookLogo({ size = 44, glow = true }: Props) {
 
         {/* Celestial core: Sun / Focus point */}
         <Circle cx="50" cy="50" r="6" fill="#FDE047" />
-        <Circle cx="50" cy="50" r="10" stroke="#FDE047" strokeWidth="1.5" fill="none" opacity={0.4} />
+        <Circle
+          cx="50"
+          cy="50"
+          r="10"
+          stroke="#FDE047"
+          strokeWidth="1.5"
+          fill="none"
+          opacity={0.4}
+        />
 
         {/* Crescent moon accent on top */}
         <Path

@@ -4,6 +4,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextStyle,
   View,
 } from 'react-native';
 import { light, useTheme } from '../theme/ThemeProvider';
@@ -91,14 +92,22 @@ export function AppDialog({
     >
       <View style={styles.backdrop}>
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
-          <View style={[styles.iconContainer, { backgroundColor: getIconBg() }]}>
-            <Text style={[styles.iconText, { color: getIconColor() }]}>{getIcon()}</Text>
+          <View
+            style={[styles.iconContainer, { backgroundColor: getIconBg() }]}
+          >
+            <Text style={[styles.iconText, { color: getIconColor() }]}>
+              {getIcon()}
+            </Text>
           </View>
 
-          <Text style={[styles.title, theme.isLight && lightStyles.title]}>{title}</Text>
+          <Text style={[styles.title, theme.isLight && lightStyles.title]}>
+            {title}
+          </Text>
 
           {message ? (
-            <Text style={[styles.message, theme.isLight && lightStyles.message]}>
+            <Text
+              style={[styles.message, theme.isLight && lightStyles.message]}
+            >
               {message}
             </Text>
           ) : null}
@@ -106,17 +115,22 @@ export function AppDialog({
           <View style={styles.buttonRow}>
             {buttons.map((button, index) => {
               const isCancel = button.style === 'cancel';
-              const isDestructive = button.style === 'destructive' || type === 'destructive';
+              const isDestructive =
+                button.style === 'destructive' || type === 'destructive';
 
               let btnStyle = styles.defaultBtn;
-              let txtStyle = styles.defaultBtnText;
+              let txtStyle: TextStyle = styles.defaultBtnText;
 
               if (isDestructive) {
                 btnStyle = styles.destructiveBtn;
                 txtStyle = styles.destructiveBtnText;
               } else if (isCancel) {
-                btnStyle = theme.isLight ? lightStyles.cancelBtn : styles.cancelBtn;
-                txtStyle = theme.isLight ? lightStyles.cancelBtnText : styles.cancelBtnText;
+                btnStyle = theme.isLight
+                  ? lightStyles.cancelBtn
+                  : styles.cancelBtn;
+                txtStyle = theme.isLight
+                  ? lightStyles.cancelBtnText
+                  : styles.cancelBtnText;
               }
 
               return (
@@ -132,7 +146,9 @@ export function AppDialog({
                   }}
                   style={[styles.btnBase, btnStyle]}
                 >
-                  <Text style={[styles.btnTextBase, txtStyle]}>{button.text}</Text>
+                  <Text style={[styles.btnTextBase, txtStyle]}>
+                    {button.text}
+                  </Text>
                 </Pressable>
               );
             })}

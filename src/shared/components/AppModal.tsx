@@ -1,25 +1,55 @@
 import React from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
 
-type Props = { visible: boolean; title: string; onClose: () => void; children: React.ReactNode };
+type Props = {
+  visible: boolean;
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+};
 
 export function AppModal({ visible, title, onClose, children }: Props) {
   const theme = useTheme();
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
         <View
           style={[
             styles.sheet,
-            { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.border,
+            },
           ]}
         >
-          <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
-            <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
-            <Pressable accessibilityRole="button" onPress={onClose} hitSlop={12}>
-              <Text style={[styles.close, { color: theme.colors.accentLight }]}>×</Text>
+          <View
+            style={[styles.header, { borderBottomColor: theme.colors.border }]}
+          >
+            <Text style={[styles.title, { color: theme.colors.text }]}>
+              {title}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onClose}
+              hitSlop={12}
+            >
+              <Text style={[styles.close, { color: theme.colors.accentLight }]}>
+                ×
+              </Text>
             </Pressable>
           </View>
           <ScrollView
@@ -35,7 +65,11 @@ export function AppModal({ visible, title, onClose, children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(4, 5, 10, .7)' },
+  backdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(4, 5, 10, .7)',
+  },
   sheet: {
     maxHeight: '88%',
     borderTopLeftRadius: 28,

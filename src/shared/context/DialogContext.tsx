@@ -45,16 +45,19 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     setConfig(prev => ({ ...prev, visible: false }));
   }, []);
 
-  const showDialog = useCallback((options: DialogOptions) => {
-    setConfig({
-      visible: true,
-      title: options.title,
-      message: options.message,
-      type: options.type,
-      buttons: options.buttons || [{ text: 'Aceptar', style: 'default' }],
-      onClose: hideDialog,
-    });
-  }, [hideDialog]);
+  const showDialog = useCallback(
+    (options: DialogOptions) => {
+      setConfig({
+        visible: true,
+        title: options.title,
+        message: options.message,
+        type: options.type,
+        buttons: options.buttons || [{ text: 'Aceptar', style: 'default' }],
+        onClose: hideDialog,
+      });
+    },
+    [hideDialog],
+  );
 
   const showConfirm = useCallback(
     ({
@@ -86,7 +89,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         onClose: hideDialog,
       });
     },
-    [hideDialog]
+    [hideDialog],
   );
 
   const showAlert = useCallback(
@@ -112,7 +115,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
         onClose: hideDialog,
       });
     },
-    [hideDialog]
+    [hideDialog],
   );
 
   return (
