@@ -1,5 +1,19 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DayRing } from './components/DayRing';
@@ -75,11 +89,13 @@ export function ClockScreen() {
 
   const [planOpen, setPlanOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
-  const [selectedSegment, setSelectedSegment] = useState<RingSegment | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<RingSegment | null>(
+    null,
+  );
 
   const freeSlot = useMemo(
     () => segments.find(segment => segment.categoryId === '__free__'),
-    [segments]
+    [segments],
   );
 
   const onChanged = useCallback(() => {
@@ -92,17 +108,21 @@ export function ClockScreen() {
     useCallback(() => {
       reloadTimeline();
       reloadGoals();
-    }, [reloadTimeline, reloadGoals])
+    }, [reloadTimeline, reloadGoals]),
   );
 
   const markProgress = async (goal: (typeof goals)[number], direction = 1) => {
-    await addGoalProgress(
-      goal.id,
-      currentTodayKey,
-      (goal.targetType === 'duration' ? 5 : 1) * direction,
-      goal.targetValue
-    );
-    reloadGoals();
+    try {
+      await addGoalProgress(
+        goal.id,
+        currentTodayKey,
+        (goal.targetType === 'duration' ? 5 : 1) * direction,
+        goal.targetValue,
+      );
+      reloadGoals();
+    } catch (error) {
+      console.warn('No se pudo registrar el avance:', error);
+    }
   };
 
   const [initialLoading, setInitialLoading] = useState(true);
@@ -130,10 +150,15 @@ export function ClockScreen() {
         <View style={styles.top}>
           <View>
             <Text style={styles.eyebrow}>HABITLOOK</Text>
-            <Text style={[styles.greeting, themed?.text]}>Tu día, de un vistazo</Text>
+            <Text style={[styles.greeting, themed?.text]}>
+              Tu día, de un vistazo
+            </Text>
           </View>
           <View style={styles.topActions}>
-            <Pressable onPress={() => setPlanOpen(true)} style={[styles.planButton, themed?.border]}>
+            <Pressable
+              onPress={() => setPlanOpen(true)}
+              style={[styles.planButton, themed?.border]}
+            >
               <Text style={styles.planText}>Planificar</Text>
             </Pressable>
           </View>
@@ -188,9 +213,11 @@ export function ClockScreen() {
           color={currentActivity.color}
           onPress={() =>
             setSelectedSegment(
-              segments.find(segment => segment.categoryName === currentActivity.name) ??
+              segments.find(
+                segment => segment.categoryName === currentActivity.name,
+              ) ??
                 freeSlot ??
-                null
+                null,
             )
           }
         />
@@ -203,7 +230,9 @@ export function ClockScreen() {
         </View>
 
         {goals.length === 0 ? (
-          <Text style={[styles.empty, themed?.muted]}>Crea una meta pequeña para empezar.</Text>
+          <Text style={[styles.empty, themed?.muted]}>
+            Crea una meta pequeña para empezar.
+          </Text>
         ) : (
           goals.map(goal => (
             <GoalProgressCard
@@ -212,6 +241,7 @@ export function ClockScreen() {
               progressLabel={goal.progressLabel}
               progressRatio={goal.progressRatio}
               color={goal.color}
+              streak={goal.streak}
               onPress={() => markProgress(goal)}
               onUndo={() => markProgress(goal, -1)}
               onDelete={() =>
@@ -232,7 +262,8 @@ export function ClockScreen() {
         )}
 
         <Text style={styles.hint}>
-          Toca una meta para registrar 5 min o 1 avance. Usa ↶ para deshacer un toque por error.
+          Toca una meta para registrar 5 min o 1 avance. Usa ↶ para deshacer un
+          toque por error.
         </Text>
       </ScrollView>
 
@@ -241,15 +272,23 @@ export function ClockScreen() {
         onClose={() => setPlanOpen(false)}
         onChanged={onChanged}
         date={selectedDate}
-        suggestedStart={freeSlot ? formatTimeMinutes(freeSlot.startMinutes) : '08:00'}
+        suggestedStart={
+          freeSlot ? formatTimeMinutes(freeSlot.startMinutes) : '08:00'
+        }
         suggestedEnd={
           freeSlot
-            ? formatTimeMinutes(Math.min(freeSlot.startMinutes + 60, freeSlot.endMinutes))
+            ? formatTimeMinutes(
+                Math.min(freeSlot.startMinutes + 60, freeSlot.endMinutes),
+              )
             : '09:00'
         }
       />
 
-      <GoalComposer visible={goalOpen} onClose={() => setGoalOpen(false)} onSaved={reloadGoals} />
+      <GoalComposer
+        visible={goalOpen}
+        onClose={() => setGoalOpen(false)}
+        onSaved={reloadGoals}
+      />
 
       <AppModal
         visible={Boolean(selectedSegment)}
@@ -258,7 +297,12 @@ export function ClockScreen() {
       >
         {selectedSegment && (
           <>
-            <View style={[styles.segmentColor, { backgroundColor: selectedSegment.color }]} />
+            <View
+              style={[
+                styles.segmentColor,
+                { backgroundColor: selectedSegment.color },
+              ]}
+            />
             <Text style={styles.detailTime}>
               {formatTimeMinutes(selectedSegment.startMinutes)} —{' '}
               {formatTimeMinutes(selectedSegment.endMinutes)}
@@ -295,9 +339,18 @@ export function ClockScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
   content: { padding: 18, paddingBottom: 38, gap: 14 },
-  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  top: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyebrow: { color: '#A78BFA', fontWeight: '800', fontSize: 12, letterSpacing: 2 },
+  eyebrow: {
+    color: '#A78BFA',
+    fontWeight: '800',
+    fontSize: 12,
+    letterSpacing: 2,
+  },
   greeting: { color: '#F8F7FB', fontSize: 20, fontWeight: '700', marginTop: 2 },
   planButton: {
     borderRadius: 12,
@@ -315,7 +368,12 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 12,
   },
-  dateLabel: { color: '#A78BFA', fontWeight: '800', fontSize: 10, letterSpacing: 1 },
+  dateLabel: {
+    color: '#A78BFA',
+    fontWeight: '800',
+    fontSize: 10,
+    letterSpacing: 1,
+  },
   dateValue: {
     color: '#EDEEF3',
     fontWeight: '600',
@@ -339,7 +397,12 @@ const styles = StyleSheet.create({
   empty: { color: '#9CA3AF' },
   hint: { color: '#74798A', fontSize: 12, marginTop: -8 },
   segmentColor: { height: 6, borderRadius: 3 },
-  detailTime: { color: '#F8F7FB', fontSize: 21, fontWeight: '700', marginTop: 4 },
+  detailTime: {
+    color: '#F8F7FB',
+    fontSize: 21,
+    fontWeight: '700',
+    marginTop: 4,
+  },
   detail: { color: '#AEB2C0', lineHeight: 21 },
   detailButton: {
     alignItems: 'center',

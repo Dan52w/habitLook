@@ -1,7 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { listBlocksForDate, TimeBlockWithCategory } from '../../../db/repositories/timeBlocks';
-import { buildRingSegments, mergeSegmentsByCategory, RingSegment, TimeBlockSegment } from '../utils/clockMath';
-import { dateFromKey, localDateKey, weekdayFromKey } from '../../../shared/utils/date';
+import {
+  listBlocksForDate,
+  TimeBlockWithCategory,
+} from '../../../db/repositories/timeBlocks';
+import {
+  buildRingSegments,
+  mergeSegmentsByCategory,
+  RingSegment,
+  TimeBlockSegment,
+} from '../utils/clockMath';
+import {
+  dateFromKey,
+  localDateKey,
+  weekdayFromKey,
+} from '../../../shared/utils/date';
 import { updateTodayWidget } from '../../../services/todayWidget';
 
 const DAY_START = 6 * 60;
@@ -16,15 +28,22 @@ const toMinutes = (time: string) => {
 export function useTodayTimeline(selectedDate: string, now = new Date()) {
   const [segments, setSegments] = useState<RingSegment[]>([]);
   const [nightSegments, setNightSegments] = useState<RingSegment[]>([]);
-  const [legend, setLegend] = useState<{ categoryName: string; color: string; hours: number }[]>([]);
-  const [currentActivity, setCurrentActivity] = useState({ name: 'Libre', color: '#4B4F5A' });
+  const [legend, setLegend] = useState<
+    { categoryName: string; color: string; hours: number }[]
+  >([]);
+  const [currentActivity, setCurrentActivity] = useState({
+    name: 'Libre',
+    color: '#4B4F5A',
+  });
   const [loading, setLoading] = useState(true);
   const hasLoaded = useRef(false);
 
   const load = useCallback(async () => {
     if (!hasLoaded.current) setLoading(true);
 
-    const blocks: TimeBlockWithCategory[] = await listBlocksForDate(selectedDate);
+    const blocks: TimeBlockWithCategory[] = await listBlocksForDate(
+      selectedDate,
+    );
     const today = localDateKey(now);
     const isToday = selectedDate === today;
     const isEarlyMorning = now.getHours() < 6;
@@ -39,14 +58,20 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
     // Separamos bloques diurnos (06:00–18:00) y nocturnos (18:00–06:00)
     const dayBlocks: TimeBlockSegment[] = [];
     const nightBlocks: TimeBlockSegment[] = [];
-    const activeBlocksToday: { name: string; color: string; start: number; end: number }[] = [];
+    const activeBlocksToday: {
+      name: string;
+      color: string;
+      start: number;
+      end: number;
+    }[] = [];
 
     for (const block of blocks) {
       const startMin = toMinutes(block.start_time);
       const endMin = toMinutes(block.end_time);
       const isFromYesterday =
         block.schedule_date === previousDate ||
-        (block.schedule_date === null && block.day_of_week === previousDayOfWeek);
+        (block.schedule_date === null &&
+          block.day_of_week === previousDayOfWeek);
       const crossesMidnight = endMin < startMin;
 
       const baseSegment = {
@@ -151,7 +176,7 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
     setCurrentActivity(
       active
         ? { name: active.name, color: active.color }
-        : { name: isToday ? 'Libre' : 'Día seleccionado', color: '#4B4F5A' }
+        : { name: isToday ? 'Libre' : 'Día seleccionado', color: '#4B4F5A' },
     );
 
     hasLoaded.current = true;
@@ -165,8 +190,11 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
       updateTodayWidget(
         next?.name ?? 'Sin actividad próxima',
         next
-          ? `Próxima: ${String(Math.floor(next.start / 60)).padStart(2, '0')}:${String(next.start % 60).padStart(2, '0')}`
-          : 'Planifica tu día en HabitLook'
+          ? `Próxima: ${String(Math.floor(next.start / 60)).padStart(
+              2,
+              '0',
+            )}:${String(next.start % 60).padStart(2, '0')}`
+          : 'Planifica tu día en HabitLook',
       );
     }
   }, [selectedDate, now]);
@@ -175,5 +203,12 @@ export function useTodayTimeline(selectedDate: string, now = new Date()) {
     load();
   }, [load]);
 
-  return { segments, nightSegments, legend, currentActivity, loading, reload: load };
+  return {
+    segments,
+    nightSegments,
+    legend,
+    currentActivity,
+    loading,
+    reload: load,
+  };
 }

@@ -1,7 +1,12 @@
 import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Line, Path, Text as SvgText } from 'react-native-svg';
-import { RingSegment, angleForClockHand, describeArc, polarToCartesian } from '../utils/clockMath';
+import {
+  RingSegment,
+  angleForClockHand,
+  describeArc,
+  polarToCartesian,
+} from '../utils/clockMath';
 import { useTheme } from '../../../shared/theme/ThemeProvider';
 
 type Props = {
@@ -26,7 +31,13 @@ const NIGHT_LABELS = [
   { label: '03', angle: 90 },
 ];
 
-export function DayRing({ daySegments, nightSegments, now, size = 294, onSegmentPress }: Props) {
+export function DayRing({
+  daySegments,
+  nightSegments,
+  now,
+  size = 294,
+  onSegmentPress,
+}: Props) {
   const theme = useTheme();
   const cx = size / 2;
   const cy = size / 2;
@@ -41,7 +52,12 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
   const outerLabels = isDaytime ? DAY_LABELS : NIGHT_LABELS;
   const innerLabels = isDaytime ? NIGHT_LABELS : DAY_LABELS;
 
-  const drawSegments = (segments: RingSegment[], radius: number, width: number, prefix: string) =>
+  const drawSegments = (
+    segments: RingSegment[],
+    radius: number,
+    width: number,
+    prefix: string,
+  ) =>
     segments.map((segment, index) => {
       const span = segment.endAngle - segment.startAngle;
       const gap = Math.min(2.2, span * 0.16);
@@ -78,10 +94,31 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
   const minuteHandColor = theme.isLight ? '#75549E' : '#C9B6E8';
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
       <Svg width={size} height={size}>
-        <Circle cx={cx} cy={cy} r={dayRadius} stroke={trackDayColor} strokeWidth={20} fill="none" />
-        <Circle cx={cx} cy={cy} r={nightRadius} stroke={trackNightColor} strokeWidth={14} fill="none" />
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={dayRadius}
+          stroke={trackDayColor}
+          strokeWidth={20}
+          fill="none"
+        />
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={nightRadius}
+          stroke={trackNightColor}
+          strokeWidth={14}
+          fill="none"
+        />
         {drawSegments(outerSegments, dayRadius, 20, 'outer')}
         {drawSegments(innerSegments, nightRadius, 14, 'inner')}
 
@@ -126,7 +163,7 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
               cx,
               cy,
               dayRadius,
-              (segment.startAngle + segment.endAngle) / 2
+              (segment.startAngle + segment.endAngle) / 2,
             );
             return (
               <SvgText
@@ -148,7 +185,7 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
               cx,
               cy,
               nightRadius,
-              (segment.startAngle + segment.endAngle) / 2
+              (segment.startAngle + segment.endAngle) / 2,
             );
             return (
               <SvgText
@@ -164,8 +201,18 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
           })}
 
         {(() => {
-          const hour = polarToCartesian(cx, cy, dayRadius - 5, angleForClockHand(now, 'hour'));
-          const minute = polarToCartesian(cx, cy, dayRadius + 3, angleForClockHand(now, 'minute'));
+          const hour = polarToCartesian(
+            cx,
+            cy,
+            dayRadius - 5,
+            angleForClockHand(now, 'hour'),
+          );
+          const minute = polarToCartesian(
+            cx,
+            cy,
+            dayRadius + 3,
+            angleForClockHand(now, 'minute'),
+          );
           return (
             <>
               <Line
@@ -191,7 +238,14 @@ export function DayRing({ daySegments, nightSegments, now, size = 294, onSegment
           );
         })()}
 
-        <Circle cx={cx} cy={cy} r={38} fill={centerFill} stroke={centerBorder} strokeWidth={1.5} />
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={38}
+          fill={centerFill}
+          stroke={centerBorder}
+          strokeWidth={1.5}
+        />
         <SvgText
           x={cx}
           y={cy + 5.5}

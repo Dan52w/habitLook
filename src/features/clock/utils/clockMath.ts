@@ -25,20 +25,21 @@ const FREE_LABEL = 'Libre';
 export function buildRingSegments(
   blocks: TimeBlockSegment[],
   windowStartMinutes: number, // ej. 8*60
-  windowEndMinutes: number,   // ej. 20*60
+  windowEndMinutes: number, // ej. 20*60
   arcStart = 0,
   arcSpan = 360,
 ): RingSegment[] {
   const windowLength = windowEndMinutes - windowStartMinutes;
-  const toAngle = (minutes: number) => arcStart + ((minutes - windowStartMinutes) / windowLength) * arcSpan;
+  const toAngle = (minutes: number) =>
+    arcStart + ((minutes - windowStartMinutes) / windowLength) * arcSpan;
 
   const clamped = blocks
-    .map((b) => ({
+    .map(b => ({
       ...b,
       startMinutes: Math.max(b.startMinutes, windowStartMinutes),
       endMinutes: Math.min(b.endMinutes, windowEndMinutes),
     }))
-    .filter((b) => b.endMinutes > b.startMinutes)
+    .filter(b => b.endMinutes > b.startMinutes)
     .sort((a, b) => a.startMinutes - b.startMinutes);
 
   const segments: RingSegment[] = [];
@@ -68,7 +69,11 @@ export function buildRingSegments(
 
   return segments;
 
-  function freeSegment(start: number, end: number, angleFn: (m: number) => number): RingSegment {
+  function freeSegment(
+    start: number,
+    end: number,
+    angleFn: (m: number) => number,
+  ): RingSegment {
     return {
       categoryId: '__free__',
       categoryName: FREE_LABEL,
@@ -84,21 +89,40 @@ export function buildRingSegments(
 }
 
 export function mergeSegmentsByCategory(segments: RingSegment[]) {
-  const map = new Map<string, { categoryName: string; color: string; hours: number }>();
+  const map = new Map<
+    string,
+    { categoryName: string; color: string; hours: number }
+  >();
   for (const s of segments) {
     const existing = map.get(s.categoryId);
     if (existing) existing.hours += s.hours;
-    else map.set(s.categoryId, { categoryName: s.categoryName, color: s.color, hours: s.hours });
+    else
+      map.set(s.categoryId, {
+        categoryName: s.categoryName,
+        color: s.color,
+        hours: s.hours,
+      });
   }
   return Array.from(map.values());
 }
 
-export function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+export function polarToCartesian(
+  cx: number,
+  cy: number,
+  r: number,
+  angleDeg: number,
+) {
   const angleRad = ((angleDeg - 90) * Math.PI) / 180; // -90 para que 0° quede arriba
   return { x: cx + r * Math.cos(angleRad), y: cy + r * Math.sin(angleRad) };
 }
 
-export function describeArc(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+export function describeArc(
+  cx: number,
+  cy: number,
+  r: number,
+  startAngle: number,
+  endAngle: number,
+) {
   const start = polarToCartesian(cx, cy, r, endAngle);
   const end = polarToCartesian(cx, cy, r, startAngle);
   const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';

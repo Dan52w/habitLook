@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { listBlocksForDates, TimeBlockWithCategory } from '../../../db/repositories/timeBlocks';
+import {
+  listBlocksForDates,
+  TimeBlockWithCategory,
+} from '../../../db/repositories/timeBlocks';
 import { dateFromKey, localDateKey } from '../../../shared/utils/date';
 
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -23,9 +26,17 @@ type Props = {
   refreshKey?: number;
 };
 
-export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: Props) {
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(dateFromKey(selectedDate)));
-  const [events, setEvents] = useState<Record<string, TimeBlockWithCategory[]>>({});
+export function MiniCalendar({
+  selectedDate,
+  onSelect,
+  refreshKey = 0,
+}: Props) {
+  const [weekStart, setWeekStart] = useState(() =>
+    startOfWeek(dateFromKey(selectedDate)),
+  );
+  const [events, setEvents] = useState<Record<string, TimeBlockWithCategory[]>>(
+    {},
+  );
 
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, index) => {
@@ -37,7 +48,9 @@ export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: Props) 
 
   const load = useCallback(async () => {
     const dates = days.map(toKey);
-    const allDates = dates.includes(selectedDate) ? dates : [...dates, selectedDate];
+    const allDates = dates.includes(selectedDate)
+      ? dates
+      : [...dates, selectedDate];
     const result = await listBlocksForDates(allDates);
     setEvents(result);
   }, [days, selectedDate]);
@@ -49,7 +62,9 @@ export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: Props) 
   useEffect(() => {
     const selected = dateFromKey(selectedDate);
     const start = startOfWeek(selected);
-    setWeekStart(current => (current.getTime() === start.getTime() ? current : start));
+    setWeekStart(current =>
+      current.getTime() === start.getTime() ? current : start,
+    );
   }, [selectedDate]);
 
   const selectedEvents = events[selectedDate] ?? [];
@@ -105,7 +120,9 @@ export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: Props) 
                 {day.getDate()}
               </Text>
               {hasEvents && (
-                <View style={[styles.eventDot, selected && styles.eventDotSelected]} />
+                <View
+                  style={[styles.eventDot, selected && styles.eventDotSelected]}
+                />
               )}
             </Pressable>
           );
@@ -113,13 +130,20 @@ export function MiniCalendar({ selectedDate, onSelect, refreshKey = 0 }: Props) 
       </View>
 
       <View style={styles.list}>
-        <Text style={styles.listTitle}>Plan de {formatLongDate(dateFromKey(selectedDate))}</Text>
+        <Text style={styles.listTitle}>
+          Plan de {formatLongDate(dateFromKey(selectedDate))}
+        </Text>
         {selectedEvents.length === 0 ? (
           <Text style={styles.empty}>No hay actividades para este día.</Text>
         ) : (
           selectedEvents.map(event => (
             <View key={event.id} style={styles.event}>
-              <View style={[styles.color, { backgroundColor: event.category_color }]} />
+              <View
+                style={[
+                  styles.color,
+                  { backgroundColor: event.category_color },
+                ]}
+              />
               <Text style={styles.eventTime}>
                 {event.start_time}–{event.end_time}
               </Text>
@@ -192,7 +216,12 @@ const styles = StyleSheet.create({
   },
   eventDotSelected: { backgroundColor: '#171421' },
   list: { backgroundColor: '#1D2230', borderRadius: 12, padding: 10, gap: 7 },
-  listTitle: { color: '#C9B6E8', fontSize: 12, fontWeight: '800', textTransform: 'capitalize' },
+  listTitle: {
+    color: '#C9B6E8',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
   empty: { color: '#8990A1', fontSize: 12, paddingVertical: 3 },
   event: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   color: { width: 7, height: 7, borderRadius: 4 },

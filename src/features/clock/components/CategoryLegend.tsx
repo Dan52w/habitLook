@@ -8,7 +8,9 @@ const duration = (hours: number) => {
   const minutes = Math.round(hours * 60);
   return minutes < 60
     ? `${minutes} min`
-    : `${Math.floor(minutes / 60)} h${minutes % 60 ? ` ${minutes % 60} min` : ''}`;
+    : `${Math.floor(minutes / 60)} h${
+        minutes % 60 ? ` ${minutes % 60} min` : ''
+      }`;
 };
 
 export function CategoryLegend({ items }: { items: LegendItem[] }) {
@@ -16,7 +18,7 @@ export function CategoryLegend({ items }: { items: LegendItem[] }) {
 
   return (
     <View style={styles.grid}>
-      {items.map((item) => (
+      {items.map(item => (
         <View key={item.categoryName} style={styles.item}>
           <View style={[styles.dot, { backgroundColor: item.color }]} />
           <Text
