@@ -77,9 +77,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.habitlook"
+    namespace "com.akmonstudios.habitlook"
     defaultConfig {
-        applicationId "com.habitlook"
+        applicationId "com.akmonstudios.habitlook"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

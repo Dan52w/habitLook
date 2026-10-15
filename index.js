@@ -10,4 +10,4 @@ import { name as appName } from './app.json';
 
 notifee.onBackgroundEvent(handleNotificationAction);
 
-AppRegistry.registerComponent('habitLook', () => App);
+AppRegistry.registerComponent(appName, () => App);

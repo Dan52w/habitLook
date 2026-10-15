@@ -1,4 +1,7 @@
-import { doIntervalsOverlap, normalizeTimeString } from '../src/features/clock/utils/timeValidation';
+import {
+  doIntervalsOverlap,
+  normalizeTimeString,
+} from '../src/features/clock/utils/timeValidation';
 import { periodStart } from '../src/shared/utils/date';
 
 describe('normalizeTimeString', () => {

@@ -1,4 +1,8 @@
-import { dateFromKey, localDateKey, weekdayFromKey } from '../src/shared/utils/date';
+import {
+  dateFromKey,
+  localDateKey,
+  weekdayFromKey,
+} from '../src/shared/utils/date';
 
 test('interpreta las fechas guardadas como fechas locales, no UTC', () => {
   const date = dateFromKey('2026-09-30');
