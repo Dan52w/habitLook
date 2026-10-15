@@ -10,6 +10,10 @@ import {
 } from '../src/db/repositories/expenseCategories';
 import { getGoalStreak } from '../src/db/repositories/goals';
 import { updateExpense } from '../src/db/repositories/expenses';
+import {
+  deleteTimeBlockOccurrence,
+  updateTimeBlock,
+} from '../src/db/repositories/timeBlocks';
 
 jest.mock('../src/db/client', () => ({
   getDb: jest.fn(),
@@ -237,5 +241,77 @@ describe('updateExpense con gastos divididos', () => {
     expect(db.executed.some(e => e.sql.startsWith('UPDATE expenses SET'))).toBe(
       false,
     );
+  });
+});
+
+describe('bloques que cruzan medianoche', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const midnightBlock = {
+    start_time: '22:00',
+    end_time: '02:00',
+    schedule_date: null,
+    day_of_week: 1, // lunes
+  };
+  const dayBlock = {
+    start_time: '08:00',
+    end_time: '09:00',
+    schedule_date: null,
+    day_of_week: 2, // martes
+  };
+
+  function fakeBlockDb(block: typeof midnightBlock | null) {
+    return fakeDb(sql =>
+      sql.startsWith('SELECT start_time')
+        ? { rows: block ? [block] : [] }
+        : { rows: [] },
+    );
+  }
+
+  it('borrar la ocurrencia vista el día siguiente registra la excepción en la fecha de origen', async () => {
+    const db = fakeBlockDb(midnightBlock);
+    // Bloque de lunes 22:00–02:00, visto el martes: la excepción debe
+    // quedar en el lunes para que el filtro la encuentre.
+    await deleteTimeBlockOccurrence('b1', '2026-10-13', true);
+    const inserted = db.executed.find(e =>
+      e.sql.startsWith('INSERT OR IGNORE INTO time_block_exceptions'),
+    );
+    expect(inserted?.params).toEqual(['b1', '2026-10-12']);
+  });
+
+  it('borrar la ocurrencia el mismo día de origen no cambia la fecha', async () => {
+    const db = fakeBlockDb(midnightBlock);
+    await deleteTimeBlockOccurrence('b1', '2026-10-12', true);
+    const inserted = db.executed.find(e =>
+      e.sql.startsWith('INSERT OR IGNORE INTO time_block_exceptions'),
+    );
+    expect(inserted?.params).toEqual(['b1', '2026-10-12']);
+  });
+
+  it('un bloque diurno normal conserva la fecha vista', async () => {
+    const db = fakeBlockDb(dayBlock);
+    await deleteTimeBlockOccurrence('b2', '2026-10-13', true);
+    const inserted = db.executed.find(e =>
+      e.sql.startsWith('INSERT OR IGNORE INTO time_block_exceptions'),
+    );
+    expect(inserted?.params).toEqual(['b2', '2026-10-13']);
+  });
+
+  it('editar "toda la serie" desde el día siguiente no desplaza el día de la semana', async () => {
+    const db = fakeBlockDb(midnightBlock);
+    await updateTimeBlock({
+      id: 'b1',
+      categoryId: 'c1',
+      startTime: '22:00',
+      endTime: '02:00',
+      date: '2026-10-13', // visto el martes
+      recurring: true,
+      scope: 'all',
+    });
+    const updated = db.executed.find(e =>
+      e.sql.startsWith('UPDATE time_blocks SET'),
+    );
+    // day_of_week debe seguir siendo lunes (1), no martes (2)
+    expect(updated?.params?.[3]).toBe(1);
   });
 });

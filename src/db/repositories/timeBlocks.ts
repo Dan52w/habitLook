@@ -19,6 +19,40 @@ export type TimeBlockWithCategory = {
   schedule_date: string | null;
 };
 
+/**
+ * Fecha de origen de un bloque: para bloques que cruzan medianoche
+ * (fin < inicio) vistos el día siguiente, el bloque "pertenece" al día
+ * anterior. Las excepciones y ediciones deben registrarse contra esa
+ * fecha para que el filtro de `listBlocksForDate` las encuentre.
+ */
+async function resolveOriginDate(
+  blockId: string,
+  viewingDate: string,
+): Promise<string> {
+  const db = await getDb();
+  const res = await db.execute(
+    'SELECT start_time, end_time, schedule_date, day_of_week FROM time_blocks WHERE id = ?',
+    [blockId],
+  );
+  const found = (res.rows ?? [])[0] as
+    | {
+        start_time: string;
+        end_time: string;
+        schedule_date: string | null;
+        day_of_week: number | null;
+      }
+    | undefined;
+  if (!found || !(found.end_time < found.start_time)) return viewingDate;
+  const prev = dateFromKey(viewingDate);
+  prev.setDate(prev.getDate() - 1);
+  const prevDate = localDateKey(prev);
+  const originatesPrev =
+    found.schedule_date === prevDate ||
+    (found.schedule_date === null &&
+      found.day_of_week === weekdayFromKey(prevDate));
+  return originatesPrev ? prevDate : viewingDate;
+}
+
 export async function listBlocksForDate(
   date: string,
 ): Promise<TimeBlockWithCategory[]> {
@@ -175,9 +209,10 @@ export async function deleteTimeBlockOccurrence(
 ): Promise<void> {
   const db = await getDb();
   if (recurring) {
+    const originDate = await resolveOriginDate(id, date);
     await db.execute(
       'INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)',
-      [id, date],
+      [id, originDate],
     );
     return;
   }
@@ -194,11 +229,12 @@ export async function updateTimeBlock(input: {
   scope: 'day' | 'all';
 }): Promise<void> {
   const db = await getDb();
+  const originDate = await resolveOriginDate(input.id, input.date);
   if (input.recurring && input.scope === 'day') {
     await db.transaction(async tx => {
       await tx.execute(
         'INSERT OR IGNORE INTO time_block_exceptions (time_block_id, date) VALUES (?, ?)',
-        [input.id, input.date],
+        [input.id, originDate],
       );
       await tx.execute(
         'INSERT INTO time_blocks (id, category_id, start_time, end_time, day_of_week, is_recurring, schedule_date) VALUES (?, ?, ?, ?, ?, 0, ?)',
@@ -207,8 +243,8 @@ export async function updateTimeBlock(input: {
           input.categoryId,
           input.startTime,
           input.endTime,
-          weekdayFromKey(input.date),
-          input.date,
+          weekdayFromKey(originDate),
+          originDate,
         ],
       );
     });
@@ -220,9 +256,9 @@ export async function updateTimeBlock(input: {
       input.categoryId,
       input.startTime,
       input.endTime,
-      weekdayFromKey(input.date),
+      weekdayFromKey(originDate),
       input.recurring ? 1 : 0,
-      input.recurring ? null : input.date,
+      input.recurring ? null : originDate,
       input.id,
     ],
   );
@@ -233,9 +269,10 @@ export async function markTimeBlockStarted(
   date: string,
 ): Promise<void> {
   const db = await getDb();
+  const originDate = await resolveOriginDate(id, date);
   await db.execute(
     "INSERT INTO time_block_status (time_block_id, date, started_at) VALUES (?, ?, datetime('now')) ON CONFLICT(time_block_id, date) DO UPDATE SET started_at = excluded.started_at",
-    [id, date],
+    [id, originDate],
   );
 }
 
@@ -245,8 +282,9 @@ export async function markTimeBlockCompleted(
   completed: boolean,
 ): Promise<void> {
   const db = await getDb();
+  const originDate = await resolveOriginDate(id, date);
   await db.execute(
     'INSERT INTO time_block_status (time_block_id, date, completed) VALUES (?, ?, ?) ON CONFLICT(time_block_id, date) DO UPDATE SET completed = excluded.completed',
-    [id, date, completed ? 1 : 0],
+    [id, originDate, completed ? 1 : 0],
   );
 }

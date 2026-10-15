@@ -48,7 +48,10 @@ export function GoalProgressCard({
           {onUndo && (
             <Pressable
               accessibilityLabel={`Deshacer avance de ${title}`}
-              onPress={onUndo}
+              onPress={e => {
+                e.stopPropagation();
+                onUndo();
+              }}
               hitSlop={10}
             >
               <Text style={styles.undo}>↶</Text>
@@ -57,7 +60,10 @@ export function GoalProgressCard({
           {onDelete && (
             <Pressable
               accessibilityLabel={`Eliminar ${title}`}
-              onPress={onDelete}
+              onPress={e => {
+                e.stopPropagation();
+                onDelete();
+              }}
               hitSlop={10}
             >
               <Text style={styles.delete}>×</Text>
@@ -78,6 +84,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#181B25',
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#262C3E',
     padding: 16,
     marginHorizontal: 16,
     marginBottom: 12,

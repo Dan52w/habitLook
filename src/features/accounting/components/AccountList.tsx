@@ -105,7 +105,10 @@ export function AccountList({
                   <Pressable
                     accessibilityLabel={`Editar cuenta ${item.name}`}
                     hitSlop={8}
-                    onPress={() => onEditAccount(item)}
+                    onPress={e => {
+                      e.stopPropagation();
+                      onEditAccount(item);
+                    }}
                   >
                     <Text
                       style={[

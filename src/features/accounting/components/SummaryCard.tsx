@@ -32,6 +32,8 @@ const styles = StyleSheet.create({
   summary: {
     backgroundColor: '#1B1F2C',
     borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#2A3042',
     padding: 17,
     flexDirection: 'row',
     justifyContent: 'space-between',

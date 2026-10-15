@@ -25,6 +25,8 @@ import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { useFocusEffect } from '@react-navigation/native';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
+import { SectionHeader } from '../../shared/components/SectionHeader';
+import { EmptyState } from '../../shared/components/EmptyState';
 
 const today = () => localDateKey();
 
@@ -163,12 +165,7 @@ export function NotesScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>
-          NOTAS
-        </Text>
-        <Text style={[styles.title, theme.isLight && lightStyles.title]}>
-          Ideas que no se escapan
-        </Text>
+        <SectionHeader eyebrow="NOTAS" title="Ideas que no se escapan" />
 
         <View style={styles.dateSelectorRow}>
           <Pressable
@@ -409,21 +406,11 @@ export function NotesScreen() {
         </ScrollView>
 
         {notes.length === 0 ? (
-          <View style={styles.empty}>
-            <Text
-              style={[
-                styles.emptyTitle,
-                theme.isLight && lightStyles.emptyTitle,
-              ]}
-            >
-              Todavía no hay notas
-            </Text>
-            <Text
-              style={[styles.emptyText, theme.isLight && lightStyles.emptyText]}
-            >
-              Puedes vincularlas a una actividad planificada o dejarlas libres.
-            </Text>
-          </View>
+          <EmptyState
+            icon="📝"
+            title="Todavía no hay notas"
+            message="Escribe arriba tu primera idea. Puedes vincularla a una actividad planificada o dejarla libre."
+          />
         ) : (
           notes.map(note => (
             <View
@@ -508,13 +495,6 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 40,
   },
-  eyebrow: {
-    color: '#A78BFA',
-    fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '800',
-  },
-  title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: -9 },
   dateSelectorRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
   dateSelector: {
     flex: 1,
@@ -608,7 +588,14 @@ const styles = StyleSheet.create({
   filterActive: { borderWidth: 1, borderColor: '#A78BFA' },
   filterText: { color: '#DDE0E8', fontSize: 13 },
   dot: { width: 7, height: 7, borderRadius: 4 },
-  note: { backgroundColor: '#181B25', borderRadius: 16, padding: 15, gap: 9 },
+  note: {
+    backgroundColor: '#181B25',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#262C3E',
+    padding: 15,
+    gap: 9,
+  },
   noteHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -640,15 +627,10 @@ const styles = StyleSheet.create({
   },
   editingText: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
   editingCancel: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
-  empty: { alignItems: 'center', paddingTop: 70 },
-  emptyTitle: { color: '#ECEEF3', fontSize: 16, fontWeight: '700' },
-  emptyText: { color: '#9298A9', textAlign: 'center', marginTop: 8 },
 });
 
 const lightStyles = StyleSheet.create({
   container: { backgroundColor: light.background },
-  eyebrow: { color: light.accent },
-  title: { color: light.text },
   dateSelector: {
     backgroundColor: light.surface,
     borderWidth: 1,
@@ -715,6 +697,4 @@ const lightStyles = StyleSheet.create({
   },
   linkedText: { color: light.accent },
   date: { color: light.muted },
-  emptyTitle: { color: light.text },
-  emptyText: { color: light.muted },
 });

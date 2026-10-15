@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Account } from '../../db/repositories/accounts';
 import { createExpenseCategory } from '../../db/repositories/expenseCategories';
@@ -12,6 +12,7 @@ import { HistoryList } from './components/HistoryList';
 import { AccountModal } from './components/AccountModal';
 import { TransferModal } from './components/TransferModal';
 import { EditExpenseModal } from './components/EditExpenseModal';
+import { SectionHeader } from '../../shared/components/SectionHeader';
 
 export function AccountingScreen() {
   const theme = useTheme();
@@ -57,23 +58,21 @@ export function AccountingScreen() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.heading}>
-          <View>
-            <Text style={styles.eyebrow}>CONTABILIDAD</Text>
-            <Text style={[styles.title, themed?.text]}>
-              Tu dinero, claro y simple
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => {
-              setEditingAccount(null);
-              setAccountModalVisible(true);
-            }}
-            style={styles.addAccount}
-          >
-            <Text style={styles.addAccountText}>+ Banco</Text>
-          </Pressable>
-        </View>
+        <SectionHeader
+          eyebrow="CONTABILIDAD"
+          title="Tu dinero, claro y simple"
+          action={
+            <Pressable
+              onPress={() => {
+                setEditingAccount(null);
+                setAccountModalVisible(true);
+              }}
+              style={styles.addAccount}
+            >
+              <Text style={styles.addAccountText}>+ Banco</Text>
+            </Pressable>
+          }
+        />
 
         <SummaryCard totals={totals} period={period} themed={themed} />
 
@@ -155,18 +154,6 @@ export function AccountingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
   content: { padding: 20, gap: 14, paddingBottom: 36 },
-  heading: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  eyebrow: {
-    color: '#A78BFA',
-    fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '800',
-  },
-  title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: 2 },
   addAccount: {
     borderRadius: 10,
     borderWidth: 1,

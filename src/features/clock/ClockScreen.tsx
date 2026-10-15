@@ -14,7 +14,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { DayRing } from './components/DayRing';
 import { CategoryLegend } from './components/CategoryLegend';
@@ -25,6 +25,8 @@ import { useTodayGoals } from '../goals/hooks/useTodayGoals';
 import { PlanManager } from './components/PlanManager';
 import { GoalComposer } from '../goals/components/GoalComposer';
 import { AppModal } from '../../shared/components/AppModal';
+import { SectionHeader } from '../../shared/components/SectionHeader';
+import { EmptyState } from '../../shared/components/EmptyState';
 import { RingSegment } from './utils/clockMath';
 import { addGoalProgress, deleteGoal } from '../../db/repositories/goals';
 import { MiniCalendar } from './components/MiniCalendar';
@@ -33,11 +35,15 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
 function useNow(intervalMs = 30_000) {
   const [now, setNow] = useState(() => new Date());
+  const isFocused = useIsFocused();
 
   useEffect(() => {
+    // Solo actualizar el reloj cuando la pestaña está visible.
+    if (!isFocused) return;
+    setNow(new Date());
     const timer = setInterval(() => setNow(new Date()), intervalMs);
     return () => clearInterval(timer);
-  }, [intervalMs]);
+  }, [intervalMs, isFocused]);
 
   return now;
 }
@@ -147,22 +153,18 @@ export function ClockScreen() {
   return (
     <SafeAreaView style={[styles.container, themed?.container]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.top}>
-          <View>
-            <Text style={styles.eyebrow}>HABITLOOK</Text>
-            <Text style={[styles.greeting, themed?.text]}>
-              Tu día, de un vistazo
-            </Text>
-          </View>
-          <View style={styles.topActions}>
+        <SectionHeader
+          eyebrow="HABITLOOK"
+          title="Tu día, de un vistazo"
+          action={
             <Pressable
               onPress={() => setPlanOpen(true)}
               style={[styles.planButton, themed?.border]}
             >
-              <Text style={styles.planText}>Planificar</Text>
+              <Text style={styles.planText}>+ Planificar</Text>
             </Pressable>
-          </View>
-        </View>
+          }
+        />
 
         <Pressable
           onPress={() => setCalendarOpen(open => !open)}
@@ -230,9 +232,13 @@ export function ClockScreen() {
         </View>
 
         {goals.length === 0 ? (
-          <Text style={[styles.empty, themed?.muted]}>
-            Crea una meta pequeña para empezar.
-          </Text>
+          <EmptyState
+            icon="🎯"
+            title="Sin metas todavía"
+            message="Crea una meta pequeña para empezar a construir tu racha día a día."
+            actionLabel="Crear mi primera meta"
+            onAction={() => setGoalOpen(true)}
+          />
         ) : (
           goals.map(goal => (
             <GoalProgressCard
@@ -339,19 +345,6 @@ export function ClockScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
   content: { padding: 18, paddingBottom: 38, gap: 14 },
-  top: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  topActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  eyebrow: {
-    color: '#A78BFA',
-    fontWeight: '800',
-    fontSize: 12,
-    letterSpacing: 2,
-  },
-  greeting: { color: '#F8F7FB', fontSize: 20, fontWeight: '700', marginTop: 2 },
   planButton: {
     borderRadius: 12,
     borderWidth: 1,
@@ -394,7 +387,6 @@ const styles = StyleSheet.create({
   sectionTitle: { color: '#C9B6E8', fontSize: 14, fontWeight: '700' },
   link: { color: '#A78BFA', fontWeight: '700' },
   loading: { color: '#FFFFFF', textAlign: 'center', marginTop: 40 },
-  empty: { color: '#9CA3AF' },
   hint: { color: '#74798A', fontSize: 12, marginTop: -8 },
   segmentColor: { height: 6, borderRadius: 3 },
   detailTime: {

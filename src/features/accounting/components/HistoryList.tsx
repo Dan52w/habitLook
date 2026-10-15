@@ -130,14 +130,20 @@ export function HistoryList({
               <Pressable
                 accessibilityLabel="Editar movimiento"
                 hitSlop={8}
-                onPress={() => onEditExpense(item)}
+                onPress={e => {
+                  e.stopPropagation();
+                  onEditExpense(item);
+                }}
               >
                 <Text style={styles.edit}>✎</Text>
               </Pressable>
               <Pressable
                 accessibilityLabel="Eliminar movimiento"
                 hitSlop={8}
-                onPress={() => handleDeleteExpense(item.id)}
+                onPress={e => {
+                  e.stopPropagation();
+                  handleDeleteExpense(item.id);
+                }}
               >
                 <Text style={styles.remove}>×</Text>
               </Pressable>

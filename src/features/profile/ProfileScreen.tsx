@@ -23,6 +23,7 @@ import { exportBackup, importBackupFromPicker } from '../../services/backup';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
 import { HabitLookLogo } from '../../shared/components/HabitLookLogo';
+import { SectionHeader } from '../../shared/components/SectionHeader';
 
 const SoonBadge = ({ isLight }: { isLight: boolean }) => (
   <View style={[styles.soon, isLight && lightStyles.soon]}>
@@ -233,12 +234,7 @@ export function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.eyebrow, theme.isLight && lightStyles.eyebrow]}>
-          PERFIL
-        </Text>
-        <Text style={[styles.title, theme.isLight && lightStyles.title]}>
-          Tu espacio, tus reglas
-        </Text>
+        <SectionHeader eyebrow="PERFIL" title="Tu espacio, tus reglas" />
 
         <View style={[styles.hero, theme.isLight && lightStyles.hero]}>
           <HabitLookLogo size={48} />
@@ -583,13 +579,6 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 40,
   },
-  eyebrow: {
-    color: '#A78BFA',
-    fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '800',
-  },
-  title: { color: '#F8F7FB', fontSize: 23, fontWeight: '700', marginTop: -8 },
   hero: {
     flexDirection: 'row',
     gap: 14,
@@ -694,8 +683,6 @@ const styles = StyleSheet.create({
 
 const lightStyles = StyleSheet.create({
   container: { backgroundColor: light.background },
-  eyebrow: { color: light.accent },
-  title: { color: light.text },
   hero: {
     backgroundColor: light.surface,
     borderWidth: 1,
