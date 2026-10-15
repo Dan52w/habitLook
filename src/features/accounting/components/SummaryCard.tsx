@@ -5,18 +5,20 @@ import { money } from '../utils/currency';
 type Props = {
   totals: { income: number; expense: number };
   period: 'week' | 'month';
+  periodLabel?: string;
   themed?: { card?: object; text?: object; muted?: object };
 };
 
-export function SummaryCard({ totals, period, themed }: Props) {
-  const periodLabel = period === 'week' ? 'esta semana' : 'este mes';
+export function SummaryCard({ totals, period, periodLabel, themed }: Props) {
+  const periodText =
+    periodLabel ?? (period === 'week' ? 'esta semana' : 'este mes');
   const balance = totals.income - totals.expense;
 
   return (
     <View style={[styles.summary, themed?.card]}>
       <View>
         <Text style={[styles.summaryLabel, themed?.muted]}>
-          Balance {periodLabel}
+          Balance · {periodText}
         </Text>
         <Text style={[styles.balance, themed?.text]}>{money(balance)}</Text>
       </View>

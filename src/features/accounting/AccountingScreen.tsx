@@ -24,6 +24,10 @@ export function AccountingScreen() {
     categories,
     period,
     setPeriod,
+    periodLabel,
+    isCurrentPeriod,
+    goPreviousPeriod,
+    goNextPeriod,
     recentRows,
     recentTransfers,
     totals,
@@ -74,7 +78,12 @@ export function AccountingScreen() {
           }
         />
 
-        <SummaryCard totals={totals} period={period} themed={themed} />
+        <SummaryCard
+          totals={totals}
+          period={period}
+          periodLabel={periodLabel}
+          themed={themed}
+        />
 
         <AccountList
           accounts={accounts}
@@ -107,6 +116,10 @@ export function AccountingScreen() {
           recentTransfers={recentTransfers}
           period={period}
           onPeriodChange={setPeriod}
+          periodLabel={periodLabel}
+          onPreviousPeriod={goPreviousPeriod}
+          onNextPeriod={goNextPeriod}
+          canGoNextPeriod={!isCurrentPeriod}
           onEditExpense={setEditingExpense}
           onRefresh={load}
         />

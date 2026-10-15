@@ -24,6 +24,7 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
 import { HabitLookLogo } from '../../shared/components/HabitLookLogo';
 import { SectionHeader } from '../../shared/components/SectionHeader';
+import { useNavigation } from '@react-navigation/native';
 
 const SoonBadge = ({ isLight }: { isLight: boolean }) => (
   <View style={[styles.soon, isLight && lightStyles.soon]}>
@@ -44,6 +45,7 @@ const REMINDER_OPTIONS: [string, string][] = [
 
 export function ProfileScreen() {
   const theme = useTheme();
+  const navigation = useNavigation();
   const { showAlert, showDialog } = useAppDialog();
   const [reminder, setReminder] = useState('15');
   const [notificationStatus, setNotificationStatus] = useState({
@@ -153,13 +155,7 @@ export function ProfileScreen() {
   };
 
   const openAiAssistant = () => {
-    showAlert({
-      title: 'Próximamente',
-      message:
-        'El asistente de IA de HabitLook está en camino: te ayudará a mejorar tus hábitos con sugerencias personalizadas, siempre con tu consentimiento explícito y sin enviar tus datos.',
-      type: 'info',
-      buttonText: 'Entendido',
-    });
+    (navigation as { navigate: (route: string) => void }).navigate('IA');
   };
 
   const exportData = async () => {    try {

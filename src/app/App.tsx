@@ -27,6 +27,7 @@ import {
   dark,
 } from '../shared/theme/ThemeProvider';
 import { DialogProvider } from '../shared/context/DialogContext';
+import { AccountingPeriodProvider } from '../features/accounting/context/PeriodContext';
 
 const customDarkTheme = {
   ...DarkTheme,
@@ -172,7 +173,9 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <DialogProvider>
-          <AppContent />
+          <AccountingPeriodProvider>
+            <AppContent />
+          </AccountingPeriodProvider>
         </DialogProvider>
       </ThemeProvider>
     </SafeAreaProvider>

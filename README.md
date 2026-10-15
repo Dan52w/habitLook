@@ -22,8 +22,13 @@ En el futuro integrará modelos de IA que ayuden a mejorar los hábitos de quien
 - Registro de **ingresos y gastos**, con categorías (8 precargadas: Comida, Transporte, Salud, Hogar, Ocio, Educación, Compras, Otros) y notas.
 - **Gastos divididos**: paga un gasto entre varias cuentas.
 - **Transferencias** entre cuentas con validación de saldo.
-- Resumen semanal/mensual, historial filtrable y edición de movimientos.
+- Resumen semanal/mensual **navegable** (puedes ver periodos anteriores), historial filtrable y edición de movimientos.
 - Las cuentas con movimientos no se eliminan: se **archivan** para no romper el historial.
+
+### ✨ Asistente IA
+- Pestaña destacada en la navegación con chat y **selector de contexto**: eliges qué compartir (plan de hoy, metas, notas, gastos del periodo visible) mensaje a mensaje.
+- Incluye comparación automática con el periodo anterior en los gastos.
+- Arquitectura lista para conectar un proveedor real (`AiProvider`); hoy responde "Próximamente". Paso a paso en [docs/conectar-ia.md](docs/conectar-ia.md).
 
 ### 📝 Notas
 - Notas rápidas con búsqueda y filtro por categoría.

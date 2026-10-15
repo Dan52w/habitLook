@@ -12,6 +12,10 @@ type Props = {
   recentTransfers: TransferRow[];
   period: 'week' | 'month';
   onPeriodChange: (p: 'week' | 'month') => void;
+  periodLabel: string;
+  onPreviousPeriod: () => void;
+  onNextPeriod: () => void;
+  canGoNextPeriod: boolean;
   onEditExpense: (row: ExpenseRow) => void;
   onRefresh: () => Promise<void>;
 };
@@ -21,6 +25,10 @@ export function HistoryList({
   recentTransfers,
   period,
   onPeriodChange,
+  periodLabel,
+  onPreviousPeriod,
+  onNextPeriod,
+  canGoNextPeriod,
   onEditExpense,
   onRefresh,
 }: Props) {
@@ -88,6 +96,39 @@ export function HistoryList({
             </Pressable>
           ))}
         </View>
+      </View>
+
+      <View style={styles.periodNav}>
+        <Pressable
+          onPress={onPreviousPeriod}
+          hitSlop={10}
+          accessibilityLabel="Periodo anterior"
+        >
+          <Text
+            style={[styles.periodArrow, theme.isLight && lightStyles.periodArrow]}
+          >
+            ‹
+          </Text>
+        </Pressable>
+        <Text style={[styles.periodLabel, theme.isLight && lightStyles.periodLabel]}>
+          {periodLabel}
+        </Text>
+        <Pressable
+          onPress={onNextPeriod}
+          hitSlop={10}
+          disabled={!canGoNextPeriod}
+          accessibilityLabel="Periodo siguiente"
+        >
+          <Text
+            style={[
+              styles.periodArrow,
+              theme.isLight && lightStyles.periodArrow,
+              !canGoNextPeriod && styles.periodArrowDisabled,
+            ]}
+          >
+            ›
+          </Text>
+        </Pressable>
       </View>
 
       {!hasItems ? (
@@ -204,6 +245,23 @@ const styles = StyleSheet.create({
   period: { borderRadius: 7, paddingHorizontal: 8, paddingVertical: 6 },
   periodActive: { backgroundColor: '#363B4F' },
   periodText: { color: '#D7D9E0', fontSize: 11 },
+  periodNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 14,
+    marginTop: -2,
+  },
+  periodArrow: { color: '#A78BFA', fontSize: 24, fontWeight: '800', lineHeight: 26 },
+  periodArrowDisabled: { opacity: 0.25 },
+  periodLabel: {
+    color: '#DDE0E8',
+    fontSize: 13,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+    minWidth: 110,
+    textAlign: 'center',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,6 +289,8 @@ const lightStyles = StyleSheet.create({
   periodActive: { backgroundColor: '#E2DCD2' },
   periodText: { color: light.muted },
   periodTextActive: { color: light.text, fontWeight: '700' },
+  periodArrow: { color: light.accent },
+  periodLabel: { color: light.textSecondary },
   row: {
     backgroundColor: light.surface,
     borderWidth: 1,

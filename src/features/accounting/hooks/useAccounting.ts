@@ -11,6 +11,7 @@ import {
 import { listExpensesWithDetails } from '../../../db/repositories/expenses';
 import { listTransfersWithDetails } from '../../../db/repositories/transfers';
 import { periodStart } from '../../../shared/utils/date';
+import { useAccountingPeriod } from '../context/PeriodContext';
 import { useFocusEffect } from '@react-navigation/native';
 
 export { periodStart };
@@ -43,7 +44,8 @@ export function useAccounting() {
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [rows, setRows] = useState<ExpenseRow[]>([]);
   const [transfers, setTransfers] = useState<TransferRow[]>([]);
-  const [period, setPeriod] = useState<'week' | 'month'>('month');
+  const periodCtx = useAccountingPeriod();
+  const { startDate, endDate } = periodCtx;
 
   const load = useCallback(async () => {
     const [
@@ -77,16 +79,15 @@ export function useAccounting() {
     }, [load]),
   );
 
-  const startDate = useMemo(() => periodStart(period), [period]);
-
   const recentRows = useMemo(
-    () => rows.filter(row => row.date >= startDate),
-    [rows, startDate],
+    () => rows.filter(row => row.date >= startDate && row.date <= endDate),
+    [rows, startDate, endDate],
   );
 
   const recentTransfers = useMemo(
-    () => transfers.filter(item => item.date >= startDate),
-    [transfers, startDate],
+    () =>
+      transfers.filter(item => item.date >= startDate && item.date <= endDate),
+    [transfers, startDate, endDate],
   );
 
   const totals = useMemo(() => {
@@ -109,8 +110,16 @@ export function useAccounting() {
     categories,
     rows,
     transfers,
-    period,
-    setPeriod,
+    period: periodCtx.period,
+    setPeriod: periodCtx.setPeriod,
+    periodOffset: periodCtx.periodOffset,
+    periodLabel: periodCtx.label,
+    isCurrentPeriod: periodCtx.isCurrent,
+    goPreviousPeriod: periodCtx.goPrevious,
+    goNextPeriod: periodCtx.goNext,
+    goCurrentPeriod: periodCtx.goCurrent,
+    startDate,
+    endDate,
     recentRows,
     recentTransfers,
     totals,
