@@ -8,7 +8,7 @@ import {
   createExpenseCategory,
   listExpenseCategories,
 } from '../src/db/repositories/expenseCategories';
-import { getGoalStreak } from '../src/db/repositories/goals';
+import { getGoalStreak, createGoal, listTodayGoals } from '../src/db/repositories/goals';
 import { updateExpense } from '../src/db/repositories/expenses';
 import {
   deleteTimeBlockOccurrence,
@@ -313,5 +313,47 @@ describe('bloques que cruzan medianoche', () => {
     );
     // day_of_week debe seguir siendo lunes (1), no martes (2)
     expect(updated?.params?.[3]).toBe(1);
+  });
+});
+
+describe('metas de un día', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('createGoal guarda target_date para metas de un día', async () => {
+    const db = fakeDb(() => ({}));
+    await createGoal({
+      categoryId: 'c1',
+      title: 'Llamar al banco',
+      targetType: 'boolean',
+      targetValue: 1,
+      period: 'daily',
+      targetDate: '2026-10-16',
+    });
+    const insert = db.executed.find(e => e.sql.startsWith('INSERT INTO goals'));
+    expect(insert).toBeDefined();
+    expect(insert!.sql).toContain('target_date');
+    expect(insert!.params?.[6]).toBe('2026-10-16');
+  });
+
+  it('createGoal guarda NULL cuando es repetitiva', async () => {
+    const db = fakeDb(() => ({}));
+    await createGoal({
+      categoryId: 'c1',
+      title: 'Leer',
+      targetType: 'count',
+      targetValue: 5,
+      period: 'weekly',
+    });
+    const insert = db.executed.find(e => e.sql.startsWith('INSERT INTO goals'));
+    expect(insert!.params?.[6]).toBeNull();
+  });
+
+  it('listTodayGoals filtra metas de un día por su fecha', async () => {
+    const db = fakeDb(() => ({ rows: [] }));
+    await listTodayGoals('2026-10-16');
+    const select = db.executed.find(e => e.sql.includes('FROM goals g'));
+    expect(select).toBeDefined();
+    expect(select!.sql).toContain('g.target_date IS NULL OR g.target_date = ?');
+    expect(select!.params).toContain('2026-10-16');
   });
 });

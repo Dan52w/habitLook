@@ -193,4 +193,11 @@ export const MIGRATIONS = [
       `INSERT INTO expense_categories (id, name, color, icon) SELECT 'seed-cat-otros', 'Otros', '#9AA0B0', '📦' WHERE NOT EXISTS (SELECT 1 FROM expense_categories WHERE id = 'seed-cat-otros');`,
     ],
   },
+  {
+    // Metas de un día: target_date con la fecha YYYY-MM-DD ancla la meta a
+    // ese día (solo se muestra entonces). NULL = meta repetitiva
+    // (diaria/semanal según `period`).
+    name: '010_goal_target_date',
+    statements: [`ALTER TABLE goals ADD COLUMN target_date TEXT;`],
+  },
 ];

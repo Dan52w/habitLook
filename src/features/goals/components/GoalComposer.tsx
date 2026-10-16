@@ -4,6 +4,9 @@ import { AppModal } from '../../../shared/components/AppModal';
 import { Category, listCategories } from '../../../db/repositories/categories';
 import { createGoal } from '../../../db/repositories/goals';
 import { light, useTheme } from '../../../shared/theme/ThemeProvider';
+import { localDateKey } from '../../../shared/utils/date';
+
+type Frequency = 'daily' | 'weekly' | 'once';
 
 type Props = {
   visible: boolean;
@@ -19,7 +22,7 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
   const [type, setType] = useState<'duration' | 'count' | 'boolean'>(
     'duration',
   );
-  const [period, setPeriod] = useState<'daily' | 'weekly'>('daily');
+  const [frequency, setFrequency] = useState<Frequency>('daily');
   const [target, setTarget] = useState('30');
 
   useEffect(() => {
@@ -46,7 +49,9 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
       title: title.trim(),
       targetType: type,
       targetValue,
-      period,
+      // 'once' se guarda como diaria anclada a hoy (ver target_date).
+      period: frequency === 'once' ? 'daily' : frequency,
+      targetDate: frequency === 'once' ? localDateKey() : null,
     });
     setTitle('');
     onSaved();
@@ -144,16 +149,17 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
           [
             ['daily', 'Cada día'],
             ['weekly', 'Cada semana'],
+            ['once', 'Solo un día'],
           ] as const
         ).map(([value, label]) => (
           <Pressable
             key={value}
-            onPress={() => setPeriod(value)}
+            onPress={() => setFrequency(value)}
             style={[
               styles.chip,
               theme.isLight && lightStyles.chip,
-              period === value && styles.chipActive,
-              theme.isLight && period === value && lightStyles.chipActive,
+              frequency === value && styles.chipActive,
+              theme.isLight && frequency === value && lightStyles.chipActive,
             ]}
           >
             <Text

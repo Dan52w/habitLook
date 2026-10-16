@@ -9,9 +9,20 @@ export type GoalWithProgress = {
   target_type: 'duration' | 'count' | 'boolean';
   target_value: number;
   period: 'daily' | 'weekly';
+  /**
+   * Fecha YYYY-MM-DD solo para metas de un día: la meta solo se muestra
+   * ese día. NULL = meta repetitiva (diaria/semanal según `period`).
+   * (Se guarda `period: 'daily'` porque el cálculo de progreso es el mismo.)
+   */
+  target_date: string | null;
   progress_value: number;
   completed: number;
 };
+
+/** true si la meta es de un único día (no repetitiva). */
+export function isOneTimeGoal(goal: { target_date: string | null }): boolean {
+  return goal.target_date != null;
+}
 
 function startOfWeek(dateStr: string): string {
   const d = dateFromKey(dateStr);
@@ -29,8 +40,9 @@ export async function listTodayGoals(
 
   // metas 'daily' -> progreso = el valor de hoy
   // metas 'weekly' -> progreso = suma de la semana en curso
+  // metas de un día (target_date) -> como 'daily', pero solo visibles su día
   const result = await db.execute(
-    `SELECT g.id, g.title, g.target_type, g.target_value, g.period,
+    `SELECT g.id, g.title, g.target_type, g.target_value, g.period, g.target_date,
             CASE
               WHEN g.period = 'daily' THEN COALESCE(
                 (SELECT value FROM goal_progress WHERE goal_id = g.id AND date = ?), 0)
@@ -42,8 +54,9 @@ export async function listTodayGoals(
             ELSE COALESCE((SELECT completed FROM goal_progress WHERE goal_id = g.id AND date = ?), 0)
             END as completed
      FROM goals g
+     WHERE g.target_date IS NULL OR g.target_date = ?
      ORDER BY g.title ASC`,
-    [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate],
+    [todayDate, weekStart, todayDate, weekStart, todayDate, todayDate, todayDate],
   );
   return (result.rows ?? []) as GoalWithProgress[];
 }
@@ -54,10 +67,12 @@ export async function createGoal(input: {
   targetType: GoalWithProgress['target_type'];
   targetValue: number;
   period: GoalWithProgress['period'];
+  /** Fecha YYYY-MM-DD para metas de un día; omitir/null = repetitiva. */
+  targetDate?: string | null;
 }): Promise<void> {
   const db = await getDb();
   await db.execute(
-    'INSERT INTO goals (id, category_id, title, target_type, target_value, period) VALUES (?, ?, ?, ?, ?, ?)',
+    'INSERT INTO goals (id, category_id, title, target_type, target_value, period, target_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [
       uuidv4(),
       input.categoryId,
@@ -65,6 +80,7 @@ export async function createGoal(input: {
       input.targetType,
       input.targetValue,
       input.period,
+      input.targetDate ?? null,
     ],
   );
 }
