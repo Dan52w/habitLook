@@ -10,8 +10,8 @@
     "start": "react-native start",
     "test": "jest",
     "typecheck": "tsc --noEmit",
-    "ai:key": "node scripts/inject-ai-key.js",
-    "postinstall": "node scripts/inject-ai-key.js --ensure"
+    "backend:secrets": "node scripts/inject-backend.js",
+    "postinstall": "node scripts/inject-backend.js --ensure"
   },
   "dependencies": {
     "@notifee/react-native": "^9.1.8",

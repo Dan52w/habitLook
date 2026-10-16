@@ -1,11 +1,11 @@
 import { getSetting } from '../../db/repositories/settings';
 import type { AiChatResult, AiMessage, AiProvider } from './types';
 import { StubProvider } from './providers/stub';
-import { GroqProvider } from './providers/groq';
+import { BackendProvider } from './providers/backend';
 
 const PROVIDERS: AiProvider[] = [
   new StubProvider(),
-  new GroqProvider(),
+  new BackendProvider(),
   // Para agregar otro proveedor, implementa AiProvider y añádelo aquí.
 ];
 
@@ -17,9 +17,9 @@ export async function getAiProvider(): Promise<AiProvider> {
   const wanted = await getSetting('ai_provider').catch(() => null);
   const found = PROVIDERS.find(p => p.id === wanted);
   if (found) return found;
-  // Sin selección explícita: usa Groq si ya hay una API key guardada.
-  const groq = PROVIDERS.find(p => p.id === 'groq');
-  if (groq && (await groq.isConfigured().catch(() => false))) return groq;
+  // Sin selección explícita: usa el backend si trae secreto embebido.
+  const backend = PROVIDERS.find(p => p.id === 'backend');
+  if (backend && (await backend.isConfigured().catch(() => false))) return backend;
   return PROVIDERS[0];
 }
 

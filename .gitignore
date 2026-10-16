@@ -89,4 +89,4 @@ node_modules/
 
 # API keys (nunca subir al repo)
 .env
-src/services/ai/embeddedKey.ts
+src/services/ai/embeddedSecrets.ts

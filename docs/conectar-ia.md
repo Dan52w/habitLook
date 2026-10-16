@@ -1,108 +1,109 @@
-# IA de HabitLook — Groq (gratis)
+# IA de HabitLook — vía backend propio
 
-El asistente usa **Groq** (`src/services/ai/providers/groq.ts`) y viene
-listo para usuarios normales: **no tienen que configurar nada**.
+La app **nunca** habla con Groq directamente y **nunca** ve la API key.
+El flujo es:
 
-## ¿Es gratis?
-
-**Sí.** Groq tiene plan gratuito sin pedir tarjeta. El tramo gratuito
-tiene límites por modelo (peticiones por minuto y tokens por día); si
-se superan, la app muestra un mensaje amable pidiendo esperar. Revisa
-los límites en https://console.groq.com/settings/limits.
-
-Modelo usado: `openai/gpt-oss-120b` (vigente en el tramo gratuito,
-verificado oct-2026). **Ojo:** Groq retira modelos cada cierto tiempo
-(ya retiró `llama-3.3-70b-versatile`); si la IA deja de responder con
-"no está disponible", revisa el catálogo en
-https://console.groq.com/docs/models y actualiza `MODEL` en `groq.ts`.
-
-## Cómo compilar la app con IA activada (desarrollador)
-
-La API key se **embebe al compilar** desde tu máquina (nunca se sube
-al repo):
-
-```powershell
-# Una sola vez: genera src/services/ai/embeddedKey.ts (ignorado por git)
-$env:GROQ_API_KEY="gsk-tu-key"
-pnpm ai:key
-
-# O interactivo:
-pnpm ai:key
+```
+Teléfono (app) ──POST /api/chat──▶ habitlook-backend (Render)
+   x-app-key: secreto embebido         │
+                                       ▼
+                              api.groq.com (GROQ_API_KEY en Render)
 ```
 
-Luego compila normal: `pnpm android`. La app resultante ya trae la IA
-funcionando, sin que el usuario pegue ninguna key.
+La app arma el prompt completo (system + contexto que el usuario
+eligió + historial) y lo envía al backend; el backend valida,
+autentica, limita por IP y reenvía a Groq.
 
-- Tu key: https://console.groq.com/keys (gratis, sin tarjeta).
-- El archivo generado está en `.gitignore`; el repo solo lleva la
-  plantilla `embeddedKey.ts.example`.
-- `postinstall` genera el archivo vacío si falta, para no romper `tsc`.
-- Si compilas **sin** key embebida, la pestaña IA muestra una tarjeta
-  para pegarla manualmente (se guarda en el Keychain del teléfono).
+## Repositorio del backend
 
-### Rotar la key
+**`Dan52w/habitlook-backend`** (privado) — Express + TypeScript.
 
-Si sospechas abuso (la key embebida puede extraerse del APK con
-ingeniería inversa): genera una nueva en console.groq.com/keys,
-revoca la vieja, corre `pnpm ai:key` de nuevo y recompila.
+## Desplegar en Render (una sola vez)
+
+1. Crea el repo `habitlook-backend` en GitHub y sube el código
+   (está en `~/workspace/habitlook-backend`).
+2. En Render: **New → Blueprint**, conecta el repo (usa `render.yaml`).
+3. En el dashboard del servicio → **Environment**, define:
+   - `GROQ_API_KEY`: tu key de https://console.groq.com/keys
+     (gratis, sin tarjeta).
+   - `APP_API_KEY`: secreto compartido app → backend. Genera uno:
+     `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+4. Deploy. Anota la URL, p. ej. `https://habitlook-backend.onrender.com`.
+
+El plan gratuito de Render basta. Nota: en el plan free el servicio
+se "duerme" tras inactividad y la primera petición tarda ~30-60 s en
+despertarlo (el timeout de la app es 60 s).
+
+## Compilar la app con IA activada
+
+```powershell
+# Una sola vez por máquina de build
+pnpm backend:secrets
+# Te pide: URL del backend y el APP_API_KEY (el mismo de Render)
+pnpm android
+```
+
+Esto genera `src/services/ai/embeddedSecrets.ts` (en `.gitignore`,
+nunca se sube al repo). La app resultante habla con tu backend sin
+pedir nada al usuario.
+
+Sin secretos embebidos, la IA queda inactiva (el chat muestra el
+proveedor "Próximamente").
+
+## Probar el backend
+
+```bash
+curl -X POST https://tu-backend.onrender.com/api/chat \
+  -H "Content-Type: application/json" \
+  -H "x-app-key: TU_APP_API_KEY" \
+  -d '{"messages":[{"role":"user","content":"hola"}]}'
+# → {"reply":"..."}
+```
 
 ## Seguridad
 
-- La key **nunca** va en el código, ni en la BD (`settings`), ni en
-  respaldos. En el dispositivo: Keychain del sistema (key manual) o
-  constante embebida en el build.
-- La key solo viaja en el header `Authorization`, por HTTPS. Nunca se
-  registra en logs ni aparece en mensajes de error.
-- Solo HTTPS (Android: `network_security_config.xml`;
-  iOS: `NSAllowsArbitraryLoads = false`). Timeout de 60 s.
-- El prompt delimita tus datos como `<datos_usuario>` no confiables:
-  el modelo no debe seguir instrucciones embebidas en notas o gastos.
-- Solo se envía lo que seleccionas en "Qué quieres compartir",
-  mensaje a mensaje. Nada en segundo plano.
-- Riesgo conocido: la key embebida **sí** puede extraerse del APK.
-  Mitigación: es el tramo gratuito (daño limitado) + rotación de key.
-  A futuro, un proxy propio eliminaría este riesgo.
+- `GROQ_API_KEY` solo existe como variable de entorno en Render.
+  Nunca en código, nunca en el repo, nunca en el teléfono.
+- `APP_API_KEY`: secreto compartido. Embebido en la app al compilar
+  (extraíble del APK con ingeniería inversa, como cualquier secreto
+  en cliente) + rate limit por IP en el backend (40 req / 15 min).
+  Si se abusa: rota el `APP_API_KEY` en Render y recompila; la key de
+  Groq sigue a salvo.
+- Validación de entrada: máx. 30 mensajes, 8000 caracteres por
+  mensaje, 30000 en total; JSON limitado a 100kb.
+- Comparación del `x-app-key` en tiempo constante.
+- Helmet: cabeceras HTTP seguras. `trust proxy` para IP real tras
+  el proxy de Render.
+- Los errores al cliente son genéricos y amables; nunca filtran la
+  key ni detalles internos.
+- En la app: solo HTTPS, timeout de 60 s, y el prompt delimita los
+  datos como `<datos_usuario>` no confiables (anti prompt-injection).
 
-## Arquitectura
-
-```
-┌──────────────┐     ┌──────────────┐     ┌───────────────┐
-│   AiScreen   │────▶│  service.ts  │────▶│ GroqProvider  │
-│ (chat + key  │     │  chatWithAi()│     │  (groq.ts)    │
-│  manual si   │     └──────────────┘     └───────────────┘
-│  no hay key  │            │                     │
-│  embebida)   │            ▼                     ▼
-└──────────────┘     getAiProvider()        getEffectiveApiKey()
-                     usa Groq si hay key ──▶ Keychain → embebida
-```
-
-**Archivos clave:**
+## Arquitectura en la app
 
 | Archivo | Rol |
 |---|---|
-| `src/features/ai/AiScreen.tsx` | Chat + tarjeta de key manual (solo sin key embebida) |
-| `src/services/ai/types.ts` | Contrato `AiProvider` |
-| `src/services/ai/service.ts` | Registro y `chatWithAi()`; Groq por defecto si hay key |
-| `src/services/ai/providers/groq.ts` | Llamadas a la API de Groq + `getEffectiveApiKey()` |
-| `src/services/ai/key.ts` | `getAiApiKey` / `setAiApiKey` / `clearAiApiKey` (Keychain) |
-| `src/services/ai/embeddedKey.ts` | Key embebida (generado, ignorado por git) |
-| `scripts/inject-ai-key.js` | Genera `embeddedKey.ts` (`pnpm ai:key`) |
+| `src/features/ai/AiScreen.tsx` | Chat + selector de contexto |
+| `src/services/ai/service.ts` | Registro; usa backend si hay secreto embebido |
+| `src/services/ai/providers/backend.ts` | `POST /api/chat` con `x-app-key` |
+| `src/services/ai/embeddedSecrets.ts` | URL + secreto (generado, ignorado por git) |
+| `scripts/inject-backend.js` | Genera `embeddedSecrets.ts` (`pnpm backend:secrets`) |
 | `src/services/ai/context.ts` | Construye el texto de cada contexto elegido |
 | `src/services/ai/prompts.ts` | System prompt + anti-inyección + historial |
 
-## Agregar otro proveedor
+## Modelo de IA
 
-1. Implementa `AiProvider` (`id`, `name`, `isConfigured()`, `chat()`).
-2. Regístralo en `PROVIDERS` en `service.ts`.
-3. Guarda su key con `setAiApiKey` (o crea otro servicio de Keychain
-   si necesitas varias keys).
+`openai/gpt-oss-120b` en Groq (tramo gratuito, verificado oct-2026),
+con `reasoning_effort: 'low'` y `max_tokens: 800`. **Ojo:** Groq
+retira modelos cada cierto tiempo (ya retiró
+`llama-3.3-70b-versatile`); si la IA deja de responder, revisa
+https://console.groq.com/docs/models y actualiza `MODEL` en el
+backend (`src/groq.ts`).
 
-## Costos y límites a tener en cuenta
+## Optimizaciones futuras
 
-- Los contextos se serializan a texto: con muchos gastos/notas el
-  prompt crece. `buildNotesBlock()` limita a 15 notas y 160
-  caracteres; haz lo mismo al agregar contextos.
-- `max_tokens: 800` + `reasoning_effort: 'low'` mantienen respuestas
-  cortas y dentro de la cuota (gpt-oss es modelo de razonamiento).
-- Todo el tráfico sale del teléfono solo cuando el usuario envía un
-  mensaje.
+- **Streaming (SSE)**: hoy la app espera la respuesta completa. Con
+  `stream: true` en Groq + Server-Sent Events, el usuario vería el
+  texto generarse en tiempo real. Requiere cambios en ambos lados.
+- **Caché de respuestas** para preguntas repetidas.
+- **Límites por dispositivo** (identificador anónimo) además de por IP.

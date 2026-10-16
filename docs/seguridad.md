@@ -33,38 +33,38 @@ sin servidores propios y sin tráfico de red (hasta que se conecte IA).
 4. **API key en `settings`**: el ejemplo de la guía la guardaba en texto
    plano en la BD. Ahora `src/services/ai/key.ts` usa Keychain.
 
-## IA con Groq (conectada el 2026-10-16)
+## IA vía backend propio (implementado el 2026-10-16)
 
-- [x] Proveedor `GroqProvider` (`openai/gpt-oss-120b`, tramo gratuito)
-- [x] Key embebida al compilar (`pnpm ai:key` → `embeddedKey.ts`,
-      ignorado por git, nunca se sube al repo); fallback a key manual
-      en Keychain si el build no trae embebida
-- [x] Mensajes de error amables para usuarios normales (sin jerga de
-      "cuota gratuita": 429/401/404/timeout → "inténtalo más tarde")
-- [x] La key nunca se registra en logs ni aparece en errores
-- [x] Solo HTTPS en ambas plataformas; timeout de 60 s
-- [x] `buildPrompt()` delimita los datos como `<datos_usuario>` no
-      confiables (anti prompt-injection)
-- [x] Nada se envía sin selección explícita del usuario, mensaje a mensaje
-- [ ] **Riesgo conocido**: la key embebida puede extraerse del APK con
-      ingeniería inversa. Mitigación actual: tramo gratuito (daño
-      limitado) + rotación en console.groq.com. A futuro: proxy propio.
-- [ ] **Vigilar**: Groq retira modelos (ya retiró
-      `llama-3.3-70b-versatile`); si la IA falla con "no disponible",
-      actualizar `MODEL` en `groq.ts`
+Arquitectura: app → `habitlook-backend` (Render) → Groq. La API key de
+Groq **nunca** sale del servidor ni llega al teléfono.
 
-## Lista para conectar IA
+- [x] Backend `Dan52w/habitlook-backend`: Express+TS, `POST /api/chat`,
+      `GET /health`, `render.yaml` para despliegue
+- [x] `GROQ_API_KEY` solo como variable de entorno en Render
+- [x] Auth app → backend: header `x-app-key` (comparación en tiempo
+      constante); secreto embebido en la app con `pnpm backend:secrets`
+      (archivo ignorado por git)
+- [x] Rate limit 40 req / 15 min por IP; validación de entrada
+      (30 mensajes, 8000 chars/mensaje, 30000 total, JSON 100kb)
+- [x] Helmet + `trust proxy`; errores genéricos sin filtrar nada
+- [x] App: `BackendProvider` (solo HTTPS, timeout 60 s); sin UI de
+      keys — funciona sin pedir nada al usuario
+- [x] Mensajes de error amables para usuarios normales
+- [x] Prompt anti-inyección (`<datos_usuario>` no confiable) y envío
+      solo de contexto seleccionado, mensaje a mensaje
+- [ ] **Riesgo conocido**: el `APP_KEY` embebido puede extraerse del
+      APK; el daño se limita con rate limit + rotación (la key de Groq
+      sigue a salvo). A futuro: límites por dispositivo.
+- [ ] **Vigilar**: Groq retira modelos; si la IA falla, actualizar
+      `MODEL` en el backend (`src/groq.ts`)
+- [ ] **Pendiente del usuario**: crear el repo `habitlook-backend` en
+      GitHub (el conector no tiene permiso), subir el código y
+      desplegar el Blueprint en Render con `GROQ_API_KEY` y `APP_API_KEY`
 
-- [x] Clave en Keychain (`getAiApiKey` / `setAiApiKey` / `clearAiApiKey`)
-- [x] Solo HTTPS en ambas plataformas
-- [x] `buildPrompt()` delimita los datos como `<datos_usuario>` no
-      confiables y ordena no seguir instrucciones embebidas en ellos
-      (notas/gastos podrían contener prompt-injection)
-- [x] Nada se envía sin selección explícita del usuario, mensaje a mensaje
-- [x] Ejemplo OpenAI con timeout (60 s) y validación de respuesta
-- [x] UI en la pestaña IA para pegar/quitar la key (Keychain)
-- [ ] **Pendiente**: al conectar, revisar que el proveedor no registre
-      los prompts (ej. en OpenAI, optar por no entrenamiento si aplica)
+## Lista para conectar IA (histórico: key directa en app, descartado)
+
+Se evaluó y descartó llamar a Groq directo desde la app: la key
+quedaba expuesta en el APK. La arquitectura con backend lo resuelve.
 
 ## Notas
 
