@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      La futura conexión con proveedores de IA debe usar exclusivamente HTTPS.
+      El tráfico en texto plano está prohibido en toda la app: ninguna API key
+      ni dato del usuario viajará sin cifrar.
+    -->
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

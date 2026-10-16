@@ -46,44 +46,57 @@ mensaje. Sin selección, el prompt lo dice claro.
 Crea `src/services/ai/providers/openai.ts`:
 
 ```ts
-import { getSetting } from '../../../db/repositories/settings';
+import { getAiApiKey } from '../key';
 import type { AiMessage, AiProvider } from '../types';
 
 const API_URL = 'https://api.openai.com/v1/chat/completions';
+const TIMEOUT_MS = 60_000;
 
 export class OpenAiProvider implements AiProvider {
   readonly id = 'openai';
   readonly name = 'OpenAI GPT';
 
   async isConfigured(): Promise<boolean> {
-    const key = await getSetting('ai_api_key').catch(() => null);
+    const key = await getAiApiKey();
     return Boolean(key);
   }
 
   async chat(messages: AiMessage[]): Promise<string> {
-    const key = await getSetting('ai_api_key');
-    if (!key) throw new Error('Falta ai_api_key');
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini', // o el modelo que prefieras
-        messages: messages.map(m => ({ role: m.role, content: m.content })),
-        max_tokens: 800,
-        temperature: 0.7,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`OpenAI ${res.status}: ${text.slice(0, 200)}`);
+    const key = await getAiApiKey();
+    if (!key) throw new Error('Falta la API key (guárdala con setAiApiKey)');
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini', // o el modelo que prefieras
+          messages: messages.map(m => ({ role: m.role, content: m.content })),
+          max_tokens: 800,
+          temperature: 0.7,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`OpenAI ${res.status}: ${text.slice(0, 200)}`);
+      }
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content;
+      if (!reply || typeof reply !== 'string')
+        throw new Error('Respuesta vacía del proveedor');
+      return reply;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError')
+        throw new Error('La IA tardó demasiado en responder (timeout)');
+      throw error;
+    } finally {
+      clearTimeout(timeout);
     }
-    const data = await res.json();
-    const reply = data.choices?.[0]?.message?.content;
-    if (!reply) throw new Error('Respuesta vacía del proveedor');
-    return reply;
   }
 }
 ```
@@ -106,24 +119,24 @@ const PROVIDERS: AiProvider[] = [
 
 ### 3. Guarda la API key
 
-Opción recomendada (misma técnica que la clave de la BD, ver
-`src/db/key.ts`): **Keychain** en vez de la tabla `settings`, para que
-la clave no quede en texto plano:
+Ya está implementado: usa `src/services/ai/key.ts`.
 
 ```ts
-import * as Keychain from 'react-native-keychain';
+import { setAiApiKey } from '../key';
 
-await Keychain.setGenericPassword('habitlook-ai', apiKey, {
-  service: 'com.akmonstudios.habitlook.aikey',
-  accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-});
+await setAiApiKey('sk-...'); // Keychain del sistema, cifrada por el SO
 ```
 
-Y en el proveedor, lee con `Keychain.getGenericPassword({ service })`
-en lugar de `getSetting('ai_api_key')`.
+La clave **nunca** va en la tabla `settings`: aunque la BD está cifrada
+con SQLCipher, las credenciales pertenecen al Keychain (control de
+acceso del dispositivo y no viajan en los respaldos JSON, que son
+texto plano). El proveedor la lee con `getAiApiKey()`.
 
-Opción simple para prototipar: `setSetting('ai_api_key', key)` desde una
-pantalla de ajustes (pendiente: agregar el campo en Perfil → Asistente IA).
+Opción simple solo para prototipar: `setSetting('ai_api_key', key)`.
+No la uses en producción.
+
+Pendiente en la UI: agregar el campo para pegar la key en
+Perfil → Asistente IA.
 
 ### 4. Actívalo
 
