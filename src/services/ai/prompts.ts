@@ -43,8 +43,13 @@ export function buildPrompt(
     '```\n\n' +
     'Reglas del bloque plan:\n' +
     '- Inclúyelo SOLO si el usuario pidió crear, armar o aplicar un plan.\n' +
+    '- Si el usuario acepta o confirma ("sí", "aplícalo", "dale") un plan ' +
+    'que propusiste antes, tu respuesta DEBE incluir el bloque ```plan ' +
+    'con las acciones acordadas (aunque ya lo hayas mostrado antes).\n' +
     '- En tu texto SIEMPRE pregunta "¿Quieres que lo aplique?" La app ' +
     'mostrará un botón y solo creará lo listado si el usuario acepta.\n' +
+    '- El bloque va AL FINAL de tu respuesta, en líneas separadas, así:\n' +
+    '  ```plan en su propia línea, luego el JSON, luego ``` en su propia línea.\n' +
     '- Máximo 12 acciones. Horas en 24h HH:MM, fin posterior a inicio.\n' +
     '- frequency: "once" (solo hoy), "daily" (cada día), "weekly" (cada semana).\n' +
     '- target_type: "count" (veces), "duration" (minutos), "boolean" (hacerlo o no).\n' +

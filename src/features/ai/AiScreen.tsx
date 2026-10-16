@@ -28,6 +28,7 @@ import {
   stripPlanBlock,
   applyPlan,
   describeAction,
+  findNewCategoryNames,
   type ParsedPlan,
 } from '../../services/ai/plan';
 import { listCategories } from '../../db/repositories/categories';
@@ -40,6 +41,7 @@ type ChatMsg = {
   plan?: ParsedPlan;
   planState?: 'pending' | 'applied' | 'dismissed' | 'error';
   planSummary?: string;
+  planNewCategories?: string[];
 };
 
 const SUGGESTIONS = [
@@ -100,6 +102,7 @@ export function AiScreen() {
       );
       const { reply } = await chatWithAi(prompt);
       const plan = extractPlanBlock(reply) ?? undefined;
+      const planNewCategories = plan ? await findNewCategoryNames(plan).catch(() => []) : undefined;
       setMessages(prev => [
         ...prev,
         {
@@ -108,6 +111,7 @@ export function AiScreen() {
           text: reply,
           plan,
           planState: plan ? 'pending' : undefined,
+          planNewCategories,
         },
       ]);
     } catch (error) {
@@ -300,7 +304,10 @@ export function AiScreen() {
                         <MarkdownText
                           text={stripPlanBlock(msg.text)}
                           color={theme.isLight ? '#2B2620' : '#EDE9F6'}
-                          style={styles.aiText}
+                          style={[
+                            styles.aiText,
+                            theme.isLight && lightStyles.aiText,
+                          ]}
                         />
                       </View>
                     </View>
@@ -319,6 +326,11 @@ export function AiScreen() {
                             {describeAction(action)}
                           </Text>
                         ))}
+                        {msg.planNewCategories && msg.planNewCategories.length > 0 ? (
+                          <Text style={[styles.planItem, theme.isLight && lightStyles.planItem]}>
+                            🆕 Se creará la categoría: {msg.planNewCategories.join(', ')}
+                          </Text>
+                        ) : null}
                         <View style={styles.planButtons}>
                           <Pressable
                             onPress={() => applyAiPlan(msg.id)}

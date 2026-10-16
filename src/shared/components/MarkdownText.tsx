@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, type TextStyle } from 'react-native';
+import { Text, type StyleProp, type TextStyle } from 'react-native';
 
 /**
  * Renderizador markdown mínimo para las burbujas del chat de IA.
@@ -87,7 +87,7 @@ function parseBlocks(text: string): Block[] {
 type Props = {
   text: string;
   color?: string;
-  style?: TextStyle;
+  style?: StyleProp<TextStyle>;
 };
 
 export function MarkdownText({ text, color = '#EDE9F6', style }: Props) {

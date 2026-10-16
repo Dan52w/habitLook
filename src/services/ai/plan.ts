@@ -42,11 +42,26 @@ const CATEGORY_COLORS = [
 
 /** Extrae y valida el bloque ```plan de una respuesta de la IA. */
 export function extractPlanBlock(text: string): ParsedPlan | null {
-  const m = /```plan\s*\n([\s\S]*?)\n```/.exec(text);
-  if (!m) return null;
+  // 1) Formato esperado: ```plan ... ```
+  const m = /```plan\s*([\s\S]*?)```/.exec(text);
+  if (m) {
+    const plan = tryParsePlanJson(m[1]);
+    if (plan) return plan;
+  }
+  // 2) Tolerancia: algunos modelos usan ```json en vez de ```plan.
+  //    Solo se acepta si el contenido valida como plan.
+  const jm = /```json\s*([\s\S]*?)```/.exec(text);
+  if (jm) {
+    const plan = tryParsePlanJson(jm[1]);
+    if (plan) return plan;
+  }
+  return null;
+}
+
+function tryParsePlanJson(candidate: string): ParsedPlan | null {
   let raw: unknown;
   try {
-    raw = JSON.parse(m[1]);
+    raw = JSON.parse(candidate.trim());
   } catch {
     return null;
   }
@@ -175,6 +190,25 @@ export async function applyPlan(plan: ParsedPlan, date: string): Promise<ApplyRe
     }
   }
   return result;
+}
+
+/** Nombres de categorías del plan que aún no existen (se crearían al aplicar). */
+export async function findNewCategoryNames(
+  plan: ParsedPlan,
+): Promise<string[]> {
+  const existing = await listCategories();
+  const known = new Set(existing.map(c => c.name.toLowerCase()));
+  const names = new Set<string>();
+  for (const action of plan.actions) {
+    const n =
+      action.type === 'time_block'
+        ? action.category
+        : action.type === 'goal'
+          ? (action.category ?? 'Metas')
+          : action.category;
+    if (n && !known.has(n.trim().toLowerCase())) names.add(n.trim());
+  }
+  return [...names];
 }
 
 /** Descripción corta de una acción para la tarjeta de confirmación. */

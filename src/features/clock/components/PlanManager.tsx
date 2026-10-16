@@ -143,14 +143,17 @@ function TimeField({
       <TextInput
         value={hour}
         onChangeText={val => {
+          // Solo estado local mientras escribe: el padre recibe el valor
+          // normalizado al completar 2 dígitos o al salir del campo.
           const digits = val.replace(/\D/g, '').slice(0, 2);
           setHour(digits);
-          onChange(`${digits.padStart(2, '0')}:${minute.padStart(2, '0')}`);
+          if (digits.length === 2) commit(digits, minute);
         }}
         onBlur={() => commit(hour, minute)}
         keyboardType="number-pad"
         maxLength={2}
         placeholder="00"
+        selectTextOnFocus
         placeholderTextColor={theme.isLight ? "#8A8474" : "#75798B"}
         style={[styles.timePart, theme.isLight && lightStyles.timePart]}
       />
@@ -160,12 +163,13 @@ function TimeField({
         onChangeText={val => {
           const digits = val.replace(/\D/g, '').slice(0, 2);
           setMinute(digits);
-          onChange(`${hour.padStart(2, '0')}:${digits.padStart(2, '0')}`);
+          if (digits.length === 2) commit(hour, digits);
         }}
         onBlur={() => commit(hour, minute)}
         keyboardType="number-pad"
         maxLength={2}
         placeholder="00"
+        selectTextOnFocus
         placeholderTextColor={theme.isLight ? "#8A8474" : "#75798B"}
         style={[styles.timePart, theme.isLight && lightStyles.timePart]}
       />

@@ -74,6 +74,34 @@ describe('extractPlanBlock', () => {
   });
 });
 
+describe('extractPlanBlock tolerante', () => {
+  const mini = (fence: string) =>
+    `Plan:\n${fence}\n{"actions":[{"type":"note","text":"Hola"}]}\n\`\`\``;
+
+  it('acepta bloque sin saltos de línea estrictos', () => {
+    const plan = extractPlanBlock(mini('```plan'));
+    expect(plan?.actions).toHaveLength(1);
+  });
+
+  it('acepta bloque en una sola línea', () => {
+    const plan = extractPlanBlock(
+      '```plan {"actions":[{"type":"note","text":"Hola"}]}```',
+    );
+    expect(plan?.actions).toHaveLength(1);
+  });
+
+  it('acepta ```json como alternativa si valida como plan', () => {
+    const plan = extractPlanBlock(mini('```json'));
+    expect(plan?.actions).toHaveLength(1);
+  });
+
+  it('ignora ```json que no es un plan', () => {
+    expect(
+      extractPlanBlock('Mira:\n```json\n{"foo": 1}\n```'),
+    ).toBeNull();
+  });
+});
+
 describe('stripPlanBlock', () => {
   it('quita el bloque plan del texto', () => {
     const stripped = stripPlanBlock(VALID);
