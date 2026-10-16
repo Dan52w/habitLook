@@ -30,28 +30,32 @@ export function buildPrompt(
       : '\n(El usuario no adjuntó ningún dato en este mensaje.)';
 
   const planHelp =
-    '\n\n## Crear planes, metas y notas\n' +
-    'Si el usuario te pide armarle un plan (del día, la semana, etc.), ' +
-    'primero proponlo en texto normal con markdown. Si además quieres ' +
-    'ofrecer aplicarlo, termina tu respuesta con UN bloque así:\n\n' +
+    '\n\n## Crear contenido: notas, metas, bloques y planes\n' +
+    'Cuando el usuario te pida CREAR algo (una nota, una meta, un bloque ' +
+    'de tiempo o un plan completo), primero responde en texto normal con ' +
+    'markdown y termina con UN bloque ```plan con las acciones en JSON:\n\n' +
     '```plan\n' +
-    '{"actions":[\n' +
+    '{"date":"2026-10-17","actions":[\n' +
     '  {"type":"time_block","category":"Trabajo","start":"09:00","end":"10:30"},\n' +
     '  {"type":"goal","title":"Leer 20 páginas","target_type":"count","target_value":20,"frequency":"once"},\n' +
     '  {"type":"note","text":"Llamar al banco antes del viernes","category":"Personal"}\n' +
     ']}\n' +
     '```\n\n' +
     'Reglas del bloque plan:\n' +
-    '- Inclúyelo SOLO si el usuario pidió crear, armar o aplicar un plan.\n' +
-    '- Si el usuario acepta o confirma ("sí", "aplícalo", "dale") un plan ' +
-    'que propusiste antes, tu respuesta DEBE incluir el bloque ```plan ' +
-    'con las acciones acordadas (aunque ya lo hayas mostrado antes).\n' +
+    '- Úsalo para CUALQUIER petición de crear: "ponme una nota de…", ' +
+    '"créame una meta de…", "hazme un plan…". No solo para planes grandes.\n' +
+    '- "date" (YYYY-MM-DD) es opcional. Si el usuario pide un día específico ' +
+    '("mañana", "el lunes", una fecha), CALCULA la fecha a partir de hoy y ' +
+    'ponla. Si no dice día, omite "date" y se aplica a hoy.\n' +
+    '- Si el usuario acepta o confirma ("sí", "aplícalo", "dale") algo que ' +
+    'propusiste antes, tu respuesta DEBE incluir el bloque ```plan con las ' +
+    'acciones acordadas (aunque ya lo hayas mostrado antes).\n' +
     '- En tu texto SIEMPRE pregunta "¿Quieres que lo aplique?" La app ' +
     'mostrará un botón y solo creará lo listado si el usuario acepta.\n' +
-    '- El bloque va AL FINAL de tu respuesta, en líneas separadas, así:\n' +
-    '  ```plan en su propia línea, luego el JSON, luego ``` en su propia línea.\n' +
+    '- El bloque va AL FINAL de tu respuesta, en líneas separadas: ' +
+    '```plan en su propia línea, luego el JSON, luego ``` en su propia línea.\n' +
     '- Máximo 12 acciones. Horas en 24h HH:MM, fin posterior a inicio.\n' +
-    '- frequency: "once" (solo hoy), "daily" (cada día), "weekly" (cada semana).\n' +
+    '- frequency: "once" (solo ese día), "daily" (cada día), "weekly" (cada semana).\n' +
     '- target_type: "count" (veces), "duration" (minutos), "boolean" (hacerlo o no).\n' +
     (opts?.categories?.length
       ? `- category: usa una de estas si encaja: ${opts.categories.join(', ')}. Si ninguna encaja, propón un nombre nuevo y corto.\n`

@@ -26,10 +26,15 @@ export type PlanAction =
     }
   | { type: 'note'; text: string; category?: string };
 
-export type ParsedPlan = { actions: PlanAction[] };
+export type ParsedPlan = {
+  actions: PlanAction[];
+  /** Fecha YYYY-MM-DD a la que aplica el plan (opcional; default: hoy). */
+  date?: string;
+};
 
 const MAX_ACTIONS = 12;
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
+const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const CATEGORY_COLORS = [
   '#F5B86B',
   '#58BDEB',
@@ -85,7 +90,7 @@ function cleanStr(value: unknown, max: number): string | null {
 
 function validatePlan(raw: unknown): ParsedPlan | null {
   if (!isRecord(raw)) return null;
-  const { actions } = raw;
+  const { actions, date } = raw;
   if (!Array.isArray(actions) || actions.length === 0 || actions.length > MAX_ACTIONS)
     return null;
   const out: PlanAction[] = [];
@@ -94,7 +99,25 @@ function validatePlan(raw: unknown): ParsedPlan | null {
     if (!parsed) return null; // fail-closed: todo o nada
     out.push(parsed);
   }
-  return { actions: out };
+  if (date !== undefined && !validPlanDate(date)) return null;
+  return { actions: out, date: typeof date === 'string' ? date : undefined };
+}
+
+/** Fecha real YYYY-MM-DD dentro de un rango sensato (±1 año atrás, 2 adelante). */
+function validPlanDate(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const m = DATE_RE.exec(value);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const dt = new Date(y, mo - 1, d);
+  if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d)
+    return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const diffDays = (dt.getTime() - today.getTime()) / 86400000;
+  return diffDays >= -365 && diffDays <= 730;
 }
 
 function validTime(t: string): boolean {
@@ -155,9 +178,14 @@ export type ApplyResult = { blocks: number; goals: number; notes: number };
 
 /**
  * Ejecuta el plan validado. Solo llamar tras confirmación explícita
- * del usuario (botón "Aplicar plan").
+ * del usuario (botón "Aplicar plan"). Si el plan no trae fecha, se usa
+ * `fallbackDate` (normalmente hoy).
  */
-export async function applyPlan(plan: ParsedPlan, date: string): Promise<ApplyResult> {
+export async function applyPlan(
+  plan: ParsedPlan,
+  fallbackDate: string,
+): Promise<ApplyResult> {
+  const date = plan.date ?? fallbackDate;
   const result: ApplyResult = { blocks: 0, goals: 0, notes: 0 };
   for (const action of plan.actions) {
     if (action.type === 'time_block') {
@@ -209,6 +237,20 @@ export async function findNewCategoryNames(
     if (n && !known.has(n.trim().toLowerCase())) names.add(n.trim());
   }
   return [...names];
+}
+
+/** Etiqueta legible de la fecha del plan: "hoy", "mañana" o "17 oct". */
+export function describePlanDate(
+  date: string | undefined,
+  today: string,
+): string {
+  if (!date || date === today) return 'hoy';
+  const [y, m, d] = date.split('-').map(Number);
+  const [ty, tm, td] = today.split('-').map(Number);
+  const dt = new Date(y, m - 1, d);
+  const tdt = new Date(ty, tm - 1, td);
+  if (dt.getTime() - tdt.getTime() === 86400000) return 'mañana';
+  return dt.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
 }
 
 /** Descripción corta de una acción para la tarjeta de confirmación. */

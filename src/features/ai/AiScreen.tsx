@@ -28,6 +28,7 @@ import {
   stripPlanBlock,
   applyPlan,
   describeAction,
+  describePlanDate,
   findNewCategoryNames,
   type ParsedPlan,
 } from '../../services/ai/plan';
@@ -316,7 +317,7 @@ export function AiScreen() {
                         style={[styles.planCard, theme.isLight && lightStyles.planCard]}
                       >
                         <Text style={[styles.planTitle, theme.isLight && lightStyles.planTitle]}>
-                          📋 Plan propuesto
+                          📋 Plan propuesto · {describePlanDate(msg.plan.date, localDateKey())}
                         </Text>
                         {msg.plan.actions.map((action, i) => (
                           <Text

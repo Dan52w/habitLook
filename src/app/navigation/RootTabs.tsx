@@ -108,9 +108,9 @@ export function RootTabs() {
           backgroundColor: theme.isLight ? light.surface : '#0F1119',
           borderTopWidth: 1,
           borderTopColor: theme.isLight ? light.border : '#1F2230',
-          height: 68,
+          height: 78,
           paddingTop: 10,
-          paddingBottom: 12,
+          paddingBottom: 20,
         },
       }}
     >

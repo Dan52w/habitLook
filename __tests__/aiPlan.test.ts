@@ -2,6 +2,7 @@ import {
   extractPlanBlock,
   stripPlanBlock,
   describeAction,
+  describePlanDate,
 } from '../src/services/ai/plan';
 
 // plan.ts importa repositorios que usan el módulo nativo de SQLite:
@@ -113,6 +114,55 @@ describe('stripPlanBlock', () => {
 
   it('deja intacto el texto sin bloque', () => {
     expect(stripPlanBlock('Hola')).toBe('Hola');
+  });
+});
+
+describe('describePlanDate', () => {
+  it('dice hoy si no hay fecha o es la de hoy', () => {
+    expect(describePlanDate(undefined, '2026-10-16')).toBe('hoy');
+    expect(describePlanDate('2026-10-16', '2026-10-16')).toBe('hoy');
+  });
+
+  it('dice mañana para el día siguiente', () => {
+    expect(describePlanDate('2026-10-17', '2026-10-16')).toBe('mañana');
+  });
+
+  it('muestra fecha corta para otros días', () => {
+    expect(describePlanDate('2026-10-20', '2026-10-16')).toContain('20');
+  });
+});
+
+describe('fecha del plan', () => {
+  const withDate = (date: string) =>
+    '```plan\n' +
+    JSON.stringify({
+      date,
+      actions: [{ type: 'note', text: 'Hola' }],
+    }) +
+    '\n```';
+
+  it('acepta fecha válida', () => {
+    const plan = extractPlanBlock(withDate('2026-10-17'));
+    expect(plan?.date).toBe('2026-10-17');
+  });
+
+  it('el plan sin fecha queda sin date', () => {
+    const plan = extractPlanBlock(
+      '```plan\n{"actions":[{"type":"note","text":"Hola"}]}\n```',
+    );
+    expect(plan?.date).toBeUndefined();
+  });
+
+  it('rechaza fecha con formato inválido', () => {
+    expect(extractPlanBlock(withDate('17-10-2026'))).toBeNull();
+  });
+
+  it('rechaza fecha inexistente', () => {
+    expect(extractPlanBlock(withDate('2026-02-30'))).toBeNull();
+  });
+
+  it('rechaza fecha muy lejana', () => {
+    expect(extractPlanBlock(withDate('2030-01-01'))).toBeNull();
   });
 });
 
