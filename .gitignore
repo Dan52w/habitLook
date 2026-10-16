@@ -86,3 +86,5 @@ keystore.properties
 
 # Node & Dependencies
 node_modules/
+
+.env
