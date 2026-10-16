@@ -14,7 +14,9 @@ import {
 } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getDb } from '../db/client';
+import { getSetting } from '../db/repositories/settings';
 import { RootTabs } from './navigation/RootTabs';
+import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import {
   ensureNotificationPermission,
   rescheduleActivityReminders,
@@ -51,7 +53,13 @@ const customLightTheme = {
   },
 };
 
-function AppContent() {
+function AppContent({
+  showOnboarding,
+  onOnboardingDone,
+}: {
+  showOnboarding: boolean;
+  onOnboardingDone: () => void;
+}) {
   const theme = useTheme();
 
   useEffect(() => {
@@ -67,6 +75,15 @@ function AppContent() {
     }
   }, [theme.isLight]);
 
+  if (showOnboarding) {
+    return (
+      <>
+        <StatusBar barStyle={theme.isLight ? 'dark-content' : 'light-content'} />
+        <OnboardingScreen onDone={onOnboardingDone} />
+      </>
+    );
+  }
+
   return (
     <>
       <StatusBar barStyle={theme.isLight ? 'dark-content' : 'light-content'} />
@@ -81,6 +98,7 @@ function AppContent() {
 
 export default function App() {
   const [ready, setReady] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [initializationError, setInitializationError] = useState(false);
   const [retry, setRetry] = useState(0);
 
@@ -95,6 +113,15 @@ export default function App() {
         setInitializationError(true);
         setReady(true);
         return;
+      }
+
+      // Onboarding de primera ejecución: se muestra una sola vez.
+      // Si la lectura falla, no se bloquea al usuario (fail closed).
+      try {
+        const done = await getSetting('onboarding_done');
+        setShowOnboarding(done !== '1');
+      } catch {
+        setShowOnboarding(false);
       }
 
       // Las notificaciones son "best effort": si fallan, la app sigue funcionando.
@@ -174,7 +201,10 @@ export default function App() {
       <ThemeProvider>
         <DialogProvider>
           <AccountingPeriodProvider>
-            <AppContent />
+            <AppContent
+              showOnboarding={showOnboarding}
+              onOnboardingDone={() => setShowOnboarding(false)}
+            />
           </AccountingPeriodProvider>
         </DialogProvider>
       </ThemeProvider>
