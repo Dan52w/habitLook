@@ -93,12 +93,17 @@ curl -X POST https://tu-backend.onrender.com/api/chat \
 
 ## Modelo de IA
 
-`openai/gpt-oss-120b` en Groq (tramo gratuito, verificado oct-2026),
-con `reasoning_effort: 'low'` y `max_tokens: 800`. **Ojo:** Groq
-retira modelos cada cierto tiempo (ya retiró
+`openai/gpt-oss-120b` por defecto en el backend (tramo gratuito,
+verificado oct-2026), con `reasoning_effort: 'low'` y
+`max_tokens: 800`. Se cambia **sin tocar código** con la variable
+`GROQ_MODEL` en Render. Para **más cuota diaria**, un modelo más
+pequeño suele tener límites más altos: `openai/gpt-oss-20b`.
+
+**Ojo:** Groq retira modelos cada cierto tiempo (ya retiró
 `llama-3.3-70b-versatile`); si la IA deja de responder, revisa
-https://console.groq.com/docs/models y actualiza `MODEL` en el
-backend (`src/groq.ts`).
+https://console.groq.com/docs/models y actualiza `GROQ_MODEL`.
+`meta-llama/llama-prompt-guard-2-86m` **no** es un modelo de chat
+(es un clasificador anti prompt-injection): no sirve como asistente.
 
 ## Optimizaciones futuras
 
