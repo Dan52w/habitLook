@@ -16,6 +16,7 @@ import { SectionHeader } from '../../shared/components/SectionHeader';
 import { useAccountingPeriod } from '../accounting/context/PeriodContext';
 import { chatWithAi, getAiProvider } from '../../services/ai/service';
 import { getAiApiKey, setAiApiKey, clearAiApiKey } from '../../services/ai/key';
+import { EMBEDDED_GROQ_API_KEY } from '../../services/ai/embeddedKey';
 import {
   buildContextBlocks,
   CONTEXT_OPTIONS,
@@ -39,7 +40,10 @@ export function AiScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [providerName, setProviderName] = useState('…');
-  const [configured, setConfigured] = useState<boolean | null>(null);
+  // Si la app se compiló con key embebida (pnpm ai:key), la IA funciona
+  // sin pedir nada al usuario.
+  const hasEmbeddedKey = EMBEDDED_GROQ_API_KEY.trim().length > 0;
+  const [keychainKey, setKeychainKey] = useState<boolean | null>(null);
   const [keyInput, setKeyInput] = useState('');
   const [savingKey, setSavingKey] = useState(false);
   const [selected, setSelected] = useState<Set<ContextId>>(
@@ -49,11 +53,11 @@ export function AiScreen() {
 
   const refreshProvider = async () => {
     try {
-      setConfigured(Boolean(await getAiApiKey()));
+      setKeychainKey(Boolean(await getAiApiKey()));
       const p = await getAiProvider();
       setProviderName(p.name);
     } catch {
-      setConfigured(false);
+      setKeychainKey(false);
       setProviderName('Próximamente');
     }
   };
@@ -163,15 +167,16 @@ export function AiScreen() {
             </Text>
           </View>
 
-          {configured === false ? (
+          {!hasEmbeddedKey && keychainKey === false ? (
             <View style={[styles.keyCard, theme.isLight && lightStyles.keyCard]}>
               <Text style={[styles.keyTitle, theme.isLight && lightStyles.keyTitle]}>
-                Conectar Groq (gratis)
+                Conectar la IA
               </Text>
               <Text style={[styles.keyHint, theme.isLight && lightStyles.keyHint]}>
-                Crea tu API key gratuita en console.groq.com/keys y pégala
-                aquí. Se guarda cifrada en el Keychain del teléfono y solo
-                viaja a la API de Groq por HTTPS cuando envías un mensaje.
+                Esta versión no trae IA integrada. Si tienes una API key de
+                Groq (gratis en console.groq.com/keys), pégala aquí: se
+                guarda cifrada en el Keychain del teléfono y solo viaja a
+                la API de Groq por HTTPS cuando envías un mensaje.
               </Text>
               <TextInput
                 value={keyInput}
@@ -196,7 +201,7 @@ export function AiScreen() {
                 </Text>
               </Pressable>
             </View>
-          ) : configured === true ? (
+          ) : keychainKey === true ? (
             <Pressable onPress={removeKey} style={styles.removeKey}>
               <Text style={[styles.removeKeyText, theme.isLight && lightStyles.removeKeyText]}>
                 Quitar API key de Groq

@@ -1,0 +1,11 @@
+// PLANTILLA — no editar este archivo directamente.
+//
+// Genera tu copia local (ignorada por git) con:
+//   pnpm ai:key
+// o:
+//   GROQ_API_KEY=gsk-... pnpm ai:key
+//
+// El archivo generado `embeddedKey.ts` lleva tu API key de Groq
+// embebida en la app compilada. Nunca se sube al repo.
+
+export const EMBEDDED_GROQ_API_KEY = '';

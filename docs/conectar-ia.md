@@ -1,71 +1,92 @@
 # IA de HabitLook — Groq (gratis)
 
-El asistente usa **Groq** (`src/services/ai/providers/groq.ts`).
+El asistente usa **Groq** (`src/services/ai/providers/groq.ts`) y viene
+listo para usuarios normales: **no tienen que configurar nada**.
 
 ## ¿Es gratis?
 
-**Sí.** Groq tiene plan gratuito sin pedir tarjeta: te registras en
-https://console.groq.com, creas una API key en
-https://console.groq.com/keys y listo. El plan gratuito tiene límites
-por modelo (peticiones por minuto y tokens por día); si los superas, la
-API responde 429 y la app te avisa que esperes. Revisa tus límites
-reales en https://console.groq.com/settings/limits (varían por modelo).
+**Sí.** Groq tiene plan gratuito sin pedir tarjeta. El tramo gratuito
+tiene límites por modelo (peticiones por minuto y tokens por día); si
+se superan, la app muestra un mensaje amable pidiendo esperar. Revisa
+los límites en https://console.groq.com/settings/limits.
 
-Modelo usado: `llama-3.3-70b-versatile` (rápido y capaz, dentro del
-tramo gratuito). La app maneja 401 (key inválida) y 429 (cuota
-alcanzada) con mensajes claros.
+Modelo usado: `openai/gpt-oss-120b` (vigente en el tramo gratuito,
+verificado oct-2026). **Ojo:** Groq retira modelos cada cierto tiempo
+(ya retiró `llama-3.3-70b-versatile`); si la IA deja de responder con
+"no está disponible", revisa el catálogo en
+https://console.groq.com/docs/models y actualiza `MODEL` en `groq.ts`.
 
-## Cómo conectarlo (2 minutos)
+## Cómo compilar la app con IA activada (desarrollador)
 
-1. Crea tu key gratuita en https://console.groq.com/keys
-   (empieza por `gsk_`).
-2. Abre la pestaña **IA** en la app → tarjeta **"Conectar Groq (gratis)"**.
-3. Pega la key y toca **Guardar key**.
+La API key se **embebe al compilar** desde tu máquina (nunca se sube
+al repo):
 
-Listo: el chat usa Groq automáticamente. La key se guarda cifrada en
-el Keychain del teléfono (iOS Keychain / Android Keystore) y nunca
-sale del dispositivo salvo a `https://api.groq.com` por HTTPS cuando
-envías un mensaje.
+```powershell
+# Una sola vez: genera src/services/ai/embeddedKey.ts (ignorado por git)
+$env:GROQ_API_KEY="gsk-tu-key"
+pnpm ai:key
 
-Para quitarla: **Quitar API key de Groq** en la misma pantalla.
+# O interactivo:
+pnpm ai:key
+```
+
+Luego compila normal: `pnpm android`. La app resultante ya trae la IA
+funcionando, sin que el usuario pegue ninguna key.
+
+- Tu key: https://console.groq.com/keys (gratis, sin tarjeta).
+- El archivo generado está en `.gitignore`; el repo solo lleva la
+  plantilla `embeddedKey.ts.example`.
+- `postinstall` genera el archivo vacío si falta, para no romper `tsc`.
+- Si compilas **sin** key embebida, la pestaña IA muestra una tarjeta
+  para pegarla manualmente (se guarda en el Keychain del teléfono).
+
+### Rotar la key
+
+Si sospechas abuso (la key embebida puede extraerse del APK con
+ingeniería inversa): genera una nueva en console.groq.com/keys,
+revoca la vieja, corre `pnpm ai:key` de nuevo y recompila.
 
 ## Seguridad
 
 - La key **nunca** va en el código, ni en la BD (`settings`), ni en
-  respaldos. Solo en el Keychain del sistema.
-- La key nunca se registra en logs; los errores solo muestran el
-  código de estado (401/429).
+  respaldos. En el dispositivo: Keychain del sistema (key manual) o
+  constante embebida en el build.
+- La key solo viaja en el header `Authorization`, por HTTPS. Nunca se
+  registra en logs ni aparece en mensajes de error.
 - Solo HTTPS (Android: `network_security_config.xml`;
-  iOS: `NSAllowsArbitraryLoads = false`).
-- Timeout de 60 s por petición.
+  iOS: `NSAllowsArbitraryLoads = false`). Timeout de 60 s.
 - El prompt delimita tus datos como `<datos_usuario>` no confiables:
   el modelo no debe seguir instrucciones embebidas en notas o gastos.
 - Solo se envía lo que seleccionas en "Qué quieres compartir",
   mensaje a mensaje. Nada en segundo plano.
+- Riesgo conocido: la key embebida **sí** puede extraerse del APK.
+  Mitigación: es el tramo gratuito (daño limitado) + rotación de key.
+  A futuro, un proxy propio eliminaría este riesgo.
 
 ## Arquitectura
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌───────────────┐
 │   AiScreen   │────▶│  service.ts  │────▶│ GroqProvider  │
-│ (chat + key) │     │  chatWithAi()│     │  (groq.ts)    │
-└──────────────┘     └──────────────┘     └───────────────┘
-        │                   │                     │
-        ▼                   ▼                     ▼
-  context.ts          getAiProvider()        key.ts (Keychain)
-  (plan, metas,  ──▶ usa Groq si hay key,
-   notas, gastos)     si no, stub
+│ (chat + key  │     │  chatWithAi()│     │  (groq.ts)    │
+│  manual si   │     └──────────────┘     └───────────────┘
+│  no hay key  │            │                     │
+│  embebida)   │            ▼                     ▼
+└──────────────┘     getAiProvider()        getEffectiveApiKey()
+                     usa Groq si hay key ──▶ Keychain → embebida
 ```
 
 **Archivos clave:**
 
 | Archivo | Rol |
 |---|---|
-| `src/features/ai/AiScreen.tsx` | Chat + tarjeta para pegar/quitar la key |
+| `src/features/ai/AiScreen.tsx` | Chat + tarjeta de key manual (solo sin key embebida) |
 | `src/services/ai/types.ts` | Contrato `AiProvider` |
 | `src/services/ai/service.ts` | Registro y `chatWithAi()`; Groq por defecto si hay key |
-| `src/services/ai/providers/groq.ts` | Llamadas a la API de Groq |
+| `src/services/ai/providers/groq.ts` | Llamadas a la API de Groq + `getEffectiveApiKey()` |
 | `src/services/ai/key.ts` | `getAiApiKey` / `setAiApiKey` / `clearAiApiKey` (Keychain) |
+| `src/services/ai/embeddedKey.ts` | Key embebida (generado, ignorado por git) |
+| `scripts/inject-ai-key.js` | Genera `embeddedKey.ts` (`pnpm ai:key`) |
 | `src/services/ai/context.ts` | Construye el texto de cada contexto elegido |
 | `src/services/ai/prompts.ts` | System prompt + anti-inyección + historial |
 
@@ -81,6 +102,7 @@ Para quitarla: **Quitar API key de Groq** en la misma pantalla.
 - Los contextos se serializan a texto: con muchos gastos/notas el
   prompt crece. `buildNotesBlock()` limita a 15 notas y 160
   caracteres; haz lo mismo al agregar contextos.
-- `max_tokens: 800` mantiene respuestas cortas y dentro de la cuota.
+- `max_tokens: 800` + `reasoning_effort: 'low'` mantienen respuestas
+  cortas y dentro de la cuota (gpt-oss es modelo de razonamiento).
 - Todo el tráfico sale del teléfono solo cuando el usuario envía un
   mensaje.

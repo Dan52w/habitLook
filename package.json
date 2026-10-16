@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ai:key": "node scripts/inject-ai-key.js",
+    "postinstall": "node scripts/inject-ai-key.js --ensure"
   },
   "dependencies": {
     "@notifee/react-native": "^9.1.8",

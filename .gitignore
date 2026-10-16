@@ -87,4 +87,6 @@ keystore.properties
 # Node & Dependencies
 node_modules/
 
+# API keys (nunca subir al repo)
 .env
+src/services/ai/embeddedKey.ts
