@@ -112,3 +112,21 @@ https://console.groq.com/docs/models y actualiza `GROQ_MODEL`.
   texto generarse en tiempo real. Requiere cambios en ambos lados.
 - **Caché de respuestas** para preguntas repetidas.
 - **Límites por dispositivo** (identificador anónimo) además de por IP.
+
+## Respuestas con formato
+
+Las respuestas de la IA se renderizan con un mini-markdown propio
+(`src/shared/components/MarkdownText.tsx`): **negritas**, *cursivas*,
+`código`, títulos y listas. Sin dependencias nuevas.
+
+## La IA puede crear planes, metas y notas
+
+Si el usuario pide un plan, la IA propone el texto y puede adjuntar un
+bloque ```plan con acciones JSON. La app lo valida estrictamente
+(`src/services/ai/plan.ts`: máximo 12 acciones, horas HH:MM válidas,
+tipos conocidos; si algo falla se rechaza todo) y muestra una tarjeta
+"📋 Plan propuesto" con botón **Aplicar plan**. Solo se crea algo si el
+usuario toca ese botón: nunca es automático. Acciones soportadas:
+`time_block` (bloque del día, no recurrente), `goal` (meta con
+frecuencia once/daily/weekly) y `note` (nota). Las categorías se
+resuelven por nombre o se crean.

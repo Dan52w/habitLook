@@ -22,8 +22,25 @@ import {
 } from '../../services/ai/context';
 import { buildPrompt } from '../../services/ai/prompts';
 import type { AiMessage } from '../../services/ai/types';
+import { MarkdownText } from '../../shared/components/MarkdownText';
+import {
+  extractPlanBlock,
+  stripPlanBlock,
+  applyPlan,
+  describeAction,
+  type ParsedPlan,
+} from '../../services/ai/plan';
+import { listCategories } from '../../db/repositories/categories';
+import { localDateKey } from '../../shared/utils/date';
 
-type ChatMsg = { id: string; role: 'user' | 'assistant'; text: string };
+type ChatMsg = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+  plan?: ParsedPlan;
+  planState?: 'pending' | 'applied' | 'dismissed' | 'error';
+  planSummary?: string;
+};
 
 const SUGGESTIONS = [
   '¿Cómo va mi semana?',
@@ -72,14 +89,26 @@ export function AiScreen() {
         endDate: period.endDate,
         label: period.label,
       });
+      const categories = await listCategories().catch(() => []);
       const prompt: AiMessage[] = buildPrompt(
         nextMessages.map(m => ({ role: m.role, content: m.text })),
         blocks,
+        {
+          today: localDateKey(),
+          categories: categories.map(c => c.name),
+        },
       );
       const { reply } = await chatWithAi(prompt);
+      const plan = extractPlanBlock(reply) ?? undefined;
       setMessages(prev => [
         ...prev,
-        { id: uuidv4(), role: 'assistant', text: reply },
+        {
+          id: uuidv4(),
+          role: 'assistant',
+          text: reply,
+          plan,
+          planState: plan ? 'pending' : undefined,
+        },
       ]);
     } catch (error) {
       console.warn('[IA] Error al chatear:', error);
@@ -98,12 +127,46 @@ export function AiScreen() {
 
   const selectedLabels = CONTEXT_OPTIONS.filter(o => selected.has(o.id));
 
+  const applyAiPlan = async (msgId: string) => {
+    const msg = messages.find(m => m.id === msgId);
+    if (!msg?.plan || msg.planState !== 'pending') return;
+    try {
+      const result = await applyPlan(msg.plan, localDateKey());
+      const parts: string[] = [];
+      if (result.blocks > 0) parts.push(`${result.blocks} bloque(s) del día`);
+      if (result.goals > 0) parts.push(`${result.goals} meta(s)`);
+      if (result.notes > 0) parts.push(`${result.notes} nota(s)`);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === msgId
+            ? { ...m, planState: 'applied' as const, planSummary: parts.join(', ') }
+            : m,
+        ),
+      );
+    } catch (error) {
+      console.warn('[IA] Error al aplicar el plan:', error);
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === msgId ? { ...m, planState: 'error' as const } : m,
+        ),
+      );
+    }
+  };
+
+  const dismissAiPlan = (msgId: string) => {
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === msgId ? { ...m, planState: 'dismissed' as const } : m,
+      ),
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, theme.isLight && lightStyles.container]}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={8}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 8 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.content}
@@ -225,23 +288,79 @@ export function AiScreen() {
                     </View>
                   </View>
                 ) : (
-                  <View key={msg.id} style={styles.aiRow}>
-                    <Text style={styles.aiAvatar}>✨</Text>
-                    <View
-                      style={[
-                        styles.aiBubble,
-                        theme.isLight && lightStyles.aiBubble,
-                      ]}
-                    >
-                      <Text
+                  <View key={msg.id}>
+                    <View style={styles.aiRow}>
+                      <Text style={styles.aiAvatar}>✨</Text>
+                      <View
                         style={[
-                          styles.aiText,
-                          theme.isLight && lightStyles.aiText,
+                          styles.aiBubble,
+                          theme.isLight && lightStyles.aiBubble,
                         ]}
                       >
-                        {msg.text}
-                      </Text>
+                        <MarkdownText
+                          text={stripPlanBlock(msg.text)}
+                          color={theme.isLight ? '#2B2620' : '#EDE9F6'}
+                          style={styles.aiText}
+                        />
+                      </View>
                     </View>
+                    {msg.plan && msg.planState === 'pending' ? (
+                      <View
+                        style={[styles.planCard, theme.isLight && lightStyles.planCard]}
+                      >
+                        <Text style={[styles.planTitle, theme.isLight && lightStyles.planTitle]}>
+                          📋 Plan propuesto
+                        </Text>
+                        {msg.plan.actions.map((action, i) => (
+                          <Text
+                            key={i}
+                            style={[styles.planItem, theme.isLight && lightStyles.planItem]}
+                          >
+                            {describeAction(action)}
+                          </Text>
+                        ))}
+                        <View style={styles.planButtons}>
+                          <Pressable
+                            onPress={() => applyAiPlan(msg.id)}
+                            style={styles.planApply}
+                          >
+                            <Text style={styles.planApplyText}>Aplicar plan</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => dismissAiPlan(msg.id)}
+                            style={[styles.planDismiss, theme.isLight && lightStyles.planDismiss]}
+                          >
+                            <Text style={[styles.planDismissText, theme.isLight && lightStyles.planDismissText]}>
+                              Descartar
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ) : null}
+                    {msg.plan && msg.planState === 'applied' ? (
+                      <View
+                        style={[styles.planCard, theme.isLight && lightStyles.planCard]}
+                      >
+                        <Text style={[styles.planTitle, theme.isLight && lightStyles.planTitle]}>
+                          ✅ Plan aplicado
+                        </Text>
+                        <Text style={[styles.planItem, theme.isLight && lightStyles.planItem]}>
+                          Se creó: {msg.planSummary}.
+                        </Text>
+                      </View>
+                    ) : null}
+                    {msg.plan && msg.planState === 'error' ? (
+                      <View
+                        style={[styles.planCard, theme.isLight && lightStyles.planCard]}
+                      >
+                        <Text style={[styles.planTitle, theme.isLight && lightStyles.planTitle]}>
+                          ⚠️ No se pudo aplicar
+                        </Text>
+                        <Text style={[styles.planItem, theme.isLight && lightStyles.planItem]}>
+                          Inténtalo de nuevo.
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 ),
               )}
@@ -396,6 +515,34 @@ const styles = StyleSheet.create({
   },
   aiText: { color: '#EDE9F6', fontSize: 14, lineHeight: 21 },
   typing: { color: '#8E94A5', fontSize: 14, fontStyle: 'italic' },
+  planCard: {
+    marginTop: 8,
+    marginLeft: 24,
+    backgroundColor: '#1B1F2E',
+    borderWidth: 1,
+    borderColor: '#4A3D6B',
+    borderRadius: 14,
+    padding: 12,
+    gap: 6,
+  },
+  planTitle: { color: '#D9C9F3', fontSize: 14, fontWeight: '800' },
+  planItem: { color: '#C9B6E8', fontSize: 13, lineHeight: 19 },
+  planButtons: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  planApply: {
+    backgroundColor: '#A78BFA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  planApplyText: { color: '#171421', fontSize: 14, fontWeight: '800' },
+  planDismiss: {
+    borderWidth: 1,
+    borderColor: '#3A3F52',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  planDismissText: { color: '#8E94A5', fontSize: 14, fontWeight: '700' },
   chips: { paddingHorizontal: 18, paddingVertical: 8, gap: 8 },
   chip: {
     backgroundColor: '#2A2140',
@@ -459,6 +606,11 @@ const lightStyles = StyleSheet.create({
   aiBubble: { backgroundColor: light.surface, borderColor: light.border },
   aiText: { color: light.text },
   typing: { color: light.muted },
+  planCard: { backgroundColor: '#F1EAFB', borderColor: '#C9B3E8' },
+  planTitle: { color: light.accent },
+  planItem: { color: '#5A5468' },
+  planDismiss: { borderColor: light.border },
+  planDismissText: { color: light.muted },
   chip: { backgroundColor: '#F1EAFB', borderColor: '#C9B3E8' },
   chipText: { color: light.accent },
   inputRow: { borderTopColor: light.border, backgroundColor: light.background },
