@@ -42,8 +42,7 @@ sin servidores propios y sin tráfico de red (hasta que se conecte IA).
       (notas/gastos podrían contener prompt-injection)
 - [x] Nada se envía sin selección explícita del usuario, mensaje a mensaje
 - [x] Ejemplo OpenAI con timeout (60 s) y validación de respuesta
-- [ ] **Pendiente UI**: campo en Perfil → Asistente IA para pegar la key
-      (usar `setAiApiKey`) y selector de proveedor (`ai_provider`)
+- [x] UI en la pestaña IA para pegar/quitar la key (Keychain)
 - [ ] **Pendiente**: al conectar, revisar que el proveedor no registre
       los prompts (ej. en OpenAI, optar por no entrenamiento si aplica)
 

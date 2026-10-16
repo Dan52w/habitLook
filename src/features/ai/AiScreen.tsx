@@ -15,6 +15,7 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 import { useAccountingPeriod } from '../accounting/context/PeriodContext';
 import { chatWithAi, getAiProvider } from '../../services/ai/service';
+import { getAiApiKey, setAiApiKey, clearAiApiKey } from '../../services/ai/key';
 import {
   buildContextBlocks,
   CONTEXT_OPTIONS,
@@ -38,16 +39,48 @@ export function AiScreen() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [providerName, setProviderName] = useState('…');
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [keyInput, setKeyInput] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
   const [selected, setSelected] = useState<Set<ContextId>>(
     () => new Set(['expenses'] as ContextId[]),
   );
   const scrollHandle = useRef<unknown>(null);
 
+  const refreshProvider = async () => {
+    try {
+      setConfigured(Boolean(await getAiApiKey()));
+      const p = await getAiProvider();
+      setProviderName(p.name);
+    } catch {
+      setConfigured(false);
+      setProviderName('Próximamente');
+    }
+  };
+
   useEffect(() => {
-    getAiProvider()
-      .then(p => setProviderName(p.name))
-      .catch(() => setProviderName('Próximamente'));
+    refreshProvider();
   }, []);
+
+  const saveKey = async () => {
+    const key = keyInput.trim();
+    if (!key || savingKey) return;
+    setSavingKey(true);
+    try {
+      await setAiApiKey(key);
+      setKeyInput('');
+      await refreshProvider();
+    } catch {
+      // Si falla el Keychain, se mantiene la tarjeta visible.
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
+  const removeKey = async () => {
+    await clearAiApiKey().catch(() => undefined);
+    await refreshProvider();
+  };
 
   const toggleContext = (id: ContextId) => {
     setSelected(prev => {
@@ -129,6 +162,47 @@ export function AiScreen() {
                 : `Conectado: ${providerName}`}
             </Text>
           </View>
+
+          {configured === false ? (
+            <View style={[styles.keyCard, theme.isLight && lightStyles.keyCard]}>
+              <Text style={[styles.keyTitle, theme.isLight && lightStyles.keyTitle]}>
+                Conectar Groq (gratis)
+              </Text>
+              <Text style={[styles.keyHint, theme.isLight && lightStyles.keyHint]}>
+                Crea tu API key gratuita en console.groq.com/keys y pégala
+                aquí. Se guarda cifrada en el Keychain del teléfono y solo
+                viaja a la API de Groq por HTTPS cuando envías un mensaje.
+              </Text>
+              <TextInput
+                value={keyInput}
+                onChangeText={setKeyInput}
+                placeholder="gsk_…"
+                placeholderTextColor={theme.isLight ? '#9AA0B4' : '#5C6172'}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={[styles.keyInput, theme.isLight && lightStyles.keyInput]}
+              />
+              <Pressable
+                onPress={saveKey}
+                disabled={!keyInput.trim() || savingKey}
+                style={[
+                  styles.keyButton,
+                  (!keyInput.trim() || savingKey) && styles.keyButtonDisabled,
+                ]}
+              >
+                <Text style={styles.keyButtonText}>
+                  {savingKey ? 'Guardando…' : 'Guardar key'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : configured === true ? (
+            <Pressable onPress={removeKey} style={styles.removeKey}>
+              <Text style={[styles.removeKeyText, theme.isLight && lightStyles.removeKeyText]}>
+                Quitar API key de Groq
+              </Text>
+            </Pressable>
+          ) : null}
 
           <Text style={[styles.section, theme.isLight && lightStyles.section]}>
             Qué quieres compartir
@@ -331,6 +405,37 @@ const styles = StyleSheet.create({
   },
   badgeIcon: { fontSize: 15 },
   badgeText: { color: '#CDB7F2', fontSize: 12, fontWeight: '700' },
+  keyCard: {
+    backgroundColor: '#211C33',
+    borderWidth: 1,
+    borderColor: '#4A3D6B',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 10,
+    gap: 8,
+  },
+  keyTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  keyHint: { color: '#A7ADBE', fontSize: 12, lineHeight: 17 },
+  keyInput: {
+    backgroundColor: '#151221',
+    borderWidth: 1,
+    borderColor: '#3A3357',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  keyButton: {
+    backgroundColor: '#7C5CFF',
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: 'center',
+  },
+  keyButtonDisabled: { opacity: 0.45 },
+  keyButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  removeKey: { marginTop: 6, alignSelf: 'flex-start' },
+  removeKeyText: { color: '#8E93A8', fontSize: 12, textDecorationLine: 'underline' },
   section: {
     color: '#C9B6E8',
     fontSize: 13,
@@ -445,6 +550,11 @@ const lightStyles = StyleSheet.create({
   container: { backgroundColor: light.background },
   badge: { backgroundColor: '#F1EAFB', borderColor: '#C9B3E8' },
   badgeText: { color: light.accent },
+  keyCard: { backgroundColor: '#F1EAFB', borderColor: '#C9B3E8' },
+  keyTitle: { color: light.text },
+  keyHint: { color: light.muted },
+  keyInput: { backgroundColor: '#FFFFFF', borderColor: '#D8CDEF', color: light.text },
+  removeKeyText: { color: light.muted },
   section: { color: light.accent },
   contextCard: { backgroundColor: light.surface, borderColor: light.border },
   contextCardActive: { borderColor: light.accent, backgroundColor: '#F1EAFB' },

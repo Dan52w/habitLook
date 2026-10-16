@@ -1,12 +1,12 @@
 import { getSetting } from '../../db/repositories/settings';
 import type { AiChatResult, AiMessage, AiProvider } from './types';
 import { StubProvider } from './providers/stub';
+import { GroqProvider } from './providers/groq';
 
 const PROVIDERS: AiProvider[] = [
   new StubProvider(),
-  // Para conectar una IA real, agrega aquí tu proveedor:
-  //   new OpenAiProvider(),
-  // y sigue el paso a paso en docs/conectar-ia.md
+  new GroqProvider(),
+  // Para agregar otro proveedor, implementa AiProvider y añádelo aquí.
 ];
 
 export function listAiProviders(): AiProvider[] {
@@ -16,7 +16,11 @@ export function listAiProviders(): AiProvider[] {
 export async function getAiProvider(): Promise<AiProvider> {
   const wanted = await getSetting('ai_provider').catch(() => null);
   const found = PROVIDERS.find(p => p.id === wanted);
-  return found ?? PROVIDERS[0];
+  if (found) return found;
+  // Sin selección explícita: usa Groq si ya hay una API key guardada.
+  const groq = PROVIDERS.find(p => p.id === 'groq');
+  if (groq && (await groq.isConfigured().catch(() => false))) return groq;
+  return PROVIDERS[0];
 }
 
 /**
