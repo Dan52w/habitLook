@@ -200,4 +200,28 @@ export const MIGRATIONS = [
     name: '010_goal_target_date',
     statements: [`ALTER TABLE goals ADD COLUMN target_date TEXT;`],
   },
+  {
+    // Chats del asistente IA: las conversaciones se guardan en el
+    // dispositivo para retomarlas después.
+    name: '011_ai_chats',
+    statements: [
+      `CREATE TABLE ai_chats (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );`,
+      `CREATE TABLE ai_messages (
+        id TEXT PRIMARY KEY,
+        chat_id TEXT NOT NULL REFERENCES ai_chats(id) ON DELETE CASCADE,
+        role TEXT NOT NULL CHECK (role IN ('user','assistant')),
+        text TEXT NOT NULL,
+        plan_json TEXT,
+        plan_state TEXT,
+        plan_summary TEXT,
+        created_at TEXT NOT NULL
+      );`,
+      `CREATE INDEX idx_ai_messages_chat ON ai_messages(chat_id, created_at);`,
+    ],
+  },
 ];

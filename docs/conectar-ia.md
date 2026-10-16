@@ -130,3 +130,15 @@ usuario toca ese botón: nunca es automático. Acciones soportadas:
 `time_block` (bloque del día, no recurrente), `goal` (meta con
 frecuencia once/daily/weekly) y `note` (nota). Las categorías se
 resuelven por nombre o se crean.
+
+## Conversaciones guardadas
+
+Los chats se persisten en SQLite (`ai_chats`, `ai_messages`, migración
+011) con el estado del plan (pendiente/aplicado/descartado). La lista de
+conversaciones permite retomar, crear nuevas y eliminar.
+
+## Rangos de contexto
+
+- **Plan**: Hoy, Semana o Mes (chips bajo las tarjetas de contexto).
+- **Gastos**: periodo actual o últimos 3 periodos (máximo, para no
+  sobrecargar a la IA).

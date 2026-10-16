@@ -24,6 +24,7 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
 import { HabitLookLogo } from '../../shared/components/HabitLookLogo';
 import { SectionHeader } from '../../shared/components/SectionHeader';
+import { TermsModal } from '../../shared/components/TermsModal';
 import { useNavigation } from '@react-navigation/native';
 
 const SoonBadge = ({ isLight }: { isLight: boolean }) => (
@@ -52,6 +53,7 @@ export function ProfileScreen() {
     notifications: false,
     exactAlarms: false,
   });
+  const [termsVisible, setTermsVisible] = useState(false);
 
   const refreshNotificationStatus = useCallback(() => {
     getReminderPermissionStatus()
@@ -328,6 +330,38 @@ export function ProfileScreen() {
             disponible más adelante.
           </Text>
         </View>
+
+        <View style={[styles.card, theme.isLight && lightStyles.card]}>
+          <Text
+            style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+          >
+            Términos y privacidad
+          </Text>
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            Qué hacemos con tus datos, cómo funciona la IA opcional y tus
+            derechos como usuario.
+          </Text>
+          <Pressable
+            onPress={() => setTermsVisible(true)}
+            style={[styles.aiButton, theme.isLight && lightStyles.aiButton]}
+          >
+            <Text
+              style={[
+                styles.aiButtonText,
+                theme.isLight && lightStyles.aiButtonText,
+              ]}
+            >
+              Leer términos
+            </Text>
+          </Pressable>
+        </View>
+
+        <TermsModal
+          visible={termsVisible}
+          onClose={() => setTermsVisible(false)}
+        />
 
         <Text style={[styles.section, theme.isLight && lightStyles.section]}>
           Ajustes

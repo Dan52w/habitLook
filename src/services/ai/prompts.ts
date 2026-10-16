@@ -55,6 +55,10 @@ export function buildPrompt(
     '- El bloque va AL FINAL de tu respuesta, en líneas separadas: ' +
     '```plan en su propia línea, luego el JSON, luego ``` en su propia línea.\n' +
     '- Máximo 12 acciones. Horas en 24h HH:MM, fin posterior a inicio.\n' +
+    '- En tu texto para el usuario NUNCA menciones los nombres técnicos ' +
+    'del bloque (target, target_value, target_type, frequency, time_block, ' +
+    'etc.): habla en lenguaje natural ("una meta de leer 10 páginas solo ' +
+    'por hoy").\n' +
     '- frequency: "once" (solo ese día), "daily" (cada día), "weekly" (cada semana).\n' +
     '- target_type: "count" (veces), "duration" (minutos), "boolean" (hacerlo o no).\n' +
     (opts?.categories?.length
