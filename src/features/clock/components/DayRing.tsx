@@ -15,6 +15,10 @@ type Props = {
   now: Date;
   size?: number;
   onSegmentPress?: (segment: RingSegment) => void;
+  /** Ángulo (0-360) de la hora actual sobre el anillo exterior; null si no aplica. */
+  nowAngle?: number | null;
+  /** Texto pequeño bajo la hora en el centro (actividad actual, etc.). */
+  centerSub?: string;
 };
 
 const DAY_LABELS = [
@@ -37,6 +41,8 @@ export function DayRing({
   now,
   size = 294,
   onSegmentPress,
+  nowAngle = null,
+  centerSub,
 }: Props) {
   const theme = useTheme();
   const cx = size / 2;
@@ -90,8 +96,46 @@ export function DayRing({
   const centerFill = theme.isLight ? '#FFFDF8' : '#121621';
   const centerBorder = theme.isLight ? '#DCD4C4' : '#4A536C';
   const timeTextColor = theme.isLight ? '#22201C' : '#F8F7FB';
+  const subTextColor = theme.isLight ? '#8C8272' : '#A9B0C3';
   const hourHandColor = theme.isLight ? '#22201C' : '#F5F2FC';
   const minuteHandColor = theme.isLight ? '#75549E' : '#C9B6E8';
+
+  // Segmento que contiene la hora actual (para el resplandor).
+  const activeSegment =
+    nowAngle != null
+      ? outerSegments.find(
+          s => nowAngle >= s.startAngle && nowAngle < s.endAngle,
+        ) ?? null
+      : null;
+
+  const nowDot =
+    nowAngle != null
+      ? polarToCartesian(cx, cy, dayRadius, nowAngle)
+      : null;
+
+  const drawGlow = (
+    segment: RingSegment | null,
+    radius: number,
+    width: number,
+  ) => {
+    if (!segment) return null;
+    const span = segment.endAngle - segment.startAngle;
+    const gap = Math.min(2.2, span * 0.16);
+    const start = segment.startAngle + gap;
+    const end = segment.endAngle - gap;
+    if (end <= start) return null;
+    return (
+      <Path
+        key="now-glow"
+        d={describeArc(cx, cy, radius, start, end)}
+        stroke={segment.color}
+        strokeWidth={width + 12}
+        strokeLinecap="round"
+        fill="none"
+        opacity={0.22}
+      />
+    );
+  };
 
   return (
     <View
@@ -119,6 +163,7 @@ export function DayRing({
           strokeWidth={14}
           fill="none"
         />
+        {drawGlow(activeSegment, dayRadius, 20)}
         {drawSegments(outerSegments, dayRadius, 20, 'outer')}
         {drawSegments(innerSegments, nightRadius, 14, 'inner')}
 
@@ -238,24 +283,56 @@ export function DayRing({
           );
         })()}
 
+        {nowDot ? (
+          <>
+            <Circle
+              cx={nowDot.x}
+              cy={nowDot.y}
+              r={10}
+              fill="#A78BFA"
+              opacity={0.35}
+            />
+            <Circle
+              cx={nowDot.x}
+              cy={nowDot.y}
+              r={4.5}
+              fill="#FFFFFF"
+              stroke="#A78BFA"
+              strokeWidth={2}
+            />
+          </>
+        ) : null}
+
         <Circle
           cx={cx}
           cy={cy}
-          r={38}
+          r={44}
           fill={centerFill}
           stroke={centerBorder}
           strokeWidth={1.5}
         />
         <SvgText
           x={cx}
-          y={cy + 5.5}
+          y={centerSub ? cy - 1 : cy + 6}
           fill={timeTextColor}
-          fontSize={16}
+          fontSize={17}
           fontWeight="800"
           textAnchor="middle"
         >
           {time}
         </SvgText>
+        {centerSub ? (
+          <SvgText
+            x={cx}
+            y={cy + 18}
+            fill={subTextColor}
+            fontSize={10.5}
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {centerSub.length > 20 ? centerSub.slice(0, 20) + '…' : centerSub}
+          </SvgText>
+        ) : null}
       </Svg>
     </View>
   );

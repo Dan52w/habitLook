@@ -63,6 +63,40 @@ const formatTimeMinutes = (minutes: number) => {
   return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
 };
 
+function DayNightPill({
+  icon,
+  label,
+  active,
+}: {
+  icon: string;
+  label: string;
+  active: boolean;
+}) {
+  const theme = useTheme();
+  const isLight = theme.isLight;
+  return (
+    <View
+      style={[
+        styles.keyPill,
+        isLight && lightStyles.keyPill,
+        active && styles.keyPillActive,
+        active && isLight && lightStyles.keyPillActive,
+      ]}
+    >
+      <Text
+        style={[
+          styles.keyPillText,
+          isLight && lightStyles.keyPillText,
+          active && styles.keyPillTextActive,
+          active && isLight && lightStyles.keyPillTextActive,
+        ]}
+      >
+        {icon} {label}
+      </Text>
+    </View>
+  );
+}
+
 export function ClockScreen() {
   const theme = useTheme();
   const now = useNow();
@@ -142,6 +176,33 @@ export function ClockScreen() {
   const isDay = currentHour >= 6 && currentHour < 18;
   const themed = theme.isLight ? lightStyles : undefined;
 
+  // Punto "estás aquí" + etiqueta del centro del reloj.
+  const viewingToday = selectedDate === currentTodayKey;
+  const nowMinutesRaw = now.getHours() * 60 + now.getMinutes();
+  let nowAngle: number | null = null;
+  let centerSub: string | undefined;
+  if (viewingToday) {
+    const windowStart = isDay ? 360 : 1080;
+    let m = nowMinutesRaw;
+    if (!isDay && m < 360) m += 1440;
+    nowAngle = ((m - windowStart) / 720) * 360;
+    const outerSegs = isDay ? segments : nightSegments;
+    const cur = outerSegs.find(s => m >= s.startMinutes && m < s.endMinutes);
+    if (cur) {
+      const name =
+        cur.categoryId === '__free__' ? 'Tiempo libre' : cur.categoryName;
+      centerSub = `${name} · ${formatTimeMinutes(cur.endMinutes)}`;
+    }
+  } else {
+    const planned = [...segments, ...nightSegments]
+      .filter(s => s.categoryId !== '__free__')
+      .reduce((acc, s) => acc + s.hours, 0);
+    centerSub =
+      planned > 0
+        ? `${planned % 1 ? planned.toFixed(1) : planned} h planificadas`
+        : 'Sin plan';
+  }
+
   if (initialLoading) {
     return (
       <SafeAreaView style={[styles.container, themed?.container]}>
@@ -196,16 +257,14 @@ export function ClockScreen() {
             nightSegments={nightSegments}
             now={now}
             onSegmentPress={setSelectedSegment}
+            nowAngle={nowAngle}
+            centerSub={centerSub}
           />
         </View>
 
         <View style={styles.ringKey}>
-          <Text style={styles.keyDay}>
-            Anillo grande · {isDay ? '06:00 — 17:59' : '18:00 — 05:59'}
-          </Text>
-          <Text style={styles.keyNight}>
-            Anillo interior · {!isDay ? '06:00 — 17:59' : '18:00 — 05:59'}
-          </Text>
+          <DayNightPill icon="☀️" label="Día · 6:00–18:00" active={isDay} />
+          <DayNightPill icon="🌙" label="Noche · 18:00–6:00" active={!isDay} />
         </View>
 
         <CategoryLegend items={legend} />
@@ -375,9 +434,23 @@ const styles = StyleSheet.create({
   },
   calendarIcon: { color: '#C9B6E8', fontSize: 23 },
   ringWrapper: { alignItems: 'center', marginTop: 2 },
-  ringKey: { alignItems: 'center', gap: 3, marginTop: -9 },
-  keyDay: { color: '#C8CBDA', fontSize: 11, fontWeight: '700' },
-  keyNight: { color: '#858B9D', fontSize: 11 },
+  ringKey: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: -4,
+  },
+  keyPill: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#2A2F42',
+    backgroundColor: '#12151F',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  keyPillActive: { borderColor: '#A78BFA', backgroundColor: '#1E1830' },
+  keyPillText: { color: '#858B9D', fontSize: 11, fontWeight: '700' },
+  keyPillTextActive: { color: '#D9C9F3' },
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -412,4 +485,8 @@ const lightStyles = StyleSheet.create({
   text: { color: light.text },
   muted: { color: light.muted },
   border: { borderColor: light.border },
+  keyPill: { backgroundColor: light.surface, borderColor: light.border },
+  keyPillActive: { borderColor: light.accent, backgroundColor: '#F1EAFB' },
+  keyPillText: { color: light.muted },
+  keyPillTextActive: { color: light.accent },
 });
