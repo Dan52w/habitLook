@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import Share from 'react-native-share';
 import { AppModal } from '../../../shared/components/AppModal';
 import { EmptyState } from '../../../shared/components/EmptyState';
 import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 import { useWeeklyStats } from '../hooks/useWeeklyStats';
 import { WeeklyGoalStat } from '../../../db/repositories/weeklyStats';
+import { ShareCard } from './ShareCard';
 
 type Props = { visible: boolean; onClose: () => void };
 
@@ -96,6 +99,8 @@ export function WeeklyStatsModal({ visible, onClose }: Props) {
   const theme = useTheme();
   const isLight = theme.isLight;
   const [weekOffset, setWeekOffset] = useState(0);
+  const [sharing, setSharing] = useState(false);
+  const cardRef = useRef<React.ComponentRef<typeof View>>(null);
   const stats = useWeeklyStats(weekOffset);
 
   useEffect(() => {
@@ -103,6 +108,31 @@ export function WeeklyStatsModal({ visible, onClose }: Props) {
   }, [visible]);
 
   const balancePositive = stats.expenses.balance >= 0;
+
+  const shareWeek = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const uri = await captureRef(cardRef, {
+        format: 'png',
+        quality: 0.9,
+      });
+      await Share.open({
+        url: uri,
+        type: 'image/png',
+        message: `Mi semana en HabitLook 📊 ${stats.label}`,
+        failOnCancel: false,
+      });
+    } catch (error) {
+      console.warn('No se pudo compartir:', error);
+      Alert.alert(
+        'No se pudo compartir',
+        'Inténtalo de nuevo en un momento.',
+      );
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <AppModal
@@ -233,6 +263,36 @@ export function WeeklyStatsModal({ visible, onClose }: Props) {
               </View>
             </View>
           )}
+
+          <View>
+            <Text style={[styles.sectionTitle, isLight && lightStyles.text]}>
+              Para compartir
+            </Text>
+            <View style={styles.previewWrap} collapsable={false} ref={cardRef}>
+              <ShareCard
+                data={{
+                  weekLabel: stats.label,
+                  completionPct: stats.completionPct,
+                  goalsCompleted: stats.goalsCompleted,
+                  goalsTotal: stats.goalsTotal,
+                  totalHours: stats.totalHours,
+                  bestDay: stats.bestDay,
+                  bestDayCount: stats.bestDayCount,
+                  balance: stats.expenses.balance,
+                  topCategories: stats.timeStats,
+                }}
+              />
+            </View>
+            <Pressable
+              style={[styles.shareButton, sharing && styles.shareDisabled]}
+              onPress={shareWeek}
+              disabled={sharing}
+            >
+              <Text style={styles.shareText}>
+                {sharing ? 'Preparando imagen…' : '📤 Compartir mi semana'}
+              </Text>
+            </Pressable>
+          </View>
         </>
       )}
     </AppModal>
@@ -308,6 +368,16 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   barFill: { height: 8, borderRadius: 4 },
+  previewWrap: { alignItems: 'center' },
+  shareButton: {
+    alignItems: 'center',
+    backgroundColor: '#A78BFA',
+    borderRadius: 13,
+    padding: 15,
+    marginTop: 10,
+  },
+  shareDisabled: { opacity: 0.6 },
+  shareText: { color: '#171421', fontWeight: '800', fontSize: 15 },
 });
 
 const lightStyles = StyleSheet.create({
