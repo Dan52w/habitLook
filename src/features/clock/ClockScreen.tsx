@@ -30,6 +30,7 @@ import { EmptyState } from '../../shared/components/EmptyState';
 import { RingSegment } from './utils/clockMath';
 import { addGoalProgress, deleteGoal } from '../../db/repositories/goals';
 import { MiniCalendar } from './components/MiniCalendar';
+import { WeeklyStatsModal } from '../stats/components/WeeklyStatsModal';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
@@ -129,6 +130,7 @@ export function ClockScreen() {
 
   const [planOpen, setPlanOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [selectedSegment, setSelectedSegment] = useState<RingSegment | null>(
     null,
   );
@@ -218,12 +220,20 @@ export function ClockScreen() {
           eyebrow="HABITLOOK"
           title="Tu día, de un vistazo"
           action={
-            <Pressable
-              onPress={() => setPlanOpen(true)}
-              style={[styles.planButton, themed?.border]}
-            >
-              <Text style={styles.planText}>+ Planificar</Text>
-            </Pressable>
+            <View style={styles.headerActions}>
+              <Pressable
+                onPress={() => setStatsOpen(true)}
+                style={[styles.planButton, themed?.border]}
+              >
+                <Text style={styles.planText}>📊 Stats</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setPlanOpen(true)}
+                style={[styles.planButton, themed?.border]}
+              >
+                <Text style={styles.planText}>+ Planificar</Text>
+              </Pressable>
+            </View>
           }
         />
 
@@ -355,6 +365,11 @@ export function ClockScreen() {
         onSaved={reloadGoals}
       />
 
+      <WeeklyStatsModal
+        visible={statsOpen}
+        onClose={() => setStatsOpen(false)}
+      />
+
       <AppModal
         visible={Boolean(selectedSegment)}
         title={selectedSegment?.categoryName ?? ''}
@@ -404,6 +419,7 @@ export function ClockScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B0D14' },
   content: { padding: 18, paddingBottom: 38, gap: 14 },
+  headerActions: { flexDirection: 'row', gap: 8 },
   planButton: {
     borderRadius: 12,
     borderWidth: 1,
