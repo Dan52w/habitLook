@@ -33,6 +33,7 @@ import {
   describeAction,
   describePlanDate,
   findNewCategoryNames,
+  CREATION_INTENT_RE,
   type ParsedPlan,
 } from '../../services/ai/plan';
 import { listCategories } from '../../db/repositories/categories';
@@ -368,7 +369,25 @@ export function AiScreen() {
         { today: localDateKey(), categories: categories.map(c => c.name) },
       );
       const { reply } = await chatWithAi(prompt);
-      const plan = extractPlanBlock(reply) ?? undefined;
+      let plan = extractPlanBlock(reply) ?? undefined;
+      // Si el usuario pedía crear algo y la IA no emitió el bloque, se le
+      // pide re-emitirlo en un segundo intento (no se muestra como mensaje).
+      if (!plan && CREATION_INTENT_RE.test(text)) {
+        try {
+          const retry = await chatWithAi([
+            ...prompt,
+            { role: 'assistant', content: reply },
+            {
+              role: 'user',
+              content:
+                'Re-emite ahora ÚNICAMENTE el bloque ```plan con las acciones en JSON, sin texto adicional.',
+            },
+          ]);
+          plan = extractPlanBlock(retry.reply) ?? undefined;
+        } catch {
+          // se queda sin plan; el usuario ve la respuesta normal
+        }
+      }
       const planNewCategories = plan
         ? await findNewCategoryNames(plan).catch(() => [])
         : undefined;

@@ -15,7 +15,14 @@ import {
  */
 
 export type PlanAction =
-  | { type: 'time_block'; category: string; start: string; end: string }
+  | {
+      type: 'time_block';
+      category: string;
+      start: string;
+      end: string;
+      /** true = se repite cada semana ese día. */
+      recurring?: boolean;
+    }
   | {
       type: 'goal';
       title: string;
@@ -35,6 +42,13 @@ export type ParsedPlan = {
 const MAX_ACTIONS = 12;
 const TIME_RE = /^([01]\d|2[0-3]):([0-5]\d)$/;
 const DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Detecta si el mensaje del usuario pide crear algo (nota, meta, bloque,
+ * plan). Se usa para reintentar el bloque ```plan si la IA no lo emitió.
+ */
+export const CREATION_INTENT_RE =
+  /(crea|cr[eé]ame|hazme|ponme|a[ñn]ade|a[ñn][áa]deme|agrega|agregar|genera|gen[ée]rame|armame|[áa]rmame|plan|nota|meta|bloque|rutina)/i;
 const CATEGORY_COLORS = [
   '#F5B86B',
   '#58BDEB',
@@ -134,7 +148,9 @@ function validateAction(a: unknown): PlanAction | null {
     if (!category || !start || !end || !validTime(start) || !validTime(end))
       return null;
     if (start >= end) return null;
-    return { type: 'time_block', category, start, end };
+    const recurring = a.recurring === undefined ? undefined : a.recurring === true;
+    if (a.recurring !== undefined && typeof a.recurring !== 'boolean') return null;
+    return { type: 'time_block', category, start, end, recurring };
   }
   if (type === 'goal') {
     const title = cleanStr(a.title, 120);
@@ -195,7 +211,7 @@ export async function applyPlan(
         startTime: action.start,
         endTime: action.end,
         date,
-        recurring: false,
+        recurring: action.recurring ?? false,
       });
       result.blocks++;
     } else if (action.type === 'goal') {
@@ -256,7 +272,7 @@ export function describePlanDate(
 /** Descripción corta de una acción para la tarjeta de confirmación. */
 export function describeAction(action: PlanAction): string {
   if (action.type === 'time_block')
-    return `🕐 ${action.start}–${action.end} · ${action.category}`;
+    return `🕐 ${action.start}–${action.end} · ${action.category}${action.recurring ? ' 🔁 cada semana' : ''}`;
   if (action.type === 'goal') {
     const freq = action.frequency === 'once' ? 'solo hoy' : action.frequency === 'daily' ? 'cada día' : 'cada semana';
     const unit = action.target_type === 'duration' ? 'min' : action.target_type === 'count' ? '' : '';

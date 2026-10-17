@@ -3,6 +3,7 @@ import {
   stripPlanBlock,
   describeAction,
   describePlanDate,
+  CREATION_INTENT_RE,
 } from '../src/services/ai/plan';
 
 // plan.ts importa repositorios que usan el módulo nativo de SQLite:
@@ -166,6 +167,40 @@ describe('fecha del plan', () => {
   });
 });
 
+describe('CREATION_INTENT_RE', () => {
+  it('detecta peticiones de crear', () => {
+    expect(CREATION_INTENT_RE.test('hazme un plan para mañana')).toBe(true);
+    expect(CREATION_INTENT_RE.test('ponme una nota de llevar agua')).toBe(true);
+    expect(CREATION_INTENT_RE.test('créame una meta de ahorro')).toBe(true);
+  });
+
+  it('no detecta preguntas normales', () => {
+    expect(CREATION_INTENT_RE.test('¿Cómo va mi semana?')).toBe(false);
+    expect(CREATION_INTENT_RE.test('Analiza mis gastos del periodo')).toBe(false);
+  });
+});
+
+describe('bloques recurrentes', () => {
+  it('acepta recurring true en time_block', () => {
+    const plan = extractPlanBlock(
+      '```plan\n{"actions":[{"type":"time_block","category":"Gym","start":"07:00","end":"08:00","recurring":true}]}\n```',
+    );
+    expect(plan?.actions[0]).toMatchObject({ recurring: true });
+  });
+
+  it('rechaza recurring no booleano', () => {
+    const plan = extractPlanBlock(
+      '```plan\n{"actions":[{"type":"time_block","category":"Gym","start":"07:00","end":"08:00","recurring":"si"}]}\n```',
+    );
+    expect(plan).toBeNull();
+  });
+
+  it('describe el bloque recurrente', () => {
+    expect(
+      describeAction({ type: 'time_block', category: 'Gym', start: '07:00', end: '08:00', recurring: true }),
+    ).toContain('cada semana');
+  });
+});
 describe('describeAction', () => {
   it('describe bloques, metas y notas', () => {
     expect(

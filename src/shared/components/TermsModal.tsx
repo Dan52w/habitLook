@@ -9,12 +9,12 @@ const SECTIONS: { title: string; body: string }[] = [
     body: 'Todo lo que registras (hábitos, metas, rutinas, notas y contabilidad) se guarda cifrado en tu propio dispositivo. No necesitas crear una cuenta y no tenemos servidores recolectando tu información.',
   },
   {
-    title: 'La IA es opcional',
-    body: 'El asistente IA solo funciona si tú conectas un backend. Solo se envía a la IA lo que selecciones explícitamente en la pantalla de IA (plan, metas, notas o gastos); nada se envía en segundo plano ni sin tu permiso.',
+    title: 'La IA viene incluida, pero no se usa sola',
+    body: 'La app trae integrado el acceso al asistente IA: no tienes que instalar ni configurar nada. Aun así, ningún dato sale de tu teléfono hasta que tú decidas usarla: solo se envía lo que selecciones explícitamente (por ejemplo, el plan de ese día, tus metas o tu contabilidad) junto con tu mensaje.',
   },
   {
     title: 'Qué viaja cuando usas la IA',
-    body: 'Tu mensaje y el contexto que elegiste viajan a tu backend propio y de ahí al proveedor de IA (Groq) para generar la respuesta. No guardamos tus conversaciones en servidores nuestros. Groq procesa cada solicitud según sus propias políticas.',
+    body: 'Tu mensaje y el contexto que elegiste viajan al servicio de IA de la app y de ahí al proveedor de IA (Groq), que genera la respuesta. No almacenamos tus conversaciones en nuestros servidores; Groq procesa cada solicitud según sus propias políticas.',
   },
   {
     title: 'Respaldos',

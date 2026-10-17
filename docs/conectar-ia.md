@@ -127,9 +127,13 @@ bloque ```plan con acciones JSON. La app lo valida estrictamente
 tipos conocidos; si algo falla se rechaza todo) y muestra una tarjeta
 "📋 Plan propuesto" con botón **Aplicar plan**. Solo se crea algo si el
 usuario toca ese botón: nunca es automático. Acciones soportadas:
-`time_block` (bloque del día, no recurrente), `goal` (meta con
-frecuencia once/daily/weekly) y `note` (nota). Las categorías se
-resuelven por nombre o se crean.
+`time_block` (bloque del día; `recurring: true` lo repite cada semana),
+`goal` (meta con frecuencia once/daily/weekly) y `note` (nota).
+Las categorías se resuelven por nombre o se crean.
+
+Si el mensaje del usuario pedía crear algo y la respuesta no trae el
+bloque, la app hace un segundo intento automático pidiendo solo el
+bloque (no se muestra como mensaje nuevo).
 
 ## Conversaciones guardadas
 
