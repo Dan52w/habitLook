@@ -3,8 +3,10 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { AppModal } from '../../../shared/components/AppModal';
 import { Category, listCategories } from '../../../db/repositories/categories';
 import { createGoal } from '../../../db/repositories/goals';
+import { scheduleGoalReminder } from '../../../services/notifications';
 import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 import { localDateKey } from '../../../shared/utils/date';
+import { GoalReminderPicker } from './GoalReminderPicker';
 
 type Frequency = 'daily' | 'weekly' | 'once';
 
@@ -24,6 +26,7 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
   );
   const [frequency, setFrequency] = useState<Frequency>('daily');
   const [target, setTarget] = useState('30');
+  const [reminderTime, setReminderTime] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -44,7 +47,7 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
     ) {
       return;
     }
-    await createGoal({
+    const goalId = await createGoal({
       categoryId: category,
       title: title.trim(),
       targetType: type,
@@ -52,8 +55,23 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
       // 'once' se guarda como diaria anclada a hoy (ver target_date).
       period: frequency === 'once' ? 'daily' : frequency,
       targetDate: frequency === 'once' ? localDateKey() : null,
+      reminderTime,
     });
+    if (reminderTime) {
+      try {
+        await scheduleGoalReminder({
+          id: goalId,
+          title: title.trim(),
+          target_type: type,
+          target_value: targetValue,
+          reminder_time: reminderTime,
+        });
+      } catch (error) {
+        console.warn('No se pudo programar el recordatorio:', error);
+      }
+    }
     setTitle('');
+    setReminderTime(null);
     onSaved();
     onClose();
   };
@@ -170,6 +188,8 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
           </Pressable>
         ))}
       </View>
+
+      <GoalReminderPicker value={reminderTime} onChange={setReminderTime} />
 
       <Pressable style={styles.save} onPress={save}>
         <Text style={styles.saveText}>Crear meta</Text>

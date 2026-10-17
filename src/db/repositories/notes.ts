@@ -13,6 +13,8 @@ export type Note = {
   block_start_time: string | null;
   block_end_time: string | null;
   note_date: string | null;
+  /** Fecha/hora ISO local 'YYYY-MM-DDTHH:MM' para avisar de esta nota. */
+  reminder_at: string | null;
 };
 
 export async function createNote(
@@ -20,18 +22,22 @@ export async function createNote(
   categoryId?: string,
   timeBlockId?: string,
   noteDate?: string,
-): Promise<void> {
+  reminderAt?: string | null,
+): Promise<string> {
   const db = await getDb();
+  const id = uuidv4();
   await db.execute(
-    'INSERT INTO notes (id, category_id, text, time_block_id, note_date) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO notes (id, category_id, text, time_block_id, note_date, reminder_at) VALUES (?, ?, ?, ?, ?, ?)',
     [
-      uuidv4(),
+      id,
       categoryId ?? null,
       text.trim(),
       timeBlockId ?? null,
       noteDate ?? localDateKey(),
+      reminderAt ?? null,
     ],
   );
+  return id;
 }
 
 export async function listNotes(
@@ -42,7 +48,7 @@ export async function listNotes(
   const db = await getDb();
   const trimmedSearch = search.trim();
   const result = await db.execute(
-    `SELECT n.id, n.text, n.created_at, n.category_id, n.time_block_id, n.note_date,
+    `SELECT n.id, n.text, n.created_at, n.category_id, n.time_block_id, n.note_date, n.reminder_at,
             c.name AS category_name, c.color AS category_color,
             tb.start_time AS block_start_time, tb.end_time AS block_end_time
      FROM notes n LEFT JOIN categories c ON c.id = n.category_id
@@ -69,7 +75,35 @@ export async function deleteNote(id: string): Promise<void> {
   await db.execute('DELETE FROM notes WHERE id = ?', [id]);
 }
 
-export async function updateNote(id: string, text: string): Promise<void> {
+export async function updateNote(
+  id: string,
+  text: string,
+  reminderAt?: string | null,
+): Promise<void> {
   const db = await getDb();
-  await db.execute('UPDATE notes SET text = ? WHERE id = ?', [text.trim(), id]);
+  if (reminderAt === undefined) {
+    await db.execute('UPDATE notes SET text = ? WHERE id = ?', [
+      text.trim(),
+      id,
+    ]);
+  } else {
+    await db.execute('UPDATE notes SET text = ?, reminder_at = ? WHERE id = ?', [
+      text.trim(),
+      reminderAt,
+      id,
+    ]);
+  }
+}
+
+export async function getNoteReminderNotes(): Promise<Note[]> {
+  const db = await getDb();
+  const result = await db.execute(
+    `SELECT n.id, n.text, n.created_at, n.category_id, n.time_block_id, n.note_date, n.reminder_at,
+            c.name AS category_name, c.color AS category_color,
+            tb.start_time AS block_start_time, tb.end_time AS block_end_time
+     FROM notes n LEFT JOIN categories c ON c.id = n.category_id
+     LEFT JOIN time_blocks tb ON tb.id = n.time_block_id
+     WHERE n.reminder_at IS NOT NULL`,
+  );
+  return (result.rows ?? []) as Note[];
 }

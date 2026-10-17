@@ -17,6 +17,8 @@ export type GoalWithProgress = {
   target_date: string | null;
   progress_value: number;
   completed: number;
+  /** Hora 'HH:MM' del recordatorio diario; null = sin recordatorio. */
+  reminder_time: string | null;
 };
 
 /** true si la meta es de un único día (no repetitiva). */
@@ -42,7 +44,7 @@ export async function listTodayGoals(
   // metas 'weekly' -> progreso = suma de la semana en curso
   // metas de un día (target_date) -> como 'daily', pero solo visibles su día
   const result = await db.execute(
-    `SELECT g.id, g.title, g.target_type, g.target_value, g.period, g.target_date,
+    `SELECT g.id, g.title, g.target_type, g.target_value, g.period, g.target_date, g.reminder_time,
             CASE
               WHEN g.period = 'daily' THEN COALESCE(
                 (SELECT value FROM goal_progress WHERE goal_id = g.id AND date = ?), 0)
@@ -69,20 +71,58 @@ export async function createGoal(input: {
   period: GoalWithProgress['period'];
   /** Fecha YYYY-MM-DD para metas de un día; omitir/null = repetitiva. */
   targetDate?: string | null;
-}): Promise<void> {
+  /** Hora 'HH:MM' del recordatorio diario; omitir = sin recordatorio. */
+  reminderTime?: string | null;
+}): Promise<string> {
   const db = await getDb();
+  const id = uuidv4();
   await db.execute(
-    'INSERT INTO goals (id, category_id, title, target_type, target_value, period, target_date) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO goals (id, category_id, title, target_type, target_value, period, target_date, reminder_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
     [
-      uuidv4(),
+      id,
       input.categoryId,
       input.title.trim(),
       input.targetType,
       input.targetValue,
       input.period,
       input.targetDate ?? null,
+      input.reminderTime ?? null,
     ],
   );
+  return id;
+}
+
+export async function updateGoalReminder(
+  goalId: string,
+  reminderTime: string | null,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute('UPDATE goals SET reminder_time = ? WHERE id = ?', [
+    reminderTime,
+    goalId,
+  ]);
+}
+
+export async function listGoalsWithReminders(): Promise<
+  {
+    id: string;
+    title: string;
+    target_type: string;
+    target_value: number;
+    reminder_time: string;
+  }[]
+> {
+  const db = await getDb();
+  const result = await db.execute(
+    'SELECT id, title, target_type, target_value, reminder_time FROM goals WHERE reminder_time IS NOT NULL',
+  );
+  return (result.rows ?? []) as {
+    id: string;
+    title: string;
+    target_type: string;
+    target_value: number;
+    reminder_time: string;
+  }[];
 }
 
 export async function addGoalProgress(

@@ -182,12 +182,177 @@ export async function handleNotificationAction(
       },
     );
   }
+
+  if (detail.pressAction?.id === 'goal-done') {
+    const goalId = detail.notification?.data?.goalId as string | undefined;
+    const increment = Number(
+      detail.notification?.data?.goalIncrement ?? 1,
+    );
+    const targetValue = Number(
+      detail.notification?.data?.goalTargetValue ?? 1,
+    );
+    if (goalId) {
+      const { addGoalProgress } = require('../db/repositories/goals');
+      await addGoalProgress(goalId, localDateKey(), increment, targetValue);
+      const shownId = detail.notification?.id as string | undefined;
+      if (shownId) {
+        try {
+          await notifee.cancelNotification(shownId);
+        } catch {
+          // La notificación ya no existe: no es un error.
+        }
+      }
+    }
+  }
 }
 
 export function observeNotificationActions() {
   return notifee.onForegroundEvent(({ type, detail }) =>
     handleNotificationAction(type, detail),
   );
+}
+
+// ---------- Recordatorios de metas y notas ----------
+
+function nextTimestampForDailyTime(hhmm: string): number | null {
+  const [h, m] = hhmm.split(':').map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  if (d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+  return d.getTime();
+}
+
+async function exactAlarmAllowed(): Promise<boolean> {
+  try {
+    const settings = await notifee.getNotificationSettings();
+    return settings.android?.alarm === AndroidNotificationSetting.ENABLED;
+  } catch {
+    return false;
+  }
+}
+
+export async function scheduleGoalReminder(goal: {
+  id: string;
+  title: string;
+  target_type: string;
+  target_value: number;
+  reminder_time: string | null;
+}): Promise<void> {
+  if (!goal.reminder_time) return;
+  const timestamp = nextTimestampForDailyTime(goal.reminder_time);
+  if (!timestamp) return;
+  const channelId = await ensureActivityChannel();
+  const increment = goal.target_type === 'duration' ? 5 : 1;
+  await notifee.createTriggerNotification(
+    {
+      id: `goal-reminder-${goal.id}`,
+      title: `⏰ ${goal.title}`,
+      body: '¿Cómo va tu meta hoy?',
+      data: {
+        goalId: goal.id,
+        goalIncrement: increment,
+        goalTargetValue: goal.target_value,
+      },
+      android: {
+        channelId,
+        pressAction: { id: 'default' },
+        actions: [
+          { title: 'Ya lo hice ✓', pressAction: { id: 'goal-done' } },
+        ],
+      },
+    },
+    {
+      type: TriggerType.TIMESTAMP,
+      timestamp,
+      repeatFrequency: RepeatFrequency.DAILY,
+      ...((await exactAlarmAllowed())
+        ? { alarmManager: { allowWhileIdle: true } }
+        : {}),
+    },
+  );
+}
+
+export async function cancelGoalReminder(goalId: string): Promise<void> {
+  try {
+    await notifee.cancelTriggerNotification(`goal-reminder-${goalId}`);
+  } catch {
+    // No había nada programado: no es un error.
+  }
+}
+
+export async function scheduleNoteReminder(note: {
+  id: string;
+  text: string;
+  reminder_at: string | null;
+}): Promise<void> {
+  if (!note.reminder_at) return;
+  const timestamp = new Date(note.reminder_at).getTime();
+  if (!Number.isFinite(timestamp) || timestamp <= Date.now()) return;
+  const channelId = await ensureActivityChannel();
+  const body =
+    note.text.length > 120 ? `${note.text.slice(0, 120)}…` : note.text;
+  await notifee.createTriggerNotification(
+    {
+      id: `note-reminder-${note.id}`,
+      title: '📝 Recordatorio',
+      body,
+      data: { noteId: note.id },
+      android: { channelId, pressAction: { id: 'default' } },
+    },
+    {
+      type: TriggerType.TIMESTAMP,
+      timestamp,
+      ...((await exactAlarmAllowed())
+        ? { alarmManager: { allowWhileIdle: true } }
+        : {}),
+    },
+  );
+}
+
+export async function cancelNoteReminder(noteId: string): Promise<void> {
+  try {
+    await notifee.cancelTriggerNotification(`note-reminder-${noteId}`);
+  } catch {
+    // No había nada programado: no es un error.
+  }
+}
+
+/**
+ * Reprograma todos los recordatorios de metas y notas desde la base de
+ * datos. Cancela primero los existentes para evitar duplicados.
+ */
+export async function rescheduleGoalAndNoteReminders(): Promise<void> {
+  const { listGoalsWithReminders } = require('../db/repositories/goals');
+  const { getNoteReminderNotes } = require('../db/repositories/notes');
+
+  const existingIds = await notifee.getTriggerNotificationIds();
+  const staleIds = existingIds.filter(
+    id => id.startsWith('goal-reminder-') || id.startsWith('note-reminder-'),
+  );
+  await Promise.all(
+    staleIds.map(id =>
+      notifee.cancelTriggerNotification(id).catch(() => {}),
+    ),
+  );
+
+  await ensureActivityChannel();
+  const [goals, notes] = await Promise.all([
+    listGoalsWithReminders(),
+    getNoteReminderNotes(),
+  ]);
+  await Promise.all([
+    ...goals.map((g: any) =>
+      scheduleGoalReminder(g).catch(e =>
+        console.warn('No se pudo programar recordatorio de meta:', e),
+      ),
+    ),
+    ...notes.map((n: any) =>
+      scheduleNoteReminder(n).catch(e =>
+        console.warn('No se pudo programar recordatorio de nota:', e),
+      ),
+    ),
+  ]);
 }
 
 export function nextDateForBlock(block: {

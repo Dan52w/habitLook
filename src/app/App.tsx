@@ -20,6 +20,7 @@ import { OnboardingScreen } from '../features/onboarding/OnboardingScreen';
 import {
   ensureNotificationPermission,
   rescheduleActivityReminders,
+  rescheduleGoalAndNoteReminders,
 } from '../services/notifications';
 import { observeNotificationActions } from '../services/notifications';
 import {
@@ -128,6 +129,7 @@ export default function App() {
       try {
         await ensureNotificationPermission();
         await rescheduleActivityReminders();
+        await rescheduleGoalAndNoteReminders();
         unobserve = observeNotificationActions();
       } catch (e) {
         console.warn('Notificaciones no disponibles:', e);

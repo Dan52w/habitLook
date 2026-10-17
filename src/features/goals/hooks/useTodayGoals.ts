@@ -15,6 +15,7 @@ export type GoalDisplay = {
   targetValue: number;
   targetType: 'duration' | 'count' | 'boolean';
   streak: number;
+  reminderTime: string | null;
 };
 
 export function useTodayGoals() {
@@ -37,6 +38,7 @@ export function useTodayGoals() {
           color: '#F2A93B',
           targetValue: g.target_value,
           targetType: g.target_type,
+          reminderTime: g.reminder_time ?? null,
         };
       }
       if (g.target_type === 'boolean') {
@@ -48,6 +50,7 @@ export function useTodayGoals() {
           color: '#64D9A0',
           targetValue: g.target_value,
           targetType: g.target_type,
+          reminderTime: g.reminder_time ?? null,
         };
       }
       const ratio =
@@ -60,6 +63,7 @@ export function useTodayGoals() {
         color: '#64D9A0',
         targetValue: g.target_value,
         targetType: g.target_type,
+        reminderTime: g.reminder_time ?? null,
       };
     });
 

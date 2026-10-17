@@ -31,6 +31,12 @@ import { RingSegment } from './utils/clockMath';
 import { addGoalProgress, deleteGoal } from '../../db/repositories/goals';
 import { MiniCalendar } from './components/MiniCalendar';
 import { WeeklyStatsModal } from '../stats/components/WeeklyStatsModal';
+import { GoalReminderPicker } from '../goals/components/GoalReminderPicker';
+import { updateGoalReminder } from '../../db/repositories/goals';
+import {
+  cancelGoalReminder,
+  scheduleGoalReminder,
+} from '../../services/notifications';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
@@ -131,6 +137,10 @@ export function ClockScreen() {
   const [planOpen, setPlanOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
+  const [reminderGoal, setReminderGoal] = useState<
+    (typeof goals)[number] | null
+  >(null);
+  const [reminderTime, setReminderTime] = useState<string | null>(null);
   const [selectedSegment, setSelectedSegment] = useState<RingSegment | null>(
     null,
   );
@@ -168,6 +178,33 @@ export function ClockScreen() {
   };
 
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const openReminderEditor = (goal: (typeof goals)[number]) => {
+    setReminderGoal(goal);
+    setReminderTime(goal.reminderTime ?? null);
+  };
+
+  const saveReminder = async () => {
+    if (!reminderGoal) return;
+    try {
+      await updateGoalReminder(reminderGoal.id, reminderTime);
+      if (reminderTime) {
+        await scheduleGoalReminder({
+          id: reminderGoal.id,
+          title: reminderGoal.title,
+          target_type: reminderGoal.targetType,
+          target_value: reminderGoal.targetValue,
+          reminder_time: reminderTime,
+        });
+      } else {
+        await cancelGoalReminder(reminderGoal.id);
+      }
+      reloadGoals();
+    } catch (error) {
+      console.warn('No se pudo guardar el recordatorio:', error);
+    }
+    setReminderGoal(null);
+  };
   useEffect(() => {
     if (!loadingTimeline && !loadingGoals) {
       setInitialLoading(false);
@@ -317,6 +354,8 @@ export function ClockScreen() {
               progressRatio={goal.progressRatio}
               color={goal.color}
               streak={goal.streak}
+              reminderTime={goal.reminderTime}
+              onReminderPress={() => openReminderEditor(goal)}
               onPress={() => markProgress(goal)}
               onUndo={() => markProgress(goal, -1)}
               onDelete={() =>
@@ -327,6 +366,11 @@ export function ClockScreen() {
                     style: 'destructive',
                     onPress: async () => {
                       await deleteGoal(goal.id);
+                      try {
+                        await cancelGoalReminder(goal.id);
+                      } catch {
+                        // Sin recordatorio programado.
+                      }
                       reloadGoals();
                     },
                   },
@@ -369,6 +413,17 @@ export function ClockScreen() {
         visible={statsOpen}
         onClose={() => setStatsOpen(false)}
       />
+
+      <AppModal
+        visible={Boolean(reminderGoal)}
+        title={reminderGoal ? `Aviso · ${reminderGoal.title}` : ''}
+        onClose={() => setReminderGoal(null)}
+      >
+        <GoalReminderPicker value={reminderTime} onChange={setReminderTime} />
+        <Pressable style={styles.detailButton} onPress={saveReminder}>
+          <Text style={styles.detailButtonText}>Guardar aviso</Text>
+        </Pressable>
+      </AppModal>
 
       <AppModal
         visible={Boolean(selectedSegment)}

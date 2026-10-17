@@ -27,6 +27,33 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 import { EmptyState } from '../../shared/components/EmptyState';
+import DateTimePicker, {
+  DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
+import {
+  cancelNoteReminder,
+  scheduleNoteReminder,
+} from '../../services/notifications';
+
+const toLocalIsoMinutes = (d: Date) => {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(
+    d.getHours(),
+  )}:${p(d.getMinutes())}`;
+};
+
+const formatReminderAt = (iso: string) => {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  const date = d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+  });
+  const time = `${String(d.getHours()).padStart(2, '0')}:${String(
+    d.getMinutes(),
+  ).padStart(2, '0')}`;
+  return `${date}, ${time}`;
+};
 
 const today = () => localDateKey();
 
@@ -69,6 +96,8 @@ export function NotesScreen() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [reminderAt, setReminderAt] = useState<Date | null>(null);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
 
   const load = useCallback(async () => {
     const isGlobal = allDates || search.trim().length > 0;
@@ -109,20 +138,39 @@ export function NotesScreen() {
     if (!text.trim() || saving) return;
     setSaving(true);
     try {
+      const reminderStr = reminderAt ? toLocalIsoMinutes(reminderAt) : null;
       if (editingId) {
-        await updateNote(editingId, text);
+        await updateNote(editingId, text, reminderStr);
+        if (reminderStr) {
+          await scheduleNoteReminder({
+            id: editingId,
+            text: text.trim(),
+            reminder_at: reminderStr,
+          }).catch(() => undefined);
+        } else {
+          await cancelNoteReminder(editingId).catch(() => undefined);
+        }
         setEditingId(null);
       } else {
         const linkedBlock = blocks.find(block => block.id === timeBlockId);
-        await createNote(
+        const noteId = await createNote(
           text,
           linkedBlock?.category_id ?? filter,
           timeBlockId,
           selectedDate,
+          reminderStr,
         );
+        if (reminderStr) {
+          await scheduleNoteReminder({
+            id: noteId,
+            text: text.trim(),
+            reminder_at: reminderStr,
+          }).catch(() => undefined);
+        }
       }
       setText('');
       setTimeBlockId(undefined);
+      setReminderAt(null);
       setCalendarRevision(value => value + 1);
       await load();
     } finally {
@@ -134,12 +182,14 @@ export function NotesScreen() {
     setEditingId(note.id);
     setText(note.text);
     setTimeBlockId(note.time_block_id ?? undefined);
+    setReminderAt(note.reminder_at ? new Date(note.reminder_at) : null);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
     setText('');
     setTimeBlockId(undefined);
+    setReminderAt(null);
   };
 
   const handleDeleteNote = (noteId: string) => {
@@ -151,6 +201,7 @@ export function NotesScreen() {
       destructive: true,
       onConfirm: async () => {
         await deleteNote(noteId);
+        await cancelNoteReminder(noteId).catch(() => undefined);
         await load();
       },
     });
@@ -327,6 +378,55 @@ export function NotesScreen() {
             ))}
           </ScrollView>
 
+          <View style={styles.reminderRow}>
+            <Pressable
+              onPress={() => setShowReminderPicker(true)}
+              style={[
+                styles.planChip,
+                theme.isLight && lightStyles.planChip,
+                reminderAt && styles.planChipActive,
+                theme.isLight && reminderAt && lightStyles.planChipActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.planChipText,
+                  theme.isLight && lightStyles.planChipText,
+                ]}
+              >
+                {reminderAt
+                  ? `🔔 ${formatReminderAt(toLocalIsoMinutes(reminderAt))}`
+                  : '🔔 Avísame de esta nota'}
+              </Text>
+            </Pressable>
+            {reminderAt && (
+              <Pressable onPress={() => setReminderAt(null)} hitSlop={10}>
+                <Text
+                  style={[
+                    styles.reminderClear,
+                    theme.isLight && lightStyles.reminderClear,
+                  ]}
+                >
+                  Quitar
+                </Text>
+              </Pressable>
+            )}
+          </View>
+          {showReminderPicker && (
+            <DateTimePicker
+              value={reminderAt ?? new Date(Date.now() + 60 * 60_000)}
+              mode="datetime"
+              is24Hour
+              minimumDate={new Date()}
+              display="default"
+              onChange={(event: DateTimePickerEvent, date?: Date) => {
+                setShowReminderPicker(false);
+                if (event.type === 'dismissed' || !date) return;
+                setReminderAt(date);
+              }}
+            />
+          )}
+
           <Pressable
             onPress={save}
             style={[styles.save, saving && styles.saveDisabled]}
@@ -476,6 +576,17 @@ export function NotesScreen() {
                 </View>
               )}
 
+              {note.reminder_at && (
+                <Text
+                  style={[
+                    styles.reminderSet,
+                    theme.isLight && lightStyles.reminderSet,
+                  ]}
+                >
+                  🔔 {formatReminderAt(note.reminder_at)}
+                </Text>
+              )}
+
               <Text style={[styles.date, theme.isLight && lightStyles.date]}>
                 {formatNoteDate(note)}
               </Text>
@@ -613,6 +724,9 @@ const styles = StyleSheet.create({
   },
   linkedText: { color: '#C9B6E8', fontSize: 11, fontWeight: '700' },
   date: { color: '#7C8192', fontSize: 12 },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  reminderClear: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
+  reminderSet: { color: '#A78BFA', fontSize: 12, fontWeight: '700' },
   delete: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
   edit: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
   noteActions: { flexDirection: 'row', gap: 14, alignItems: 'center' },
@@ -697,4 +811,6 @@ const lightStyles = StyleSheet.create({
   },
   linkedText: { color: light.accent },
   date: { color: light.muted },
+  reminderClear: { color: '#C05A6E' },
+  reminderSet: { color: light.accent },
 });

@@ -224,4 +224,12 @@ export const MIGRATIONS = [
       `CREATE INDEX idx_ai_messages_chat ON ai_messages(chat_id, created_at);`,
     ],
   },
+  {
+    // Recordatorios: hora diaria por meta (HH:MM) y fecha/hora puntual por nota.
+    name: '012_reminders',
+    statements: [
+      `ALTER TABLE goals ADD COLUMN reminder_time TEXT;`,
+      `ALTER TABLE notes ADD COLUMN reminder_at TEXT;`,
+    ],
+  },
 ];

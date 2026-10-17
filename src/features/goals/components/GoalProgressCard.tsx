@@ -8,9 +8,11 @@ type Props = {
   progressRatio: number;
   color: string;
   streak?: number;
+  reminderTime?: string | null;
   onPress?: () => void;
   onUndo?: () => void;
   onDelete?: () => void;
+  onReminderPress?: () => void;
 };
 
 export function GoalProgressCard({
@@ -19,9 +21,11 @@ export function GoalProgressCard({
   progressRatio,
   color,
   streak = 0,
+  reminderTime,
   onPress,
   onUndo,
   onDelete,
+  onReminderPress,
 }: Props) {
   const theme = useTheme();
   const pct = Math.max(0, Math.min(1, progressRatio)) * 100;
@@ -39,6 +43,26 @@ export function GoalProgressCard({
             <Text style={[styles.streak, theme.isLight && lightStyles.streak]}>
               🔥 {streak} {streak === 1 ? 'día' : 'días'}
             </Text>
+          )}
+          {onReminderPress && (
+            <Pressable
+              accessibilityLabel={`Recordatorio de ${title}`}
+              onPress={e => {
+                e.stopPropagation();
+                onReminderPress();
+              }}
+              hitSlop={10}
+            >
+              <Text
+                style={[
+                  styles.reminder,
+                  theme.isLight && lightStyles.reminder,
+                  !reminderTime && styles.reminderOff,
+                ]}
+              >
+                {reminderTime ? `⏰ ${reminderTime}` : '⏰ Sin aviso'}
+              </Text>
+            </Pressable>
           )}
         </View>
         <View style={styles.actions}>
@@ -99,6 +123,8 @@ const styles = StyleSheet.create({
   titleWrap: { flex: 1, marginRight: 10 },
   title: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
   streak: { color: '#F5B86B', fontSize: 12, fontWeight: '700', marginTop: 2 },
+  reminder: { color: '#A78BFA', fontSize: 12, fontWeight: '700', marginTop: 2 },
+  reminderOff: { color: '#5A5F70' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   label: { color: '#9CA3AF', fontSize: 13 },
   delete: { color: '#E895A4', fontSize: 22, lineHeight: 22 },
@@ -117,4 +143,5 @@ const lightStyles = StyleSheet.create({
   muted: { color: light.muted },
   track: { backgroundColor: light.surfaceMuted },
   streak: { color: '#B97A1F' },
+  reminder: { color: light.accent },
 });
