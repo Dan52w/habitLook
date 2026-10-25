@@ -37,6 +37,7 @@ import {
   cancelGoalReminder,
   scheduleGoalReminder,
 } from '../../services/notifications';
+import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
@@ -508,6 +509,21 @@ export function ClockScreen() {
           </>
         )}
       </AppModal>
+
+      <FirstTimeTip tipKey="inicio" icon="⏰" title="Tu día en un círculo">
+        <TipText>
+          Este círculo es tu día. Cada color es una actividad que planeaste:
+          trabajo, estudio, descanso…
+        </TipText>
+        <TipText>
+          El punto blanco te dice dónde vas ahora mismo. Toca cualquier color
+          para ver qué es y a qué hora termina.
+        </TipText>
+        <TipText>
+          Con “+ Planificar” organizas tu día, y abajo están tus metas: toca
+          una para marcar tu avance del día.
+        </TipText>
+      </FirstTimeTip>
     </SafeAreaView>
   );
 }

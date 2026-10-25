@@ -27,6 +27,7 @@ import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { useAppDialog } from '../../shared/context/DialogContext';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 import { EmptyState } from '../../shared/components/EmptyState';
+import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
@@ -600,6 +601,14 @@ export function NotesScreen() {
           ))
         )}
       </ScrollView>
+
+      <FirstTimeTip tipKey="notas" icon="📝" title="Ideas que no se escapan">
+        <TipText>Escribe cualquier idea rápida, sin formato ni complicaciones.</TipText>
+        <TipText>
+          Si quieres, puedes pegarla a una actividad de tu día o ponerle un
+          aviso para que te recuerde a una hora.
+        </TipText>
+      </FirstTimeTip>
     </SafeAreaView>
   );
 }

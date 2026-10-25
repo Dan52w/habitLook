@@ -21,7 +21,7 @@ export function NowStatusCard({ activityName, color, onPress }: Props) {
         <Text style={[styles.bold, theme.isLight && lightStyles.bold]}>
           {activityName}
         </Text>{' '}
-        — toca para ver sugerencias
+        — toca para ver el detalle
       </Text>
     </Pressable>
   );
