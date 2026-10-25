@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 import { AppModal } from '../../shared/components/AppModal';
+import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
 import { useAccountingPeriod } from '../accounting/context/PeriodContext';
 import { chatWithAi, getAiProvider } from '../../services/ai/service';
 import {
@@ -822,6 +823,20 @@ export function AiScreen() {
           </View>
         ))}
       </AppModal>
+
+      <FirstTimeTip tipKey="ia" icon="✨" title="Tu asistente, cuando tú quieras">
+        <TipText>
+          Pídele que te arme un plan, una meta o una nota, con tus palabras.
+        </TipText>
+        <TipText>
+          Elige primero qué quieres compartirle (tu día, tus metas, tus
+          gastos) y solo eso sale de tu teléfono.
+        </TipText>
+        <TipText>
+          Si te propone algo, tú decides: nada se crea sin que toques
+          “Aplicar plan”.
+        </TipText>
+      </FirstTimeTip>
     </SafeAreaView>
   );
 }

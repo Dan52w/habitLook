@@ -25,6 +25,8 @@ import { useAppDialog } from '../../shared/context/DialogContext';
 import { HabitLookLogo } from '../../shared/components/HabitLookLogo';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 import { TermsModal } from '../../shared/components/TermsModal';
+import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
+import { resetAllTips } from '../../shared/hooks/useFirstTimeTip';
 import { useNavigation } from '@react-navigation/native';
 
 const SoonBadge = ({ isLight }: { isLight: boolean }) => (
@@ -363,6 +365,20 @@ export function ProfileScreen() {
           onClose={() => setTermsVisible(false)}
         />
 
+        <FirstTimeTip tipKey="perfil" icon="👤" title="Tu espacio, tus reglas">
+          <TipText>
+            Aquí están tus ajustes, tu respaldo y los términos de la app.
+          </TipText>
+          <TipText>
+            Haz copias de seguridad de vez en cuando: si cambias de teléfono,
+            con el respaldo recuperas todo.
+          </TipText>
+          <TipText>
+            Recuerda: HabitLook no tiene cuentas ni servidores. Todo vive en
+            tu teléfono.
+          </TipText>
+        </FirstTimeTip>
+
         <Text style={[styles.section, theme.isLight && lightStyles.section]}>
           Ajustes
         </Text>
@@ -393,6 +409,39 @@ export function ProfileScreen() {
               thumbColor={theme.isLight ? '#FFFDF8' : '#BAC0CE'}
             />
           </View>
+        </View>
+
+        <View style={[styles.card, theme.isLight && lightStyles.card]}>
+          <Text
+            style={[styles.cardTitle, theme.isLight && lightStyles.cardTitle]}
+          >
+            Consejos de la app
+          </Text>
+          <Text
+            style={[styles.cardText, theme.isLight && lightStyles.cardText]}
+          >
+            Vuelve a ver los consejos de cada función, como la primera vez.
+          </Text>
+          <Pressable
+            onPress={async () => {
+              await resetAllTips();
+              showAlert({
+                title: 'Consejos listos',
+                message:
+                  'La próxima vez que entres a cada función, verás su consejo de nuevo.',
+              });
+            }}
+            style={[styles.aiButton, theme.isLight && lightStyles.aiButton]}
+          >
+            <Text
+              style={[
+                styles.aiButtonText,
+                theme.isLight && lightStyles.aiButtonText,
+              ]}
+            >
+              Volver a ver los consejos
+            </Text>
+          </Pressable>
         </View>
 
         <View style={[styles.card, theme.isLight && lightStyles.card]}>
