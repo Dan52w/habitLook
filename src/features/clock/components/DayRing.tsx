@@ -19,6 +19,8 @@ type Props = {
   nowAngle?: number | null;
   /** Texto pequeño bajo la hora en el centro (actividad actual, etc.). */
   centerSub?: string;
+  /** Contexto adicional bajo la actividad (por ejemplo, cuándo termina). */
+  centerMeta?: string;
 };
 
 const DAY_LABELS = [
@@ -43,6 +45,7 @@ export function DayRing({
   onSegmentPress,
   nowAngle = null,
   centerSub,
+  centerMeta,
 }: Props) {
   const theme = useTheme();
   const cx = size / 2;
@@ -89,16 +92,16 @@ export function DayRing({
     hour12: false,
   });
 
-  const trackDayColor = theme.isLight ? '#DDD5C7' : '#30384C';
-  const trackNightColor = theme.isLight ? '#EAE2D2' : '#434B61';
-  const outerLabelColor = theme.isLight ? '#665E50' : '#D9DDEA';
-  const innerLabelColor = theme.isLight ? '#8C8272' : '#A9B0C3';
-  const centerFill = theme.isLight ? '#FFFDF8' : '#121621';
-  const centerBorder = theme.isLight ? '#DCD4C4' : '#4A536C';
-  const timeTextColor = theme.isLight ? '#22201C' : '#F8F7FB';
-  const subTextColor = theme.isLight ? '#8C8272' : '#A9B0C3';
-  const hourHandColor = theme.isLight ? '#22201C' : '#F5F2FC';
-  const minuteHandColor = theme.isLight ? '#75549E' : '#C9B6E8';
+  const trackDayColor = theme.isLight ? '#DFDFE5' : '#2A2A2A';
+  const trackNightColor = theme.isLight ? '#E9E9ED' : '#343434';
+  const outerLabelColor = theme.isLight ? '#48484A' : '#FAFAFA';
+  const innerLabelColor = theme.isLight ? '#6E6E73' : '#A3A3A3';
+  const centerFill = theme.colors.surface;
+  const centerBorder = theme.colors.border;
+  const timeTextColor = theme.colors.text;
+  const subTextColor = theme.colors.muted;
+  const hourHandColor = theme.colors.text;
+  const minuteHandColor = theme.colors.accent;
 
   // Segmento que contiene la hora actual (para el resplandor).
   const activeSegment =
@@ -278,7 +281,7 @@ export function DayRing({
                 strokeWidth={2}
                 strokeLinecap="round"
               />
-              <Circle cx={cx} cy={cy} r={3.5} fill="#A78BFA" />
+              <Circle cx={cx} cy={cy} r={3.5} fill={theme.colors.accent} />
             </>
           );
         })()}
@@ -289,7 +292,7 @@ export function DayRing({
               cx={nowDot.x}
               cy={nowDot.y}
               r={10}
-              fill="#A78BFA"
+              fill={theme.colors.accent}
               opacity={0.35}
             />
             <Circle
@@ -297,7 +300,7 @@ export function DayRing({
               cy={nowDot.y}
               r={4.5}
               fill="#FFFFFF"
-              stroke="#A78BFA"
+              stroke={theme.colors.accent}
               strokeWidth={2}
             />
           </>
@@ -306,16 +309,16 @@ export function DayRing({
         <Circle
           cx={cx}
           cy={cy}
-          r={44}
+          r={54}
           fill={centerFill}
           stroke={centerBorder}
           strokeWidth={1.5}
         />
         <SvgText
           x={cx}
-          y={centerSub ? cy - 1 : cy + 6}
+          y={centerSub ? cy - 10 : cy + 8}
           fill={timeTextColor}
-          fontSize={17}
+          fontSize={23}
           fontWeight="800"
           textAnchor="middle"
         >
@@ -324,13 +327,25 @@ export function DayRing({
         {centerSub ? (
           <SvgText
             x={cx}
-            y={cy + 18}
+            y={cy + 9}
             fill={subTextColor}
             fontSize={10.5}
             fontWeight="700"
             textAnchor="middle"
           >
-            {centerSub.length > 20 ? centerSub.slice(0, 20) + '…' : centerSub}
+            {centerSub.length > 18 ? centerSub.slice(0, 18) + '…' : centerSub}
+          </SvgText>
+        ) : null}
+        {centerMeta ? (
+          <SvgText
+            x={cx}
+            y={cy + 25}
+            fill={subTextColor}
+            fontSize={9}
+            fontWeight="600"
+            textAnchor="middle"
+          >
+            {centerMeta}
           </SvgText>
         ) : null}
       </Svg>

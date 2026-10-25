@@ -1,5 +1,12 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import {
   BottomTabBarButtonProps,
   createBottomTabNavigator,
@@ -17,6 +24,7 @@ import {
 } from '../../shared/components/icons/TabIcons';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 import { TabErrorBoundary } from '../../shared/components/TabErrorBoundary';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Tab = createBottomTabNavigator();
 
@@ -64,23 +72,53 @@ function AiTab() {
 function AiTabButton({ onPress, accessibilityState, style }: BottomTabBarButtonProps) {
   const theme = useTheme();
   const focused = accessibilityState?.selected ?? false;
+  const scale = useRef(new Animated.Value(focused ? 1.05 : 1)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(scale, {
+      toValue: focused ? 1.05 : 1,
+      duration: reduceMotion ? 0 : 180,
+      easing: Easing.bezier(0.23, 1, 0.32, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [focused, reduceMotion, scale]);
+
   return (
     <Pressable
       onPress={onPress}
-      style={[style, styles.aiWrap]}
+      style={({ pressed }) => [
+        style,
+        styles.aiWrap,
+        pressed && styles.tabPressed,
+      ]}
       accessibilityRole="button"
       accessibilityState={accessibilityState}
       accessibilityLabel="Asistente IA"
     >
-      <View
+      <Animated.View
         style={[
           styles.aiCircle,
-          theme.isLight && styles.aiCircleLight,
-          focused && styles.aiCircleFocused,
+          {
+            backgroundColor: focused
+              ? theme.colors.text
+              : theme.colors.surfaceMuted,
+            borderColor: theme.colors.background,
+          },
+          { transform: [{ scale }] },
         ]}
       >
-        <Text style={styles.aiEmoji}>✨</Text>
-      </View>
+        <Text style={[styles.aiGlyph, focused && styles.aiGlyphActive]}>✦</Text>
+      </Animated.View>
       <Text
         style={[
           styles.aiLabel,
@@ -97,20 +135,25 @@ function AiTabButton({ onPress, accessibilityState, style }: BottomTabBarButtonP
 
 export function RootTabs() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  // 58 pt es el área de controles. El inset se añade al alto total para que
+  // los botones del sistema nunca cubran etiquetas o iconos en Android.
+  const tabBarHeight = 58 + Math.max(insets.bottom, 10);
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: theme.isLight ? light.accent : '#C4B5FD',
-        tabBarInactiveTintColor: theme.isLight ? light.muted : '#5B5F6B',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginTop: 3 },
+        tabBarActiveTintColor: theme.colors.text,
+        tabBarInactiveTintColor: theme.colors.muted,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2 },
+        tabBarItemStyle: { paddingTop: 4 },
         tabBarStyle: {
-          backgroundColor: theme.isLight ? light.surface : '#0F1119',
+          backgroundColor: theme.colors.background,
           borderTopWidth: 1,
-          borderTopColor: theme.isLight ? light.border : '#1F2230',
-          height: 78,
-          paddingTop: 10,
-          paddingBottom: 20,
+          borderTopColor: theme.colors.border,
+          height: tabBarHeight,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 10),
         },
       }}
     >
@@ -152,40 +195,26 @@ const styles = StyleSheet.create({
   aiWrap: {
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 4,
+    paddingTop: 1,
   },
+  tabPressed: { opacity: 0.72 },
   aiCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#A78BFA',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -22,
-    borderWidth: 3,
-    borderColor: '#0F1119',
-    elevation: 6,
-    shadowColor: '#A78BFA',
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    borderWidth: 1,
   },
-  aiCircleLight: {
-    backgroundColor: '#75549E',
-    borderColor: '#FFFDF8',
-    shadowColor: '#75549E',
-  },
-  aiCircleFocused: {
-    transform: [{ scale: 1.06 }],
-  },
-  aiEmoji: { fontSize: 26 },
+  aiGlyph: { color: '#A3A3A3', fontSize: 16, fontWeight: '700', lineHeight: 19 },
+  aiGlyphActive: { color: '#0E0E0F' },
   aiLabel: {
-    color: '#8E94A5',
+    color: '#A3A3A3',
     fontSize: 11,
     fontWeight: '700',
     marginTop: 3,
   },
-  aiLabelLight: { color: '#7E7669' },
-  aiLabelFocused: { color: '#C4B5FD' },
-  aiLabelFocusedLight: { color: '#75549E' },
+  aiLabelLight: { color: light.muted },
+  aiLabelFocused: { color: '#FAFAFA' },
+  aiLabelFocusedLight: { color: light.text },
 });

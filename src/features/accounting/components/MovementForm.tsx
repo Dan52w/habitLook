@@ -426,7 +426,7 @@ export function MovementForm({
           onPress={handleAddCategory}
           style={[
             styles.smallButton,
-            { backgroundColor: theme.isLight ? '#DDD4C4' : '#33384B' },
+            { backgroundColor: theme.colors.surfaceMuted },
           ]}
         >
           <Text style={[styles.smallButtonText, { color: theme.colors.text }]}>
@@ -458,9 +458,7 @@ export function MovementForm({
           style={[
             styles.splitToggle,
             {
-              backgroundColor: theme.isLight
-                ? theme.colors.surfaceMuted
-                : '#1A1E2A',
+              backgroundColor: theme.colors.surfaceMuted,
               borderColor: theme.colors.border,
             },
           ]}
@@ -484,7 +482,7 @@ export function MovementForm({
           style={[
             styles.splitBox,
             {
-              backgroundColor: theme.isLight ? theme.colors.surface : '#181B25',
+              backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
             },
           ]}
@@ -650,7 +648,7 @@ export function MovementForm({
         style={[
           styles.submit,
           {
-            backgroundColor: theme.colors.accent,
+            backgroundColor: theme.colors.text,
             opacity: submitting ? 0.6 : 1,
           },
         ]}
@@ -658,7 +656,7 @@ export function MovementForm({
         <Text
           style={[
             styles.submitText,
-            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+            { color: theme.isLight ? '#FFFFFF' : '#0E0E0F' },
           ]}
         >
           {submitting ? 'Guardando…' : 'Guardar movimiento'}

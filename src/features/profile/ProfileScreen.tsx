@@ -541,8 +541,18 @@ export function ProfileScreen() {
               </Pressable>
             )}
           </View>
-          <Pressable onPress={testReminder} style={styles.testButton}>
-            <Text style={styles.testButtonText}>Probar en 10 segundos</Text>
+          <Pressable
+            onPress={testReminder}
+            style={[styles.testButton, theme.isLight && lightStyles.testButton]}
+          >
+            <Text
+              style={[
+                styles.testButtonText,
+                theme.isLight && lightStyles.testButtonText,
+              ]}
+            >
+              Probar en 10 segundos
+            </Text>
           </Pressable>
         </View>
 
@@ -627,7 +637,7 @@ export function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0D14' },
+  container: { flex: 1, backgroundColor: '#0E0E0F' },
   content: {
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -638,50 +648,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 14,
     alignItems: 'center',
-    backgroundColor: '#181B25',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#262C3E',
+    backgroundColor: '#191919',
+    borderRadius: 20,
     padding: 16,
     marginVertical: 4,
   },
   heroInfo: { flex: 1 },
-  heroTitle: { color: '#F5F6F9', fontSize: 16, fontWeight: '700' },
-  heroText: { color: '#9DA3B2', marginTop: 3, fontSize: 12, lineHeight: 16 },
+  heroTitle: { color: '#FAFAFA', fontSize: 16, fontWeight: '700' },
+  heroText: { color: '#A3A3A3', marginTop: 3, fontSize: 12, lineHeight: 16 },
   aiCard: {
-    backgroundColor: '#211C33',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#4A3D6B',
+    backgroundColor: '#191919',
+    borderRadius: 20,
     padding: 16,
     gap: 10,
   },
   aiTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   aiIcon: { fontSize: 20 },
-  aiTitle: { color: '#EDE9FB', fontWeight: '800', fontSize: 16 },
-  aiText: { color: '#B9B0D6', fontSize: 13, lineHeight: 19 },
+  aiTitle: { color: '#FAFAFA', fontWeight: '700', fontSize: 16 },
+  aiText: { color: '#C7C7CC', fontSize: 13, lineHeight: 19 },
   aiButton: {
-    backgroundColor: '#A78BFA',
-    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
     marginTop: 2,
   },
-  aiButtonText: { color: '#171421', fontWeight: '800', fontSize: 14 },
+  aiButtonText: { color: '#0E0E0F', fontWeight: '700', fontSize: 14 },
   section: {
-    color: '#C9B6E8',
-    fontSize: 13,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
+    color: '#FAFAFA',
+    fontSize: 16,
+    fontWeight: '700',
     marginTop: 8,
   },
   card: {
-    backgroundColor: '#181B25',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#262C3E',
-    padding: 15,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 18,
     gap: 8,
   },
   reminderChoices: {
@@ -691,22 +693,22 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   reminder: {
-    backgroundColor: '#252A39',
+    backgroundColor: '#252525',
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
   },
-  reminderActive: { backgroundColor: '#A78BFA' },
-  reminderText: { color: '#DDE0E8', fontSize: 12, fontWeight: '700' },
-  reminderTextActive: { color: '#171421' },
+  reminderActive: { backgroundColor: '#FAFAFA' },
+  reminderText: { color: '#C7C7CC', fontSize: 12, fontWeight: '600' },
+  reminderTextActive: { color: '#0E0E0F' },
   titleLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 8,
     alignItems: 'center',
   },
-  cardTitle: { color: '#F2F3F6', fontWeight: '700', fontSize: 15 },
-  cardText: { color: '#A1A6B6', fontSize: 13, lineHeight: 19 },
+  cardTitle: { color: '#FAFAFA', fontWeight: '700', fontSize: 15 },
+  cardText: { color: '#C7C7CC', fontSize: 13, lineHeight: 19 },
   status: { flexDirection: 'row', gap: 7, alignItems: 'center' },
   statusDot: {
     width: 8,
@@ -724,20 +726,20 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   statusButton: {
-    backgroundColor: '#252A39',
+    backgroundColor: '#252525',
     borderRadius: 9,
     paddingHorizontal: 9,
     paddingVertical: 7,
   },
-  statusButtonText: { color: '#DDE0E8', fontSize: 11, fontWeight: '700' },
+  statusButtonText: { color: '#C7C7CC', fontSize: 11, fontWeight: '600' },
   testButton: {
     alignItems: 'center',
-    backgroundColor: '#A78BFA',
-    borderRadius: 11,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
     paddingVertical: 11,
     marginTop: 4,
   },
-  testButtonText: { color: '#171421', fontWeight: '800', fontSize: 12 },
+  testButtonText: { color: '#0E0E0F', fontWeight: '700', fontSize: 12 },
   soon: {
     backgroundColor: '#38313F',
     borderRadius: 7,
@@ -755,16 +757,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     alignItems: 'center',
-    backgroundColor: '#181B25',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#262C3E',
-    padding: 15,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 18,
   },
-  rowTitle: { color: '#F2F3F6', fontWeight: '700' },
-  rowText: { color: '#9298A9', marginTop: 4, fontSize: 12 },
-  rowAction: { color: '#C9B6E8', fontWeight: '800', fontSize: 12 },
-  footnote: { color: '#73798B', fontSize: 12, lineHeight: 18, marginTop: 8 },
+  rowTitle: { color: '#FAFAFA', fontWeight: '700' },
+  rowText: { color: '#A3A3A3', marginTop: 4, fontSize: 12 },
+  rowAction: { color: '#65D6C0', fontWeight: '600', fontSize: 12 },
+  footnote: { color: '#A3A3A3', fontSize: 12, lineHeight: 18, marginTop: 8 },
 });
 
 const lightStyles = StyleSheet.create({
@@ -777,8 +777,8 @@ const lightStyles = StyleSheet.create({
   heroTitle: { color: light.text },
   heroText: { color: light.muted },
   aiCard: {
-    backgroundColor: '#F1EAFB',
-    borderColor: '#C9B3E8',
+    backgroundColor: light.chipActive,
+    borderColor: light.border,
   },
   aiTitle: { color: '#4A3573' },
   aiText: { color: '#6B5B8A' },
@@ -825,4 +825,6 @@ const lightStyles = StyleSheet.create({
   rowText: { color: light.muted },
   rowAction: { color: light.accent },
   footnote: { color: light.muted },
+  testButton: { backgroundColor: light.text },
+  testButtonText: { color: '#FFFFFF' },
 });

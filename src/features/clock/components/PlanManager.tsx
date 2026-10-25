@@ -505,10 +505,10 @@ export function PlanManager({
           style={[styles.input, theme.isLight && lightStyles.input]}
         />
         <Pressable
-          style={styles.add}
+          style={[styles.add, theme.isLight && lightStyles.add]}
           onPress={editingCategory ? saveCategoryEdit : addCategory}
         >
-          <Text style={styles.addText}>
+          <Text style={[styles.addText, theme.isLight && lightStyles.addText]}>
             {editingCategory ? 'Guardar' : 'Añadir'}
           </Text>
         </Pressable>
@@ -584,7 +584,7 @@ export function PlanManager({
         ))}
       </ScrollView>
       <Pressable
-        style={styles.saveActivity}
+        style={[styles.saveActivity, theme.isLight && lightStyles.saveActivity]}
         onPress={
           editingBlock
             ? () => {
@@ -611,7 +611,7 @@ export function PlanManager({
             : addBlock
         }
       >
-        <Text style={styles.addText}>
+        <Text style={[styles.addText, theme.isLight && lightStyles.addText]}>
           {editingBlock ? 'Guardar cambios' : 'Guardar actividad'}
         </Text>
       </Pressable>
@@ -623,8 +623,8 @@ export function PlanManager({
         <Switch
           value={recurring}
           onValueChange={setRecurring}
-          trackColor={{ false: '#3A3F50', true: '#8066AA' }}
-          thumbColor={recurring ? '#CDB7F2' : '#BAC0CE'}
+          trackColor={{ false: theme.colors.surfaceMuted, true: theme.colors.accent }}
+          thumbColor={recurring ? '#FFFFFF' : theme.colors.muted}
         />
       </View>
       <Text style={[styles.label, theme.isLight && lightStyles.label]}>Actividades de este día</Text>
@@ -690,91 +690,90 @@ export function PlanManager({
 
 const styles = StyleSheet.create({
   label: {
-    color: '#C9B6E8',
+    color: '#C7C7CC',
     fontSize: 13,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.2,
   },
-  date: { backgroundColor: '#202433', borderRadius: 13, padding: 12, gap: 3 },
+  date: { backgroundColor: '#252525', borderRadius: 16, padding: 14, gap: 3 },
   dateOverline: {
-    color: '#A78BFA',
+    color: '#A3A3A3',
     fontSize: 10,
     fontWeight: '800',
     letterSpacing: 1,
   },
   dateText: {
-    color: '#F4F3F8',
+    color: '#FAFAFA',
     fontWeight: '700',
     textTransform: 'capitalize',
   },
-  help: { color: '#9DA2B3', fontSize: 13, marginTop: -7 },
+  help: { color: '#A3A3A3', fontSize: 13, marginTop: -7 },
   categories: { gap: 8 },
   category: {
     minHeight: 42,
-    borderRadius: 12,
-    backgroundColor: '#202433',
+    borderRadius: 14,
+    backgroundColor: '#252525',
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
   },
-  categoryActive: { borderWidth: 1, borderColor: '#A78BFA' },
-  categoryText: { flex: 1, color: '#EFF0F5', fontSize: 14 },
+  categoryActive: { borderWidth: 1, borderColor: '#555555', backgroundColor: '#303030' },
+  categoryText: { flex: 1, color: '#FAFAFA', fontSize: 14 },
   dot: { width: 9, height: 9, borderRadius: 5 },
   remove: { color: '#A6A9B7', fontSize: 23, lineHeight: 23 },
   inline: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   input: {
     flex: 1,
     height: 46,
-    backgroundColor: '#202433',
+    backgroundColor: '#202020',
     borderRadius: 12,
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     paddingHorizontal: 13,
   },
   to: { color: '#A6A9B7' },
   add: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     paddingHorizontal: 13,
     height: 46,
     justifyContent: 'center',
     borderRadius: 12,
   },
-  addText: { color: '#171421', fontWeight: '800', fontSize: 13 },
+  addText: { color: '#0E0E0F', fontWeight: '700', fontSize: 13 },
   colors: { flexDirection: 'row', gap: 12 },
   color: { width: 25, height: 25, borderRadius: 13 },
   colorSelected: { borderWidth: 3, borderColor: '#F8F7FB' },
-  divider: { height: 1, backgroundColor: '#282C3C', marginVertical: 5 },
+  divider: { height: 1, backgroundColor: '#2A2A2A', marginVertical: 5 },
   repeat: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#1C202D',
+    backgroundColor: '#252525',
     borderRadius: 12,
     padding: 12,
   },
-  repeatTitle: { color: '#E8E9EE', fontWeight: '700', fontSize: 14 },
+  repeatTitle: { color: '#FAFAFA', fontWeight: '600', fontSize: 14 },
   block: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 9,
-    backgroundColor: '#1C202D',
+    backgroundColor: '#252525',
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 11,
   },
-  blockText: { color: '#E5E6EB', flex: 1, fontSize: 14 },
-  none: { color: '#858B9B', fontSize: 13 },
+  blockText: { color: '#FAFAFA', flex: 1, fontSize: 14 },
+  none: { color: '#A3A3A3', fontSize: 13 },
   emojis: { flexDirection: 'row', gap: 8 },
-  emoji: { padding: 7, borderRadius: 9, backgroundColor: '#202433' },
-  emojiSelected: { borderWidth: 1, borderColor: '#A78BFA' },
-  edit: { color: '#C9B6E8', fontSize: 19, lineHeight: 22 },
-  timeLabel: { color: '#B9C0D0', fontSize: 12, fontWeight: '700' },
+  emoji: { padding: 7, borderRadius: 9, backgroundColor: '#252525' },
+  emojiSelected: { borderWidth: 1, borderColor: '#555555' },
+  edit: { color: '#C7C7CC', fontSize: 19, lineHeight: 22 },
+  timeLabel: { color: '#A3A3A3', fontSize: 12, fontWeight: '600' },
   timeRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 9 },
   timeField: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#202433',
+    backgroundColor: '#252525',
     borderRadius: 12,
     paddingHorizontal: 8,
     height: 46,
@@ -782,13 +781,13 @@ const styles = StyleSheet.create({
   },
   timePart: {
     width: 29,
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
     padding: 0,
   },
-  colon: { color: '#A78BFA', fontSize: 18, fontWeight: '900' },
+  colon: { color: '#65D6C0', fontSize: 18, fontWeight: '700' },
   timeChoices: { flexDirection: 'row', gap: 7 },
   suggestion: {
     backgroundColor: '#253A36',
@@ -798,7 +797,7 @@ const styles = StyleSheet.create({
   },
   timeChoiceText: { color: '#E8E9EE', fontSize: 12 },
   saveActivity: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     alignItems: 'center',
     padding: 13,
     borderRadius: 12,
@@ -837,4 +836,7 @@ const lightStyles = StyleSheet.create({
   colon: { color: light.accent },
   suggestion: { backgroundColor: '#E4EFE8' },
   timeChoiceText: { color: light.textSecondary },
+  add: { backgroundColor: light.text },
+  addText: { color: '#FFFFFF' },
+  saveActivity: { backgroundColor: light.text },
 });

@@ -1,5 +1,13 @@
-import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Pressable,
+  View,
+  Text,
+  StyleSheet,
+} from 'react-native';
 import { light, useTheme } from '../../../shared/theme/ThemeProvider';
 
 type Props = {
@@ -29,9 +37,38 @@ export function GoalProgressCard({
 }: Props) {
   const theme = useTheme();
   const pct = Math.max(0, Math.min(1, progressRatio)) * 100;
+  const fillProgress = useRef(new Animated.Value(pct / 100)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const subscription = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      setReduceMotion,
+    );
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      fillProgress.setValue(pct / 100);
+      return;
+    }
+    Animated.timing(fillProgress, {
+      toValue: pct / 100,
+      duration: 220,
+      easing: Easing.bezier(0.23, 1, 0.32, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [fillProgress, pct, reduceMotion]);
+
   return (
     <Pressable
-      style={[styles.card, theme.isLight && lightStyles.card]}
+      style={({ pressed }) => [
+        styles.card,
+        theme.isLight && lightStyles.card,
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
       <View style={styles.row}>
@@ -96,8 +133,14 @@ export function GoalProgressCard({
         </View>
       </View>
       <View style={[styles.track, theme.isLight && lightStyles.track]}>
-        <View
-          style={[styles.fill, { width: `${pct}%`, backgroundColor: color }]}
+        <Animated.View
+          style={[
+            styles.fill,
+            {
+              backgroundColor: color,
+              transform: [{ scaleX: fillProgress }],
+            },
+          ]}
         />
       </View>
     </Pressable>
@@ -106,14 +149,12 @@ export function GoalProgressCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#181B25',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#262C3E',
-    padding: 16,
-    marginHorizontal: 16,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 18,
     marginBottom: 12,
   },
+  pressed: { opacity: 0.82, transform: [{ scale: 0.992 }] },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -121,21 +162,26 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   titleWrap: { flex: 1, marginRight: 10 },
-  title: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  title: { color: '#FAFAFA', fontSize: 16, fontWeight: '700', letterSpacing: -0.15 },
   streak: { color: '#F5B86B', fontSize: 12, fontWeight: '700', marginTop: 2 },
-  reminder: { color: '#A78BFA', fontSize: 12, fontWeight: '700', marginTop: 2 },
-  reminderOff: { color: '#5A5F70' },
+  reminder: { color: '#65D6C0', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  reminderOff: { color: '#A3A3A3' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  label: { color: '#9CA3AF', fontSize: 13 },
-  delete: { color: '#E895A4', fontSize: 22, lineHeight: 22 },
-  undo: { color: '#C9B6E8', fontSize: 20, lineHeight: 22 },
+  label: { color: '#A3A3A3', fontSize: 13 },
+  delete: { color: '#F28B9A', fontSize: 22, lineHeight: 22 },
+  undo: { color: '#C7C7CC', fontSize: 20, lineHeight: 22 },
   track: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#2A2D3A',
+    backgroundColor: '#303030',
     overflow: 'hidden',
   },
-  fill: { height: '100%', borderRadius: 4 },
+  fill: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 4,
+    transformOrigin: 'left center',
+  },
 });
 const lightStyles = StyleSheet.create({
   card: { backgroundColor: light.surface },

@@ -220,7 +220,7 @@ export function OnboardingScreen({ onDone }: Props) {
             <View style={styles.actions}>
               {notifGranted === null ? (
                 <ActivityIndicator
-                  color={theme.isLight ? light.accent : '#A78BFA'}
+                  color={theme.isLight ? light.accent : '#FAFAFA'}
                 />
               ) : notifGranted ? (
                 <>
@@ -316,7 +316,7 @@ export function OnboardingScreen({ onDone }: Props) {
             ) : null}
             {creating ? (
               <ActivityIndicator
-                color={theme.isLight ? light.accent : '#A78BFA'}
+                color={theme.isLight ? light.accent : '#FAFAFA'}
                 style={styles.loaderSpaced}
               />
             ) : null}
@@ -392,7 +392,7 @@ export function OnboardingScreen({ onDone }: Props) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#0B0D14',
+    backgroundColor: '#0E0E0F',
   },
   topRow: {
     flexDirection: 'row',
@@ -408,21 +408,21 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#292E3D',
+    backgroundColor: '#282828',
   },
   dotActive: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     width: 24,
   },
   dotDone: {
-    backgroundColor: '#4A3F6B',
+    backgroundColor: '#555555',
   },
   skip: {
     paddingVertical: 8,
     paddingLeft: 16,
   },
   skipText: {
-    color: '#8E94A5',
+    color: '#A3A3A3',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -446,14 +446,14 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   body: {
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 17,
     lineHeight: 26,
     textAlign: 'center',
     marginTop: 12,
   },
   bodySmall: {
-    color: '#D1D5DB',
+    color: '#C7C7CC',
     fontSize: 14,
     lineHeight: 21,
     textAlign: 'center',
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: 'center',
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   primaryButtonText: {
-    color: '#171421',
+    color: '#0E0E0F',
     fontSize: 16,
     fontWeight: '800',
   },
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   secondaryButtonText: {
-    color: '#8E94A5',
+    color: '#A3A3A3',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -507,9 +507,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#181B25',
+    backgroundColor: '#191919',
     borderWidth: 1,
-    borderColor: '#292E3D',
+    borderColor: '#2A2A2A',
     borderRadius: 999,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   chipLabel: {
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 15,
     fontWeight: '600',
   },
@@ -527,22 +527,22 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   input: {
-    backgroundColor: '#181B25',
+    backgroundColor: '#191919',
     borderWidth: 1,
-    borderColor: '#292E3D',
+    borderColor: '#2A2A2A',
     borderRadius: 12,
     paddingVertical: 13,
     paddingHorizontal: 16,
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 16,
   },
   createdGoal: {
-    backgroundColor: '#181B25',
+    backgroundColor: '#191919',
     borderWidth: 1,
-    borderColor: '#292E3D',
+    borderColor: '#2A2A2A',
     borderRadius: 14,
     padding: 16,
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 15,
     lineHeight: 22,
     textAlign: 'center',
@@ -553,7 +553,7 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   bullet: {
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 16,
     lineHeight: 24,
   },
@@ -567,7 +567,7 @@ const lightStyles = StyleSheet.create({
     backgroundColor: light.border,
   },
   dotActive: {
-    backgroundColor: light.accent,
+    backgroundColor: light.text,
   },
   muted: {
     color: light.muted,

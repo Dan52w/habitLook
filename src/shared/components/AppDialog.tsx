@@ -64,7 +64,7 @@ export function AppDialog({
         return '#14412B';
       case 'info':
       default:
-        return '#2E234B';
+        return '#282828';
     }
   };
 
@@ -79,7 +79,7 @@ export function AppDialog({
         return '#4ADE80';
       case 'info':
       default:
-        return '#C4B5FD';
+        return '#FAFAFA';
     }
   };
 
@@ -162,7 +162,7 @@ export function AppDialog({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(5, 7, 12, 0.72)',
+    backgroundColor: 'rgba(0, 0, 0, 0.68)',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -170,12 +170,12 @@ const styles = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: '#171B27',
+    backgroundColor: '#191919',
     borderRadius: 22,
     padding: 22,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#262C3E',
+    borderColor: '#2A2A2A',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.4,
@@ -195,14 +195,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   title: {
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
   },
   message: {
-    color: '#9CA3AF',
+    color: '#A3A3A3',
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
@@ -227,10 +227,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   defaultBtn: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
   },
   defaultBtnText: {
-    color: '#171421',
+    color: '#0E0E0F',
     fontWeight: '800',
   },
   destructiveBtn: {
@@ -241,10 +241,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   cancelBtn: {
-    backgroundColor: '#252A39',
+    backgroundColor: '#252525',
   },
   cancelBtnText: {
-    color: '#D1D5DB',
+    color: '#C7C7CC',
   },
 });
 

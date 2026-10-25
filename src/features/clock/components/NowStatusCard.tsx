@@ -8,7 +8,11 @@ export function NowStatusCard({ activityName, color, onPress }: Props) {
   const theme = useTheme();
   return (
     <Pressable
-      style={[styles.card, theme.isLight && lightStyles.card]}
+      style={({ pressed }) => [
+        styles.card,
+        theme.isLight && lightStyles.card,
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
       <View style={[styles.dot, { backgroundColor: color }]} />
@@ -27,18 +31,16 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#181B25',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#262C3E',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
     gap: 10,
   },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.992 }] },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  text: { color: '#D1D5DB', fontSize: 14, flexShrink: 1 },
-  bold: { color: '#FFFFFF', fontWeight: '600' },
+  text: { color: '#C7C7CC', fontSize: 14, flexShrink: 1, lineHeight: 20 },
+  bold: { color: '#FAFAFA', fontWeight: '700' },
 });
 const lightStyles = StyleSheet.create({
   card: { backgroundColor: light.surface },

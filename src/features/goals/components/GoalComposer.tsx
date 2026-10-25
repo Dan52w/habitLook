@@ -191,8 +191,13 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
 
       <GoalReminderPicker value={reminderTime} onChange={setReminderTime} />
 
-      <Pressable style={styles.save} onPress={save}>
-        <Text style={styles.saveText}>Crear meta</Text>
+      <Pressable
+        style={[styles.save, theme.isLight && lightStyles.save]}
+        onPress={save}
+      >
+        <Text style={[styles.saveText, theme.isLight && lightStyles.saveText]}>
+          Crear meta
+        </Text>
       </Pressable>
     </AppModal>
   );
@@ -200,11 +205,10 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
 
 const styles = StyleSheet.create({
   label: {
-    color: '#C9B6E8',
+    color: '#C7C7CC',
     fontSize: 13,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 0.2,
     marginTop: 4,
   },
   chips: {
@@ -216,17 +220,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    borderRadius: 12,
-    backgroundColor: '#202433',
+    borderRadius: 14,
+    backgroundColor: '#252525',
     paddingHorizontal: 12,
     paddingVertical: 11,
   },
   chipActive: {
     borderWidth: 1,
-    borderColor: '#A78BFA',
+    borderColor: '#555555',
+    backgroundColor: '#303030',
   },
   chipText: {
-    color: '#E8E9EE',
+    color: '#FAFAFA',
     fontSize: 14,
   },
   dot: {
@@ -237,8 +242,8 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#202433',
-    color: '#F8F7FB',
+    backgroundColor: '#202020',
+    color: '#FAFAFA',
     paddingHorizontal: 13,
     fontSize: 15,
   },
@@ -248,11 +253,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 14,
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
   },
   saveText: {
-    color: '#171421',
-    fontWeight: '800',
+    color: '#0E0E0F',
+    fontWeight: '700',
     fontSize: 15,
   },
 });
@@ -268,7 +273,7 @@ const lightStyles = StyleSheet.create({
   },
   chipActive: {
     borderColor: light.accent,
-    backgroundColor: '#EAE4D9',
+    backgroundColor: light.chipActive,
   },
   chipText: {
     color: light.text,
@@ -279,4 +284,6 @@ const lightStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
   },
+  save: { backgroundColor: light.text },
+  saveText: { color: '#FFFFFF' },
 });

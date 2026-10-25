@@ -71,9 +71,11 @@ export function AccountingScreen() {
                 setEditingAccount(null);
                 setAccountModalVisible(true);
               }}
-              style={styles.addAccount}
+              style={[styles.addAccount, theme.isLight && lightStyles.addAccount]}
             >
-              <Text style={styles.addAccountText}>+ Banco</Text>
+              <Text style={[styles.addAccountText, theme.isLight && lightStyles.addAccountText]}>
+                + Banco
+              </Text>
             </Pressable>
           }
         />
@@ -165,16 +167,16 @@ export function AccountingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0D14' },
-  content: { padding: 20, gap: 14, paddingBottom: 36 },
+  container: { flex: 1, backgroundColor: '#0E0E0F' },
+  content: { padding: 20, gap: 20, paddingBottom: 36 },
   addAccount: {
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#725A9B',
+    borderColor: '#3A3A3A',
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  addAccountText: { color: '#D9C9F3', fontSize: 12, fontWeight: '800' },
+  addAccountText: { color: '#FAFAFA', fontSize: 12, fontWeight: '600' },
 });
 
 const lightStyles = StyleSheet.create({
@@ -182,4 +184,6 @@ const lightStyles = StyleSheet.create({
   card: { backgroundColor: light.surface },
   text: { color: light.text },
   muted: { color: light.muted },
+  addAccount: { backgroundColor: light.text, borderColor: light.text },
+  addAccountText: { color: '#FFFFFF' },
 });

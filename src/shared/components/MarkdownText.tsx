@@ -90,7 +90,7 @@ type Props = {
   style?: StyleProp<TextStyle>;
 };
 
-export function MarkdownText({ text, color = '#EDE9F6', style }: Props) {
+export function MarkdownText({ text, color = '#FAFAFA', style }: Props) {
   let blocks: Block[];
   try {
     blocks = parseBlocks(text);
@@ -117,7 +117,7 @@ export function MarkdownText({ text, color = '#EDE9F6', style }: Props) {
               {block.items.map((item, ii) => (
                 <Text key={`${key}i${ii}`}>
                   {'  '}
-                  <Text style={{ color: '#A78BFA', fontWeight: '900' }}>
+                  <Text style={{ color: '#65D6C0', fontWeight: '900' }}>
                     {block.ordered ? `${ii + 1}. ` : '• '}
                   </Text>
                   {renderInline(item, `${key}i${ii}`, color)}

@@ -90,7 +90,7 @@ function GoalRow({ goal }: { goal: WeeklyGoalStat }) {
           {detail}
         </Text>
       </View>
-      <Bar ratio={ratio} color={goal.weekCompleted ? '#4ADE80' : '#A78BFA'} />
+      <Bar ratio={ratio} color={goal.weekCompleted ? '#65D6C0' : '#FAFAFA'} />
     </View>
   );
 }
@@ -184,7 +184,7 @@ export function WeeklyStatsModal({ visible, onClose }: Props) {
               <Text style={[styles.heroTitle, isLight && lightStyles.text]}>
                 de tus días de metas{'\n'}cumplidos
               </Text>
-              <Bar ratio={stats.completionPct / 100} color="#A78BFA" />
+              <Bar ratio={stats.completionPct / 100} color="#FAFAFA" />
             </View>
           </View>
 
@@ -284,11 +284,15 @@ export function WeeklyStatsModal({ visible, onClose }: Props) {
               />
             </View>
             <Pressable
-              style={[styles.shareButton, sharing && styles.shareDisabled]}
+              style={[
+                styles.shareButton,
+                isLight && lightStyles.shareButton,
+                sharing && styles.shareDisabled,
+              ]}
               onPress={shareWeek}
               disabled={sharing}
             >
-              <Text style={styles.shareText}>
+              <Text style={[styles.shareText, isLight && lightStyles.shareText]}>
                 {sharing ? 'Preparando imagen…' : '📤 Compartir mi semana'}
               </Text>
             </Pressable>
@@ -309,44 +313,44 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#1B1F2D',
+    backgroundColor: '#252525',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  navArrow: { color: '#D9C9F3', fontSize: 26, fontWeight: '700' },
-  navArrowDisabled: { color: '#4A5063' },
+  navArrow: { color: '#FAFAFA', fontSize: 26, fontWeight: '700' },
+  navArrowDisabled: { color: '#555555' },
   weekLabel: {
-    color: '#EDEEF3',
+    color: '#FAFAFA',
     fontSize: 16,
     fontWeight: '700',
     textTransform: 'capitalize',
   },
-  loading: { color: '#AEB2C0', textAlign: 'center', marginVertical: 30 },
+  loading: { color: '#A3A3A3', textAlign: 'center', marginVertical: 30 },
   hero: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    backgroundColor: '#171B27',
+    backgroundColor: '#191919',
     borderRadius: 18,
     padding: 18,
   },
-  heroPct: { color: '#A78BFA', fontSize: 40, fontWeight: '800' },
+  heroPct: { color: '#FAFAFA', fontSize: 40, fontWeight: '800' },
   heroBody: { flex: 1, gap: 8 },
-  heroTitle: { color: '#C8CBDA', fontSize: 14, lineHeight: 19 },
+  heroTitle: { color: '#C7C7CC', fontSize: 14, lineHeight: 19 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   tile: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#171B27',
+    backgroundColor: '#191919',
     borderRadius: 16,
     padding: 14,
     gap: 4,
   },
   tileIcon: { fontSize: 20 },
-  tileValue: { color: '#F8F7FB', fontSize: 19, fontWeight: '800' },
-  tileLabel: { color: '#858B9D', fontSize: 12 },
+  tileValue: { color: '#FAFAFA', fontSize: 19, fontWeight: '800' },
+  tileLabel: { color: '#A3A3A3', fontSize: 12 },
   sectionTitle: {
-    color: '#C9B6E8',
+    color: '#FAFAFA',
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 8,
@@ -359,25 +363,25 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     gap: 8,
   },
-  rowTitle: { color: '#EDEEF3', fontSize: 14, fontWeight: '600', flex: 1 },
-  rowDetail: { color: '#858B9D', fontSize: 12, fontWeight: '700' },
+  rowTitle: { color: '#FAFAFA', fontSize: 14, fontWeight: '600', flex: 1 },
+  rowDetail: { color: '#A3A3A3', fontSize: 12, fontWeight: '700' },
   barTrack: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#232839',
+    backgroundColor: '#282828',
     overflow: 'hidden',
   },
   barFill: { height: 8, borderRadius: 4 },
   previewWrap: { alignItems: 'center' },
   shareButton: {
     alignItems: 'center',
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     borderRadius: 13,
     padding: 15,
     marginTop: 10,
   },
   shareDisabled: { opacity: 0.6 },
-  shareText: { color: '#171421', fontWeight: '800', fontSize: 15 },
+  shareText: { color: '#0E0E0F', fontWeight: '800', fontSize: 15 },
 });
 
 const lightStyles = StyleSheet.create({
@@ -387,6 +391,8 @@ const lightStyles = StyleSheet.create({
   tile: { backgroundColor: light.surface },
   tileValue: { color: light.text },
   tileLabel: { color: light.muted },
-  barTrack: { backgroundColor: '#E9E2D2' },
-  navButton: { backgroundColor: '#EFE9DB' },
+  barTrack: { backgroundColor: light.surfaceMuted },
+  navButton: { backgroundColor: light.surfaceMuted },
+  shareButton: { backgroundColor: light.text },
+  shareText: { color: '#FFFFFF' },
 });

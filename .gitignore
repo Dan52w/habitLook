@@ -90,3 +90,4 @@ node_modules/
 # API keys (nunca subir al repo)
 .env
 src/services/ai/embeddedSecrets.ts
+src/services/ai/embeddedSecrets.example

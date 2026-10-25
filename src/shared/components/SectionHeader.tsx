@@ -39,22 +39,23 @@ const styles = StyleSheet.create({
   },
   titles: { flex: 1 },
   eyebrow: {
-    color: '#A78BFA',
+    color: '#A3A3A3',
     fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '800',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   title: {
-    color: '#F8F7FB',
-    fontSize: 24,
+    color: '#FAFAFA',
+    fontSize: 26,
     fontWeight: '700',
-    marginTop: 2,
-    letterSpacing: -0.3,
+    lineHeight: 31,
+    marginTop: 4,
+    letterSpacing: -0.55,
   },
   action: { paddingTop: 2 },
 });
 
 const lightStyles = StyleSheet.create({
-  eyebrow: { color: light.accent },
+  eyebrow: { color: light.muted },
   title: { color: light.text },
 });

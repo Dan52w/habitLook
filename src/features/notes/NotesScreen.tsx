@@ -429,10 +429,16 @@ export function NotesScreen() {
 
           <Pressable
             onPress={save}
-            style={[styles.save, saving && styles.saveDisabled]}
+            style={[
+              styles.save,
+              theme.isLight && lightStyles.save,
+              saving && styles.saveDisabled,
+            ]}
             disabled={saving}
           >
-            <Text style={styles.saveText}>
+            <Text
+              style={[styles.saveText, theme.isLight && lightStyles.saveText]}
+            >
               {saving
                 ? 'Guardando…'
                 : editingId
@@ -599,7 +605,7 @@ export function NotesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0D14' },
+  container: { flex: 1, backgroundColor: '#0E0E0F' },
   content: {
     paddingHorizontal: 18,
     paddingVertical: 16,
@@ -612,14 +618,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#171B27',
-    borderRadius: 14,
-    padding: 12,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 16,
   },
   dateSelectorDisabled: { opacity: 0.6 },
   allDatesToggle: {
-    backgroundColor: '#202433',
-    borderRadius: 14,
+    backgroundColor: '#252525',
+    borderRadius: 16,
     paddingHorizontal: 14,
     height: 48,
     justifyContent: 'center',
@@ -627,63 +633,63 @@ const styles = StyleSheet.create({
   },
   allDatesToggleActive: {
     borderWidth: 1,
-    borderColor: '#A78BFA',
-    backgroundColor: '#2A2342',
+    borderColor: '#555555',
+    backgroundColor: '#303030',
   },
-  allDatesText: { color: '#8E94A5', fontSize: 12, fontWeight: '700' },
-  allDatesTextActive: { color: '#D9C9F3' },
+  allDatesText: { color: '#A3A3A3', fontSize: 12, fontWeight: '600' },
+  allDatesTextActive: { color: '#FAFAFA' },
   dateLabel: {
-    color: '#A78BFA',
-    fontWeight: '800',
-    fontSize: 10,
-    letterSpacing: 1,
+    color: '#A3A3A3',
+    fontWeight: '600',
+    fontSize: 11,
+    letterSpacing: 0.4,
   },
   dateValue: {
-    color: '#EDEEF3',
+    color: '#FAFAFA',
     fontWeight: '600',
     textTransform: 'capitalize',
     marginTop: 3,
   },
-  chevron: { color: '#C9B6E8', fontSize: 23 },
+  chevron: { color: '#A3A3A3', fontSize: 23 },
   composer: {
-    backgroundColor: '#181B25',
-    borderRadius: 18,
-    padding: 14,
-    gap: 10,
+    backgroundColor: '#191919',
+    borderRadius: 20,
+    padding: 18,
+    gap: 12,
   },
   textarea: {
-    color: '#F6F7FA',
+    color: '#FAFAFA',
     minHeight: 72,
     fontSize: 15,
     textAlignVertical: 'top',
   },
-  associationLabel: { color: '#AAB0C0', fontSize: 11, fontWeight: '700' },
+  associationLabel: { color: '#A3A3A3', fontSize: 11, fontWeight: '600' },
   planChips: { gap: 7 },
   planChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 11,
-    backgroundColor: '#252A39',
+    borderRadius: 14,
+    backgroundColor: '#252525',
     paddingHorizontal: 10,
     paddingVertical: 8,
   },
-  planChipActive: { borderWidth: 1, borderColor: '#A78BFA' },
-  planChipText: { color: '#E2E3E9', fontSize: 12 },
+  planChipActive: { borderWidth: 1, borderColor: '#555555', backgroundColor: '#303030' },
+  planChipText: { color: '#C7C7CC', fontSize: 12 },
   save: {
     alignSelf: 'flex-end',
-    backgroundColor: '#A78BFA',
-    borderRadius: 10,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
   saveDisabled: { opacity: 0.6 },
-  saveText: { color: '#171421', fontWeight: '800' },
+  saveText: { color: '#0E0E0F', fontWeight: '700' },
   search: {
     height: 47,
-    color: '#F6F7FA',
-    borderRadius: 13,
-    backgroundColor: '#1B1E29',
+    color: '#FAFAFA',
+    borderRadius: 16,
+    backgroundColor: '#191919',
     paddingHorizontal: 14,
   },
   filters: { gap: 8 },
@@ -692,19 +698,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     borderRadius: 20,
-    backgroundColor: '#202433',
+    backgroundColor: '#252525',
     paddingHorizontal: 12,
     paddingVertical: 9,
   },
-  filterActive: { borderWidth: 1, borderColor: '#A78BFA' },
-  filterText: { color: '#DDE0E8', fontSize: 13 },
+  filterActive: { borderWidth: 1, borderColor: '#555555', backgroundColor: '#303030' },
+  filterText: { color: '#C7C7CC', fontSize: 13 },
   dot: { width: 7, height: 7, borderRadius: 4 },
   note: {
-    backgroundColor: '#181B25',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#262C3E',
-    padding: 15,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 18,
     gap: 9,
   },
   noteHeader: {
@@ -713,33 +717,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   category: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  categoryText: { color: '#CFC4DF', fontSize: 12, fontWeight: '700' },
-  noteText: { color: '#F2F3F6', fontSize: 15, lineHeight: 21 },
+  categoryText: { color: '#65D6C0', fontSize: 12, fontWeight: '600' },
+  noteText: { color: '#FAFAFA', fontSize: 15, lineHeight: 21 },
   linked: {
     alignSelf: 'flex-start',
     borderRadius: 7,
-    backgroundColor: '#2A3040',
+    backgroundColor: '#282828',
     paddingHorizontal: 8,
     paddingVertical: 5,
   },
-  linkedText: { color: '#C9B6E8', fontSize: 11, fontWeight: '700' },
-  date: { color: '#7C8192', fontSize: 12 },
+  linkedText: { color: '#C7C7CC', fontSize: 11, fontWeight: '600' },
+  date: { color: '#A3A3A3', fontSize: 12 },
   reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   reminderClear: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
-  reminderSet: { color: '#A78BFA', fontSize: 12, fontWeight: '700' },
+  reminderSet: { color: '#65D6C0', fontSize: 12, fontWeight: '600' },
   delete: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
-  edit: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
+  edit: { color: '#C7C7CC', fontSize: 12, fontWeight: '600' },
   noteActions: { flexDirection: 'row', gap: 14, alignItems: 'center' },
   editingBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#2A2440',
-    borderRadius: 10,
+    backgroundColor: '#282828',
+    borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  editingText: { color: '#C9B6E8', fontSize: 12, fontWeight: '700' },
+  editingText: { color: '#FAFAFA', fontSize: 12, fontWeight: '600' },
   editingCancel: { color: '#E895A4', fontSize: 12, fontWeight: '700' },
 });
 
@@ -759,7 +763,7 @@ const lightStyles = StyleSheet.create({
     borderColor: light.border,
   },
   allDatesToggleActive: {
-    backgroundColor: '#EDE5F8',
+    backgroundColor: light.chipActive,
     borderColor: light.accent,
   },
   allDatesText: { color: light.muted },
@@ -770,6 +774,8 @@ const lightStyles = StyleSheet.create({
     borderColor: light.border,
   },
   textarea: { color: light.text },
+  save: { backgroundColor: light.text },
+  saveText: { color: '#FFFFFF' },
   associationLabel: { color: light.muted },
   planChip: {
     backgroundColor: light.surfaceMuted,
@@ -778,7 +784,7 @@ const lightStyles = StyleSheet.create({
   },
   planChipActive: {
     borderColor: light.accent,
-    backgroundColor: '#ECE4F8',
+    backgroundColor: light.chipActive,
   },
   planChipText: { color: light.muted },
   planChipTextActive: { color: light.text, fontWeight: '700' },
@@ -795,7 +801,7 @@ const lightStyles = StyleSheet.create({
   },
   filterActive: {
     borderColor: light.accent,
-    backgroundColor: '#ECE4F8',
+    backgroundColor: light.chipActive,
   },
   filterText: { color: light.muted },
   filterTextActive: { color: light.text, fontWeight: '700' },

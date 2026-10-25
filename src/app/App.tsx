@@ -149,10 +149,10 @@ export default function App() {
           flex: 1,
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#0B0D14',
+          backgroundColor: '#0E0E0F',
         }}
       >
-        <ActivityIndicator color="#9B8FBF" />
+        <ActivityIndicator color="#FAFAFA" />
       </View>
     );
   }
@@ -166,14 +166,14 @@ export default function App() {
             alignItems: 'center',
             justifyContent: 'center',
             padding: 28,
-            backgroundColor: '#0B0D14',
+            backgroundColor: '#0E0E0F',
             gap: 14,
           }}
         >
-          <Text style={{ color: '#F8F7FB', fontSize: 20, fontWeight: '700' }}>
+          <Text style={{ color: '#FAFAFA', fontSize: 20, fontWeight: '700' }}>
             No se pudo abrir tu bóveda local
           </Text>
-          <Text style={{ color: '#AEB2C0', textAlign: 'center' }}>
+          <Text style={{ color: '#A3A3A3', textAlign: 'center' }}>
             Tus datos no se han modificado. Intenta abrir la app de nuevo.
           </Text>
           <Pressable
@@ -183,13 +183,13 @@ export default function App() {
               setRetry(value => value + 1);
             }}
             style={{
-              backgroundColor: '#A78BFA',
+              backgroundColor: '#FAFAFA',
               borderRadius: 12,
               paddingHorizontal: 16,
               paddingVertical: 11,
             }}
           >
-            <Text style={{ color: '#171421', fontWeight: '800' }}>
+            <Text style={{ color: '#0E0E0F', fontWeight: '800' }}>
               Reintentar
             </Text>
           </Pressable>

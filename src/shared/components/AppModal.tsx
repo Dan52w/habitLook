@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useTheme } from '../theme/ThemeProvider';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Props = {
   visible: boolean;
@@ -18,6 +19,7 @@ type Props = {
 
 export function AppModal({ visible, title, onClose, children }: Props) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Modal
@@ -47,14 +49,17 @@ export function AppModal({ visible, title, onClose, children }: Props) {
               onPress={onClose}
               hitSlop={12}
             >
-              <Text style={[styles.close, { color: theme.colors.accentLight }]}>
+              <Text style={[styles.close, { color: theme.colors.muted }]}>
                 ×
               </Text>
             </Pressable>
           </View>
           <ScrollView
             keyboardShouldPersistTaps="handled"
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: 24 + insets.bottom },
+            ]}
           >
             {children}
           </ScrollView>
@@ -68,13 +73,13 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(4, 5, 10, .7)',
+    backgroundColor: 'rgba(0, 0, 0, .64)',
   },
   sheet: {
     maxHeight: '88%',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 18,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 10,
     borderWidth: 1,
     borderBottomWidth: 0,
   },
@@ -82,11 +87,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 22,
-    paddingBottom: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  title: { fontSize: 19, fontWeight: '700' },
-  close: { fontSize: 32, lineHeight: 32 },
-  content: { padding: 20, paddingBottom: 44, gap: 14 },
+  title: { fontSize: 18, fontWeight: '700', letterSpacing: -0.25 },
+  close: { fontSize: 30, lineHeight: 32, fontWeight: '300' },
+  content: { padding: 20, gap: 16 },
 });

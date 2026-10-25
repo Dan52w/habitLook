@@ -62,34 +62,34 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B0D14',
+    backgroundColor: '#0E0E0F',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 32,
   },
   icon: { fontSize: 40, marginBottom: 12 },
-  title: { color: '#F8F7FB', fontSize: 18, fontWeight: '700' },
+  title: { color: '#FAFAFA', fontSize: 18, fontWeight: '700' },
   message: {
-    color: '#8E94A5',
+    color: '#A3A3A3',
     fontSize: 14,
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
   },
   button: {
-    backgroundColor: '#A78BFA',
+    backgroundColor: '#FAFAFA',
     borderRadius: 12,
     paddingHorizontal: 22,
     paddingVertical: 12,
     marginTop: 18,
   },
-  buttonText: { color: '#171421', fontWeight: '800', fontSize: 14 },
+  buttonText: { color: '#0E0E0F', fontWeight: '800', fontSize: 14 },
 });
 
 const lightStyles = StyleSheet.create({
   container: { backgroundColor: light.background },
   title: { color: light.text },
   message: { color: light.muted },
-  button: { backgroundColor: light.accent },
+  button: { backgroundColor: light.text },
   buttonText: { color: '#FFFFFF' },
 });

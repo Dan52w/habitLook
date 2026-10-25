@@ -55,13 +55,13 @@ export function AccountList({
             onPress={onAddAccount}
             style={[
               styles.emptyAction,
-              { backgroundColor: theme.colors.accent },
+              { backgroundColor: theme.colors.text },
             ]}
           >
             <Text
               style={[
                 styles.emptyActionText,
-                { color: theme.isLight ? '#FFFDF8' : '#171421' },
+                { color: theme.isLight ? '#FFFFFF' : '#0E0E0F' },
               ]}
             >
               + Banco

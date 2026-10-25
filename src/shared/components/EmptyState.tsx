@@ -18,8 +18,11 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Prop
   const theme = useTheme();
   return (
     <View style={[styles.container, theme.isLight && lightStyles.container]}>
-      <View style={[styles.iconWrap, theme.isLight && lightStyles.iconWrap]}>
-        <Text style={styles.icon}>{icon}</Text>
+      <View
+        accessibilityLabel={icon}
+        style={[styles.iconWrap, theme.isLight && lightStyles.iconWrap]}
+      >
+        <View style={styles.mark} />
       </View>
       <Text style={[styles.title, theme.isLight && lightStyles.title]}>
         {title}
@@ -54,15 +57,15 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#1D2233',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#242424',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
-  icon: { fontSize: 26 },
+  mark: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#65D6C0' },
   title: {
     color: '#F2F3F6',
     fontSize: 16,
@@ -77,13 +80,13 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   action: {
-    backgroundColor: '#A78BFA',
-    borderRadius: 12,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 11,
     marginTop: 14,
   },
-  actionText: { color: '#171421', fontWeight: '800', fontSize: 14 },
+  actionText: { color: '#0E0E0F', fontWeight: '700', fontSize: 14 },
 });
 
 const lightStyles = StyleSheet.create({
@@ -91,6 +94,6 @@ const lightStyles = StyleSheet.create({
   iconWrap: { backgroundColor: light.surfaceMuted },
   title: { color: light.text },
   message: { color: light.muted },
-  action: { backgroundColor: light.accent },
+  action: { backgroundColor: light.text },
   actionText: { color: '#FFFFFF' },
 });

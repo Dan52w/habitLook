@@ -40,17 +40,23 @@ import {
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
-function useNow(intervalMs = 30_000) {
+function useNow() {
   const [now, setNow] = useState(() => new Date());
   const isFocused = useIsFocused();
 
   useEffect(() => {
-    // Solo actualizar el reloj cuando la pestaña está visible.
+    // Alineamos la actualización al cambio real de minuto: el reloj no salta
+    // dos veces por minuto ni queda atrasado hasta el siguiente intervalo.
     if (!isFocused) return;
-    setNow(new Date());
-    const timer = setInterval(() => setNow(new Date()), intervalMs);
-    return () => clearInterval(timer);
-  }, [intervalMs, isFocused]);
+    let timer: ReturnType<typeof setTimeout>;
+    const update = () => {
+      setNow(new Date());
+      const delay = 60_050 - (Date.now() % 60_000);
+      timer = setTimeout(update, delay);
+    };
+    update();
+    return () => clearTimeout(timer);
+  }, [isFocused]);
 
   return now;
 }
@@ -220,6 +226,7 @@ export function ClockScreen() {
   const nowMinutesRaw = now.getHours() * 60 + now.getMinutes();
   let nowAngle: number | null = null;
   let centerSub: string | undefined;
+  let centerMeta: string | undefined;
   if (viewingToday) {
     const windowStart = isDay ? 360 : 1080;
     let m = nowMinutesRaw;
@@ -230,16 +237,18 @@ export function ClockScreen() {
     if (cur) {
       const name =
         cur.categoryId === '__free__' ? 'Tiempo libre' : cur.categoryName;
-      centerSub = `${name} · ${formatTimeMinutes(cur.endMinutes)}`;
+      centerSub = name;
+      centerMeta = `hasta ${formatTimeMinutes(cur.endMinutes)}`;
     }
   } else {
     const planned = [...segments, ...nightSegments]
       .filter(s => s.categoryId !== '__free__')
       .reduce((acc, s) => acc + s.hours, 0);
-    centerSub =
+    centerSub = planned > 0 ? 'Plan del día' : 'Sin plan';
+    centerMeta =
       planned > 0
         ? `${planned % 1 ? planned.toFixed(1) : planned} h planificadas`
-        : 'Sin plan';
+        : 'Elige una fecha';
   }
 
   if (initialLoading) {
@@ -260,15 +269,28 @@ export function ClockScreen() {
             <View style={styles.headerActions}>
               <Pressable
                 onPress={() => setStatsOpen(true)}
-                style={[styles.planButton, themed?.border]}
+                style={({ pressed }) => [
+                  styles.planButton,
+                  themed?.border,
+                  theme.isLight && styles.statsButtonLight,
+                  pressed && styles.buttonPressed,
+                ]}
               >
-                <Text style={styles.planText}>📊 Stats</Text>
+                <Text style={[styles.planText, theme.isLight && styles.statsTextLight]}>
+                  📊 Stats
+                </Text>
               </Pressable>
               <Pressable
                 onPress={() => setPlanOpen(true)}
-                style={[styles.planButton, themed?.border]}
+                style={({ pressed }) => [
+                  styles.planButton,
+                  theme.isLight && styles.planButtonLight,
+                  pressed && styles.buttonPressed,
+                ]}
               >
-                <Text style={styles.planText}>+ Planificar</Text>
+                <Text style={[styles.planText, theme.isLight && styles.planTextLight]}>
+                  + Planificar
+                </Text>
               </Pressable>
             </View>
           }
@@ -276,17 +298,23 @@ export function ClockScreen() {
 
         <Pressable
           onPress={() => setCalendarOpen(open => !open)}
-          style={[styles.dateSelector, themed?.card]}
+          style={({ pressed }) => [
+            styles.dateSelector,
+            themed?.card,
+            pressed && styles.buttonPressed,
+          ]}
         >
           <View>
-            <Text style={styles.dateLabel}>
+            <Text style={[styles.dateLabel, themed?.muted]}>
               {selectedDate === currentTodayKey ? 'HOY' : 'DÍA ELEGIDO'}
             </Text>
             <Text style={[styles.dateValue, themed?.text]}>
               {formatDisplayDate(selectedDate)}
             </Text>
           </View>
-          <Text style={styles.calendarIcon}>{calendarOpen ? '⌃' : '⌄'}</Text>
+          <Text style={[styles.calendarIcon, themed?.muted]}>
+            {calendarOpen ? '⌃' : '⌄'}
+          </Text>
         </Pressable>
 
         {calendarOpen && (
@@ -306,6 +334,7 @@ export function ClockScreen() {
             onSegmentPress={setSelectedSegment}
             nowAngle={nowAngle}
             centerSub={centerSub}
+            centerMeta={centerMeta}
           />
         </View>
 
@@ -331,9 +360,11 @@ export function ClockScreen() {
         />
 
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Metas de hoy</Text>
+          <Text style={[styles.sectionTitle, themed?.text]}>Metas de hoy</Text>
           <Pressable onPress={() => setGoalOpen(true)}>
-            <Text style={styles.link}>+ Nueva</Text>
+            <Text style={[styles.link, theme.isLight && lightStyles.link]}>
+              + Nueva
+            </Text>
           </Pressable>
         </View>
 
@@ -380,7 +411,7 @@ export function ClockScreen() {
           ))
         )}
 
-        <Text style={styles.hint}>
+        <Text style={[styles.hint, themed?.muted]}>
           Toca una meta para registrar 5 min o 1 avance. Usa ↶ para deshacer un
           toque por error.
         </Text>
@@ -420,8 +451,18 @@ export function ClockScreen() {
         onClose={() => setReminderGoal(null)}
       >
         <GoalReminderPicker value={reminderTime} onChange={setReminderTime} />
-        <Pressable style={styles.detailButton} onPress={saveReminder}>
-          <Text style={styles.detailButtonText}>Guardar aviso</Text>
+        <Pressable
+          style={[styles.detailButton, theme.isLight && lightStyles.detailButton]}
+          onPress={saveReminder}
+        >
+          <Text
+            style={[
+              styles.detailButtonText,
+              theme.isLight && lightStyles.detailButtonText,
+            ]}
+          >
+            Guardar aviso
+          </Text>
         </Pressable>
       </AppModal>
 
@@ -438,11 +479,11 @@ export function ClockScreen() {
                 { backgroundColor: selectedSegment.color },
               ]}
             />
-            <Text style={styles.detailTime}>
+          <Text style={[styles.detailTime, themed?.text]}>
               {formatTimeMinutes(selectedSegment.startMinutes)} —{' '}
               {formatTimeMinutes(selectedSegment.endMinutes)}
             </Text>
-            <Text style={styles.detail}>
+          <Text style={[styles.detail, themed?.muted]}>
               {selectedSegment.categoryId === '__free__'
                 ? 'Este tiempo está disponible. Úsalo para crear una actividad en el día elegido.'
                 : `Bloque de ${
@@ -472,39 +513,44 @@ export function ClockScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B0D14' },
-  content: { padding: 18, paddingBottom: 38, gap: 14 },
+  container: { flex: 1, backgroundColor: '#0E0E0F' },
+  content: { padding: 20, paddingBottom: 34, gap: 18 },
   headerActions: { flexDirection: 'row', gap: 8 },
   planButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#624B86',
+    borderColor: '#3A3A3A',
     paddingHorizontal: 13,
     paddingVertical: 9,
   },
-  planText: { color: '#D9C9F3', fontWeight: '700', fontSize: 13 },
+  planButtonLight: { backgroundColor: light.text, borderColor: light.text },
+  planText: { color: '#FAFAFA', fontWeight: '600', fontSize: 13 },
+  planTextLight: { color: '#FFFFFF' },
+  statsButtonLight: { backgroundColor: light.surface, borderColor: light.border },
+  statsTextLight: { color: light.text },
+  buttonPressed: { opacity: 0.72, transform: [{ scale: 0.985 }] },
   dateSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#171B27',
-    borderRadius: 14,
-    padding: 12,
+    backgroundColor: '#191919',
+    borderRadius: 18,
+    padding: 16,
   },
   dateLabel: {
-    color: '#A78BFA',
-    fontWeight: '800',
-    fontSize: 10,
-    letterSpacing: 1,
+    color: '#A3A3A3',
+    fontWeight: '600',
+    fontSize: 11,
+    letterSpacing: 0.4,
   },
   dateValue: {
-    color: '#EDEEF3',
+    color: '#FAFAFA',
     fontWeight: '600',
     textTransform: 'capitalize',
     marginTop: 3,
   },
-  calendarIcon: { color: '#C9B6E8', fontSize: 23 },
-  ringWrapper: { alignItems: 'center', marginTop: 2 },
+  calendarIcon: { color: '#A3A3A3', fontSize: 23 },
+  ringWrapper: { alignItems: 'center', marginTop: 4 },
   ringKey: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -514,40 +560,40 @@ const styles = StyleSheet.create({
   keyPill: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2A2F42',
-    backgroundColor: '#12151F',
+    borderColor: '#2A2A2A',
+    backgroundColor: '#191919',
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  keyPillActive: { borderColor: '#A78BFA', backgroundColor: '#1E1830' },
-  keyPillText: { color: '#858B9D', fontSize: 11, fontWeight: '700' },
-  keyPillTextActive: { color: '#D9C9F3' },
+  keyPillActive: { borderColor: '#555555', backgroundColor: '#282828' },
+  keyPillText: { color: '#A3A3A3', fontSize: 11, fontWeight: '600' },
+  keyPillTextActive: { color: '#FAFAFA' },
   sectionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 5,
   },
-  sectionTitle: { color: '#C9B6E8', fontSize: 14, fontWeight: '700' },
-  link: { color: '#A78BFA', fontWeight: '700' },
+  sectionTitle: { color: '#FAFAFA', fontSize: 16, fontWeight: '700' },
+  link: { color: '#65D6C0', fontWeight: '600' },
   loading: { color: '#FFFFFF', textAlign: 'center', marginTop: 40 },
-  hint: { color: '#74798A', fontSize: 12, marginTop: -8 },
+  hint: { color: '#A3A3A3', fontSize: 12, marginTop: -8 },
   segmentColor: { height: 6, borderRadius: 3 },
   detailTime: {
-    color: '#F8F7FB',
+    color: '#FAFAFA',
     fontSize: 21,
     fontWeight: '700',
     marginTop: 4,
   },
-  detail: { color: '#AEB2C0', lineHeight: 21 },
+  detail: { color: '#C7C7CC', lineHeight: 21 },
   detailButton: {
     alignItems: 'center',
-    backgroundColor: '#A78BFA',
-    borderRadius: 13,
+    backgroundColor: '#FAFAFA',
+    borderRadius: 14,
     padding: 15,
     marginTop: 4,
   },
-  detailButtonText: { color: '#171421', fontWeight: '800' },
+  detailButtonText: { color: '#0E0E0F', fontWeight: '700' },
 });
 
 const lightStyles = StyleSheet.create({
@@ -557,7 +603,10 @@ const lightStyles = StyleSheet.create({
   muted: { color: light.muted },
   border: { borderColor: light.border },
   keyPill: { backgroundColor: light.surface, borderColor: light.border },
-  keyPillActive: { borderColor: light.accent, backgroundColor: '#F1EAFB' },
+  keyPillActive: { borderColor: light.accent, backgroundColor: light.chipActive },
   keyPillText: { color: light.muted },
   keyPillTextActive: { color: light.accent },
+  link: { color: light.accent },
+  detailButton: { backgroundColor: light.text },
+  detailButtonText: { color: '#FFFFFF' },
 });

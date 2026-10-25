@@ -32,18 +32,16 @@ export function SummaryCard({ totals, period, periodLabel, themed }: Props) {
 
 const styles = StyleSheet.create({
   summary: {
-    backgroundColor: '#1B1F2C',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#2A3042',
-    padding: 17,
+    backgroundColor: '#191919',
+    borderRadius: 20,
+    padding: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginVertical: 4,
   },
-  summaryLabel: { color: '#9EA4B6', fontSize: 13 },
-  balance: { color: '#F8F7FB', fontSize: 23, fontWeight: '800', marginTop: 4 },
+  summaryLabel: { color: '#A3A3A3', fontSize: 13 },
+  balance: { color: '#FAFAFA', fontSize: 28, fontWeight: '700', marginTop: 5 },
   summaryRight: { alignItems: 'flex-end', gap: 5, justifyContent: 'center' },
-  income: { color: '#74D8A1', fontWeight: '700' },
+  income: { color: '#65D6C0', fontWeight: '600' },
   expense: { color: '#F09AA9', fontWeight: '700' },
 });

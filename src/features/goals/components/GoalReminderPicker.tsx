@@ -80,7 +80,7 @@ export function GoalReminderPicker({ value, onChange }: Props) {
 
 const styles = StyleSheet.create({
   label: {
-    color: '#C9B6E8',
+    color: '#C7C7CC',
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -90,12 +90,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 8 },
   chip: {
     borderRadius: 12,
-    backgroundColor: '#202433',
+    backgroundColor: '#252525',
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  chipText: { color: '#E8E9EE', fontSize: 14, fontWeight: '600' },
-  hint: { color: '#858B9D', fontSize: 12, marginTop: 6 },
+  chipText: { color: '#FAFAFA', fontSize: 14, fontWeight: '600' },
+  hint: { color: '#A3A3A3', fontSize: 12, marginTop: 6 },
 });
 
 const lightStyles = StyleSheet.create({

@@ -296,12 +296,12 @@ export function EditExpenseModal({
 
       <Pressable
         onPress={save}
-        style={[styles.submit, { backgroundColor: theme.colors.accent }]}
+        style={[styles.submit, { backgroundColor: theme.colors.text }]}
       >
         <Text
           style={[
             styles.submitText,
-            { color: theme.isLight ? '#FFFDF8' : '#171421' },
+            { color: theme.isLight ? '#FFFFFF' : '#0E0E0F' },
           ]}
         >
           Guardar cambios
