@@ -6,7 +6,7 @@ import DateTimePicker, {
 import { AppModal } from '../../../shared/components/AppModal';
 import { createDebt, DebtDirection } from '../../../db/repositories/debts';
 import { cop } from '../utils/currency';
-import { light, useTheme } from '../../../shared/theme/ThemeProvider';
+import { useTheme } from '../../../shared/theme/ThemeProvider';
 import { localDateKey } from '../../../shared/utils/date';
 
 type Props = {
@@ -17,7 +17,7 @@ type Props = {
 
 export function DebtModal({ visible, onClose, onSaved }: Props) {
   const theme = useTheme();
-  const isLight = theme.isLight;
+  const c = theme.colors;
   const [title, setTitle] = useState('');
   const [person, setPerson] = useState('');
   const [direction, setDirection] = useState<DebtDirection>('owe');
@@ -64,33 +64,34 @@ export function DebtModal({ visible, onClose, onSaved }: Props) {
     }
   };
 
+  const inputStyle = [
+    styles.input,
+    { backgroundColor: c.input, color: c.text, borderColor: c.border },
+  ];
+
   return (
     <AppModal visible={visible} title="Nueva deuda" onClose={onClose}>
-      <Text style={[styles.label, isLight && lightStyles.label]}>
-        ¿Qué es la deuda?
-      </Text>
+      <Text style={[styles.label, { color: c.muted }]}>¿Qué es la deuda?</Text>
       <TextInput
         value={title}
         onChangeText={setTitle}
         placeholder="Ej. Préstamo para la moto"
-        placeholderTextColor={isLight ? light.muted : '#75798B'}
-        style={[styles.input, isLight && lightStyles.input]}
+        placeholderTextColor={c.muted}
+        style={inputStyle}
       />
 
-      <Text style={[styles.label, isLight && lightStyles.label]}>
+      <Text style={[styles.label, { color: c.muted }]}>
         ¿Con quién? · opcional
       </Text>
       <TextInput
         value={person}
         onChangeText={setPerson}
         placeholder="Ej. Juan"
-        placeholderTextColor={isLight ? light.muted : '#75798B'}
-        style={[styles.input, isLight && lightStyles.input]}
+        placeholderTextColor={c.muted}
+        style={inputStyle}
       />
 
-      <Text style={[styles.label, isLight && lightStyles.label]}>
-        Dirección
-      </Text>
+      <Text style={[styles.label, { color: c.muted }]}>Dirección</Text>
       <View style={styles.chips}>
         {(
           [
@@ -103,39 +104,38 @@ export function DebtModal({ visible, onClose, onSaved }: Props) {
             onPress={() => setDirection(value)}
             style={[
               styles.chip,
-              isLight && lightStyles.chip,
-              direction === value && styles.chipActive,
-              isLight && direction === value && lightStyles.chipActive,
+              {
+                backgroundColor:
+                  direction === value ? c.chipActive : c.chip,
+              },
             ]}
           >
-            <Text style={[styles.chipText, isLight && lightStyles.chipText]}>
+            <Text style={[styles.chipText, { color: c.textSecondary }]}>
               {label}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={[styles.label, isLight && lightStyles.label]}>
-        Monto total
-      </Text>
+      <Text style={[styles.label, { color: c.muted }]}>Monto total</Text>
       <TextInput
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
         placeholder="Ej. 500000"
-        placeholderTextColor={isLight ? light.muted : '#75798B'}
-        style={[styles.input, isLight && lightStyles.input]}
+        placeholderTextColor={c.muted}
+        style={inputStyle}
       />
 
-      <Text style={[styles.label, isLight && lightStyles.label]}>
+      <Text style={[styles.label, { color: c.muted }]}>
         Fecha límite · opcional
       </Text>
       <View style={styles.row}>
         <Pressable
           onPress={() => setShowPicker(true)}
-          style={[styles.chip, isLight && lightStyles.chip]}
+          style={[styles.chip, { backgroundColor: c.chip }]}
         >
-          <Text style={[styles.chipText, isLight && lightStyles.chipText]}>
+          <Text style={[styles.chipText, { color: c.textSecondary }]}>
             {dueDate
               ? dueDate.toLocaleDateString('es-CO', {
                   day: 'numeric',
@@ -164,19 +164,27 @@ export function DebtModal({ visible, onClose, onSaved }: Props) {
         />
       )}
 
-      <Text style={[styles.label, isLight && lightStyles.label]}>
-        Nota · opcional
-      </Text>
+      <Text style={[styles.label, { color: c.muted }]}>Nota · opcional</Text>
       <TextInput
         value={note}
         onChangeText={setNote}
         placeholder="Ej. Pagar en cuotas"
-        placeholderTextColor={isLight ? light.muted : '#75798B'}
-        style={[styles.input, isLight && lightStyles.input]}
+        placeholderTextColor={c.muted}
+        style={inputStyle}
       />
 
-      <Pressable style={styles.save} onPress={save}>
-        <Text style={styles.saveText}>Guardar deuda</Text>
+      <Pressable
+        style={[styles.save, { backgroundColor: c.text }]}
+        onPress={save}
+      >
+        <Text
+          style={[
+            styles.saveText,
+            { color: theme.isLight ? '#FFFFFF' : '#0E0E0F' },
+          ]}
+        >
+          Guardar deuda
+        </Text>
       </Pressable>
     </AppModal>
   );
@@ -184,7 +192,6 @@ export function DebtModal({ visible, onClose, onSaved }: Props) {
 
 const styles = StyleSheet.create({
   label: {
-    color: '#C9B6E8',
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -194,20 +201,17 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#202433',
-    color: '#F8F7FB',
+    borderWidth: 1,
     paddingHorizontal: 13,
     fontSize: 15,
   },
   chips: { flexDirection: 'row', gap: 8 },
   chip: {
     borderRadius: 12,
-    backgroundColor: '#202433',
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  chipActive: { borderWidth: 1, borderColor: '#A78BFA' },
-  chipText: { color: '#E8E9EE', fontSize: 14, fontWeight: '600' },
+  chipText: { fontSize: 14, fontWeight: '600' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   clear: { color: '#E895A4', fontSize: 13, fontWeight: '700' },
   save: {
@@ -216,24 +220,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 14,
-    backgroundColor: '#A78BFA',
   },
-  saveText: { color: '#171421', fontWeight: '800', fontSize: 15 },
-});
-
-const lightStyles = StyleSheet.create({
-  label: { color: light.accent },
-  input: {
-    backgroundColor: light.surface,
-    color: light.text,
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  chip: {
-    backgroundColor: light.surfaceMuted,
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  chipActive: { borderColor: light.accent, backgroundColor: '#EAE4D9' },
-  chipText: { color: light.text },
+  saveText: { fontWeight: '800', fontSize: 15 },
 });

@@ -13,7 +13,7 @@ import { AccountModal } from './components/AccountModal';
 import { TransferModal } from './components/TransferModal';
 import { EditExpenseModal } from './components/EditExpenseModal';
 import { DebtSection } from './components/DebtSection';
-import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
+import { FirstTimeTip, FirstTimeTipOnOpen, TipText } from '../../shared/components/FirstTimeTip';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 
 export function AccountingScreen() {
@@ -154,6 +154,22 @@ export function AccountingScreen() {
           setTransferModalVisible(false);
         }}
       />
+
+      <FirstTimeTipOnOpen
+        open={transferModalVisible}
+        tipKey="transferencias"
+        icon="🔄"
+        title="Mover dinero entre tus cuentas"
+      >
+        <TipText>
+          Si pasas plata de tu banco a tu efectivo (o al revés), regístralo
+          aquí.
+        </TipText>
+        <TipText>
+          No es un gasto ni un ingreso: tu plata solo cambia de lugar, así
+          que tus cuentas quedan al día.
+        </TipText>
+      </FirstTimeTipOnOpen>
 
       <EditExpenseModal
         visible={Boolean(editingExpense)}

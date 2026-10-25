@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import { getSetting, setSetting } from '../../db/repositories/settings';
 
@@ -35,8 +35,50 @@ export function useFirstTimeTip(key: string) {
   return { visible, dismiss };
 }
 
+/**
+ * Variante para funciones que se abren como ventana: muestra el consejo la
+ * primera vez que esa ventana se abre.
+ */
+export function useFirstTimeTipOnOpen(open: boolean, key: string) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let alive = true;
+    getSetting(`tip_seen_${key}`)
+      .then(seen => {
+        if (alive && seen !== '1') setVisible(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [open, key]);
+
+  const dismiss = useCallback(async () => {
+    setVisible(false);
+    try {
+      await setSetting(`tip_seen_${key}`, '1');
+    } catch {
+      // Si no se pudo guardar, el consejo se mostrará de nuevo: no es grave.
+    }
+  }, [key]);
+
+  return { visible, dismiss };
+}
+
 /** Todas las claves de consejos, para el botón "volver a verlos" de Perfil. */
-export const TIP_KEYS = ['inicio', 'contabilidad', 'notas', 'ia', 'perfil'];
+export const TIP_KEYS = [
+  'inicio',
+  'contabilidad',
+  'notas',
+  'ia',
+  'perfil',
+  'planificacion',
+  'metas',
+  'estadisticas',
+  'transferencias',
+];
 
 export async function resetAllTips(): Promise<void> {
   await Promise.all(TIP_KEYS.map(key => setSetting(`tip_seen_${key}`, '0')));

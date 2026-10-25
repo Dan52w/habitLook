@@ -7,13 +7,13 @@ import {
   listDebts,
 } from '../../../db/repositories/debts';
 import { money } from '../utils/currency';
-import { light, useTheme } from '../../../shared/theme/ThemeProvider';
+import { useTheme } from '../../../shared/theme/ThemeProvider';
 import { DebtModal } from './DebtModal';
 import { DebtDetailModal } from './DebtDetailModal';
 
 export function DebtSection() {
   const theme = useTheme();
-  const isLight = theme.isLight;
+  const c = theme.colors;
   const [debts, setDebts] = useState<DebtWithProgress[]>([]);
   const [totals, setTotals] = useState<DebtTotals>({
     oweTotal: 0,
@@ -37,7 +37,7 @@ export function DebtSection() {
   }, []);
 
   useEffect(() => {
-    void load();
+    load();
   }, [load]);
 
   const handleDebtChanged = useCallback(async () => {
@@ -53,46 +53,40 @@ export function DebtSection() {
   return (
     <View style={styles.section}>
       <View style={styles.header}>
-        <Text style={[styles.title, isLight && lightStyles.text]}>
-          Deudas
-        </Text>
+        <Text style={[styles.title, { color: c.accentLight }]}>Deudas</Text>
         <Pressable onPress={() => setCreateOpen(true)}>
-          <Text style={styles.add}>+ Nueva</Text>
+          <Text style={[styles.add, { color: c.accent }]}>+ Nueva</Text>
         </Pressable>
       </View>
 
-      <Text style={[styles.explain, isLight && lightStyles.muted]}>
+      <Text style={[styles.explain, { color: c.muted }]}>
         Lo que debes y lo que te deben, aparte de tus gastos: una deuda no es
         un ingreso ni un egreso.
       </Text>
 
       <View style={styles.tiles}>
-        <View style={[styles.tile, isLight && lightStyles.tile]}>
-          <Text style={[styles.tileLabel, isLight && lightStyles.muted]}>
-            Debes
-          </Text>
-          <Text style={[styles.tileValue, isLight && lightStyles.text]}>
+        <View style={[styles.tile, { backgroundColor: c.card }]}>
+          <Text style={[styles.tileLabel, { color: c.muted }]}>Debes</Text>
+          <Text style={[styles.tileValue, { color: c.text }]}>
             {money(totals.oweRemaining)}
           </Text>
-          <Text style={[styles.tileSub, isLight && lightStyles.muted]}>
+          <Text style={[styles.tileSub, { color: c.muted }]}>
             de {money(totals.oweTotal)}
           </Text>
         </View>
-        <View style={[styles.tile, isLight && lightStyles.tile]}>
-          <Text style={[styles.tileLabel, isLight && lightStyles.muted]}>
-            Te deben
-          </Text>
-          <Text style={[styles.tileValue, isLight && lightStyles.text]}>
+        <View style={[styles.tile, { backgroundColor: c.card }]}>
+          <Text style={[styles.tileLabel, { color: c.muted }]}>Te deben</Text>
+          <Text style={[styles.tileValue, { color: c.text }]}>
             {money(totals.owedRemaining)}
           </Text>
-          <Text style={[styles.tileSub, isLight && lightStyles.muted]}>
+          <Text style={[styles.tileSub, { color: c.muted }]}>
             de {money(totals.owedTotal)}
           </Text>
         </View>
       </View>
 
       {debts.length === 0 ? (
-        <Text style={[styles.empty, isLight && lightStyles.muted]}>
+        <Text style={[styles.empty, { color: c.muted }]}>
           Sin deudas registradas. Cuando le debas a alguien (o te deban),
           regístralo aquí para no perderle la pista.
         </Text>
@@ -104,23 +98,23 @@ export function DebtSection() {
               <Pressable
                 key={debt.id}
                 onPress={() => setSelected(debt)}
-                style={[styles.card, isLight && lightStyles.card]}
+                style={[styles.card, { backgroundColor: c.card }]}
               >
                 <View style={styles.row}>
                   <Text
-                    style={[styles.name, isLight && lightStyles.text]}
+                    style={[styles.name, { color: c.text }]}
                     numberOfLines={1}
                   >
                     {debt.direction === 'owe' ? '🔴 ' : '🟢 '}
                     {debt.title}
                   </Text>
-                  <Text style={[styles.remaining, isLight && lightStyles.text]}>
+                  <Text style={[styles.remaining, { color: c.text }]}>
                     {money(debt.remaining)}
                   </Text>
                 </View>
                 <View style={styles.row}>
                   <Text
-                    style={[styles.sub, isLight && lightStyles.muted]}
+                    style={[styles.sub, { color: c.muted }]}
                     numberOfLines={1}
                   >
                     {debt.direction === 'owe' ? 'Yo debo' : 'Me deben'}
@@ -133,18 +127,20 @@ export function DebtSection() {
                           ? ` · vence ${debt.due_date}`
                           : ''}
                   </Text>
-                  <Text style={[styles.sub, isLight && lightStyles.muted]}>
+                  <Text style={[styles.sub, { color: c.muted }]}>
                     {money(debt.paid)} de {money(debt.total)}
                   </Text>
                 </View>
-                <View style={[styles.track, isLight && lightStyles.track]}>
+                <View
+                  style={[styles.track, { backgroundColor: c.surfaceMuted }]}
+                >
                   <View
                     style={[
                       styles.fill,
                       {
                         width: `${Math.min(100, ratio * 100)}%`,
                         backgroundColor:
-                          debt.status === 'paid' ? '#4ADE80' : '#A78BFA',
+                          debt.status === 'paid' ? '#4ADE80' : c.accent,
                       },
                     ]}
                   />
@@ -180,50 +176,26 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  title: { color: '#C9B6E8', fontSize: 15, fontWeight: '800' },
-  add: { color: '#A78BFA', fontWeight: '700' },
-  explain: { color: '#858B9D', fontSize: 12, lineHeight: 17 },
+  title: { fontSize: 15, fontWeight: '800' },
+  add: { fontWeight: '700' },
+  explain: { fontSize: 12, lineHeight: 17 },
   tiles: { flexDirection: 'row', gap: 10 },
-  tile: {
-    flex: 1,
-    backgroundColor: '#171B27',
-    borderRadius: 16,
-    padding: 14,
-    gap: 2,
-  },
-  tileLabel: { color: '#858B9D', fontSize: 12, fontWeight: '700' },
-  tileValue: { color: '#F8F7FB', fontSize: 19, fontWeight: '800' },
-  tileSub: { color: '#858B9D', fontSize: 12 },
-  empty: { color: '#858B9D', fontSize: 13, lineHeight: 19 },
+  tile: { flex: 1, borderRadius: 16, padding: 14, gap: 2 },
+  tileLabel: { fontSize: 12, fontWeight: '700' },
+  tileValue: { fontSize: 19, fontWeight: '800' },
+  tileSub: { fontSize: 12 },
+  empty: { fontSize: 13, lineHeight: 19 },
   list: { gap: 10 },
-  card: {
-    backgroundColor: '#171B27',
-    borderRadius: 16,
-    padding: 14,
-    gap: 6,
-  },
+  card: { borderRadius: 16, padding: 14, gap: 6 },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     gap: 8,
   },
-  name: { color: '#EDEEF3', fontSize: 14, fontWeight: '600', flex: 1 },
-  remaining: { color: '#F8F7FB', fontSize: 15, fontWeight: '800' },
-  sub: { color: '#858B9D', fontSize: 12 },
-  track: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#232839',
-    overflow: 'hidden',
-  },
+  name: { fontSize: 14, fontWeight: '600', flex: 1 },
+  remaining: { fontSize: 15, fontWeight: '800' },
+  sub: { fontSize: 12 },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
-});
-
-const lightStyles = StyleSheet.create({
-  text: { color: light.text },
-  muted: { color: light.muted },
-  tile: { backgroundColor: light.surface },
-  card: { backgroundColor: light.surface },
-  track: { backgroundColor: '#E9E2D2' },
 });

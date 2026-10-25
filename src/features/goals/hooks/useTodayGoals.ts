@@ -32,7 +32,7 @@ export function useTodayGoals() {
         return {
           id: g.id,
           title: g.title,
-          progressLabel: `${capped} / ${g.target_value}`,
+          progressLabel: `${capped} / ${g.target_value} veces`,
           progressRatio:
             g.target_value > 0 ? Math.min(1, capped / g.target_value) : 0,
           color: '#F2A93B',
@@ -58,7 +58,7 @@ export function useTodayGoals() {
       return {
         id: g.id,
         title: g.title,
-        progressLabel: `${Math.round(ratio * 100)}%`,
+        progressLabel: `${Math.round(ratio * 100)}% de ${g.target_value} min`,
         progressRatio: ratio,
         color: '#64D9A0',
         targetValue: g.target_value,

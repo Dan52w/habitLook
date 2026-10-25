@@ -9,7 +9,7 @@ import {
   listDebtPayments,
 } from '../../../db/repositories/debts';
 import { cop, money } from '../utils/currency';
-import { light, useTheme } from '../../../shared/theme/ThemeProvider';
+import { useTheme } from '../../../shared/theme/ThemeProvider';
 import { dateFromKey } from '../../../shared/utils/date';
 
 type Props = {
@@ -28,7 +28,7 @@ function formatDue(dateKey: string) {
 
 export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
   const theme = useTheme();
-  const isLight = theme.isLight;
+  const c = theme.colors;
   const [payments, setPayments] = useState<DebtPayment[]>([]);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -95,13 +95,14 @@ export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
     ]);
   };
 
+  const inputStyle = [
+    styles.input,
+    { backgroundColor: c.input, color: c.text, borderColor: c.border },
+  ];
+
   return (
-    <AppModal
-      visible={Boolean(debt)}
-      title={debt.title}
-      onClose={onClose}
-    >
-      <Text style={[styles.direction, isLight && lightStyles.muted]}>
+    <AppModal visible={Boolean(debt)} title={debt.title} onClose={onClose}>
+      <Text style={[styles.direction, { color: c.muted }]}>
         {directionLabel}
         {debt.person ? ` · ${debt.person}` : ''}
         {debt.due_date ? ` · vence ${formatDue(debt.due_date)}` : ''}
@@ -109,49 +110,43 @@ export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
 
       <View style={styles.amounts}>
         <View>
-          <Text style={[styles.amountLabel, isLight && lightStyles.muted]}>
-            Pagado
-          </Text>
-          <Text style={[styles.amount, isLight && lightStyles.text]}>
+          <Text style={[styles.amountLabel, { color: c.muted }]}>Pagado</Text>
+          <Text style={[styles.amount, { color: c.text }]}>
             {money(debt.paid)}
           </Text>
         </View>
         <View style={styles.amountRight}>
-          <Text style={[styles.amountLabel, isLight && lightStyles.muted]}>
-            Queda
-          </Text>
-          <Text style={[styles.amount, isLight && lightStyles.text]}>
+          <Text style={[styles.amountLabel, { color: c.muted }]}>Queda</Text>
+          <Text style={[styles.amount, { color: c.text }]}>
             {money(debt.remaining)}
           </Text>
         </View>
       </View>
 
-      <View style={[styles.track, isLight && lightStyles.track]}>
+      <View style={[styles.track, { backgroundColor: c.surfaceMuted }]}>
         <View
           style={[
             styles.fill,
             {
               width: `${Math.min(100, ratio * 100)}%`,
-              backgroundColor: debt.status === 'paid' ? '#4ADE80' : '#A78BFA',
+              backgroundColor: debt.status === 'paid' ? '#4ADE80' : c.accent,
             },
           ]}
         />
       </View>
-      <Text style={[styles.total, isLight && lightStyles.muted]}>
+      <Text style={[styles.total, { color: c.muted }]}>
         Total: {money(debt.total)}
         {debt.status === 'paid' ? ' · ✓ Pagada' : ''}
         {debt.status === 'overdue' ? ' · ⚠️ Vencida' : ''}
       </Text>
 
       {debt.note ? (
-        <Text style={[styles.note, isLight && lightStyles.muted]}>
-          {debt.note}
-        </Text>
+        <Text style={[styles.note, { color: c.textSecondary }]}>{debt.note}</Text>
       ) : null}
 
       {debt.status !== 'paid' && (
         <>
-          <Text style={[styles.label, isLight && lightStyles.label]}>
+          <Text style={[styles.label, { color: c.muted }]}>
             Registrar abono
           </Text>
           <TextInput
@@ -159,20 +154,30 @@ export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
             onChangeText={setAmount}
             keyboardType="decimal-pad"
             placeholder="Monto del abono"
-            placeholderTextColor={isLight ? light.muted : '#75798B'}
-            style={[styles.input, isLight && lightStyles.input]}
+            placeholderTextColor={c.muted}
+            style={inputStyle}
           />
           <TextInput
             value={note}
             onChangeText={setNote}
             placeholder="Nota · opcional"
-            placeholderTextColor={isLight ? light.muted : '#75798B'}
-            style={[styles.input, isLight && lightStyles.input]}
+            placeholderTextColor={c.muted}
+            style={inputStyle}
           />
-          <Pressable style={styles.save} onPress={pay}>
-            <Text style={styles.saveText}>Abonar</Text>
+          <Pressable
+            style={[styles.save, { backgroundColor: c.text }]}
+            onPress={pay}
+          >
+            <Text
+              style={[
+                styles.saveText,
+                { color: theme.isLight ? '#FFFFFF' : '#0E0E0F' },
+              ]}
+            >
+              Abonar
+            </Text>
           </Pressable>
-          <Text style={[styles.hint, isLight && lightStyles.muted]}>
+          <Text style={[styles.hint, { color: c.muted }]}>
             El abono solo actualiza esta deuda: no se cuenta como gasto ni
             mueve el saldo de tus cuentas.
           </Text>
@@ -181,19 +186,17 @@ export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
 
       {payments.length > 0 && (
         <>
-          <Text style={[styles.label, isLight && lightStyles.label]}>
-            Abonos
-          </Text>
+          <Text style={[styles.label, { color: c.muted }]}>Abonos</Text>
           <View style={styles.payments}>
             {payments.map(p => (
               <View key={p.id} style={styles.paymentRow}>
-                <Text style={[styles.paymentDate, isLight && lightStyles.muted]}>
+                <Text style={[styles.paymentDate, { color: c.muted }]}>
                   {p.date}
                 </Text>
-                <Text style={[styles.paymentNote, isLight && lightStyles.text]}>
+                <Text style={[styles.paymentNote, { color: c.text }]}>
                   {p.note ?? 'Abono'}
                 </Text>
-                <Text style={[styles.paymentAmount, isLight && lightStyles.text]}>
+                <Text style={[styles.paymentAmount, { color: c.text }]}>
                   {money(p.amount)}
                 </Text>
               </View>
@@ -210,22 +213,16 @@ export function DebtDetailModal({ debt, onClose, onChanged }: Props) {
 }
 
 const styles = StyleSheet.create({
-  direction: { color: '#AEB2C0', fontSize: 13, fontWeight: '600' },
+  direction: { fontSize: 13, fontWeight: '600' },
   amounts: { flexDirection: 'row', justifyContent: 'space-between' },
   amountRight: { alignItems: 'flex-end' },
-  amountLabel: { color: '#858B9D', fontSize: 12 },
-  amount: { color: '#F8F7FB', fontSize: 22, fontWeight: '800' },
-  track: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#232839',
-    overflow: 'hidden',
-  },
+  amountLabel: { fontSize: 12 },
+  amount: { fontSize: 22, fontWeight: '800' },
+  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
   fill: { height: 8, borderRadius: 4 },
-  total: { color: '#858B9D', fontSize: 13, fontWeight: '600' },
-  note: { color: '#AEB2C0', fontSize: 14, lineHeight: 20 },
+  total: { fontSize: 13, fontWeight: '600' },
+  note: { fontSize: 14, lineHeight: 20 },
   label: {
-    color: '#C9B6E8',
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -235,8 +232,7 @@ const styles = StyleSheet.create({
   input: {
     height: 48,
     borderRadius: 12,
-    backgroundColor: '#202433',
-    color: '#F8F7FB',
+    borderWidth: 1,
     paddingHorizontal: 13,
     fontSize: 15,
   },
@@ -245,32 +241,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 14,
-    backgroundColor: '#A78BFA',
   },
-  saveText: { color: '#171421', fontWeight: '800', fontSize: 15 },
-  hint: { color: '#858B9D', fontSize: 12, lineHeight: 17 },
+  saveText: { fontWeight: '800', fontSize: 15 },
+  hint: { fontSize: 12, lineHeight: 17 },
   payments: { gap: 10 },
-  paymentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  paymentDate: { color: '#858B9D', fontSize: 12, width: 86 },
-  paymentNote: { color: '#EDEEF3', fontSize: 14, flex: 1 },
-  paymentAmount: { color: '#F8F7FB', fontSize: 14, fontWeight: '700' },
+  paymentRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  paymentDate: { fontSize: 12, width: 86 },
+  paymentNote: { fontSize: 14, flex: 1 },
+  paymentAmount: { fontSize: 14, fontWeight: '700' },
   deleteWrap: { alignItems: 'center', marginTop: 6 },
   delete: { color: '#E895A4', fontSize: 13, fontWeight: '700' },
-});
-
-const lightStyles = StyleSheet.create({
-  text: { color: light.text },
-  muted: { color: light.muted },
-  label: { color: light.accent },
-  input: {
-    backgroundColor: light.surface,
-    color: light.text,
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  track: { backgroundColor: '#E9E2D2' },
 });

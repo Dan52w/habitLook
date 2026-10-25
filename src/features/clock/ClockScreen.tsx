@@ -37,7 +37,7 @@ import {
   cancelGoalReminder,
   scheduleGoalReminder,
 } from '../../services/notifications';
-import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
+import { FirstTimeTip, FirstTimeTipOnOpen, TipText } from '../../shared/components/FirstTimeTip';
 import { dateFromKey, localDateKey } from '../../shared/utils/date';
 import { light, useTheme } from '../../shared/theme/ThemeProvider';
 
@@ -445,6 +445,62 @@ export function ClockScreen() {
         visible={statsOpen}
         onClose={() => setStatsOpen(false)}
       />
+
+      <FirstTimeTipOnOpen
+        open={planOpen}
+        tipKey="planificacion"
+        icon="🗓️"
+        title="Arma tu día por bloques"
+      >
+        <TipText>
+          Elige una actividad y la hora en que va. Así tu día queda
+          organizado en bloques de colores.
+        </TipText>
+        <TipText>
+          Si marcas “cada semana”, esa actividad se repite sola los mismos
+          días, sin tener que crearla otra vez.
+        </TipText>
+        <TipText>
+          Los huecos sin color son tiempo libre: úsalos para descansar o para
+          algo nuevo.
+        </TipText>
+      </FirstTimeTipOnOpen>
+
+      <FirstTimeTipOnOpen
+        open={goalOpen}
+        tipKey="metas"
+        icon="🎯"
+        title="Metas que sí se cumplen"
+      >
+        <TipText>
+          Una meta es algo que quieres hacer cada día o cada semana, como
+          leer o tomar agua.
+        </TipText>
+        <TipText>
+          Primero elige cómo se mide: en minutos, en veces, o solo sí/no.
+          Luego dime cuánto: por ejemplo, 30 minutos de lectura.
+        </TipText>
+        <TipText>
+          Cada día la tocas para marcar tu avance, y la racha te muestra
+          cuántos días seguidos vas.
+        </TipText>
+      </FirstTimeTipOnOpen>
+
+      <FirstTimeTipOnOpen
+        open={statsOpen}
+        tipKey="estadisticas"
+        icon="📊"
+        title="Tu semana en resumen"
+      >
+        <TipText>
+          Aquí ves cuántos días cumpliste tus metas, cuántas horas planeaste
+          y cuál fue tu mejor día.
+        </TipText>
+        <TipText>
+          Con “Compartir mi semana” haces una imagen bonita para presumir tu
+          avance donde quieras.
+        </TipText>
+      </FirstTimeTipOnOpen>
 
       <AppModal
         visible={Boolean(reminderGoal)}

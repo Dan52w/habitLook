@@ -147,12 +147,15 @@ export function GoalComposer({ visible, onClose, onSaved }: Props) {
       {type !== 'boolean' && (
         <>
           <Text style={[styles.label, theme.isLight && lightStyles.label]}>
-            Objetivo
+            Objetivo en {type === 'duration' ? 'minutos' : 'veces'}
           </Text>
           <TextInput
             value={target}
             keyboardType="decimal-pad"
             onChangeText={setTarget}
+            placeholder={
+              type === 'duration' ? 'Ej. 30 minutos' : 'Ej. 3 veces'
+            }
             placeholderTextColor={theme.isLight ? light.muted : '#75798B'}
             style={[styles.input, theme.isLight && lightStyles.input]}
           />
