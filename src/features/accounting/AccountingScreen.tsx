@@ -12,6 +12,8 @@ import { HistoryList } from './components/HistoryList';
 import { AccountModal } from './components/AccountModal';
 import { TransferModal } from './components/TransferModal';
 import { EditExpenseModal } from './components/EditExpenseModal';
+import { DebtSection } from './components/DebtSection';
+import { FirstTimeTip, TipText } from '../../shared/components/FirstTimeTip';
 import { SectionHeader } from '../../shared/components/SectionHeader';
 
 export function AccountingScreen() {
@@ -74,7 +76,7 @@ export function AccountingScreen() {
               style={[styles.addAccount, theme.isLight && lightStyles.addAccount]}
             >
               <Text style={[styles.addAccountText, theme.isLight && lightStyles.addAccountText]}>
-                + Banco
+                + Cuenta
               </Text>
             </Pressable>
           }
@@ -102,6 +104,8 @@ export function AccountingScreen() {
           }}
           onOpenTransfer={() => setTransferModalVisible(true)}
         />
+
+        <DebtSection />
 
         <MovementForm
           accounts={accounts}
@@ -162,6 +166,19 @@ export function AccountingScreen() {
           setEditingExpense(null);
         }}
       />
+
+      <FirstTimeTip tipKey="contabilidad" icon="💰" title="Tu dinero sin enredos">
+        <TipText>
+          Primero crea tus cuentas: tu banco, tu efectivo o lo que uses. Luego
+          anota lo que entra y lo que sale.
+        </TipText>
+        <TipText>
+          En “Deudas” anotas lo que debes o lo que te deben, aparte de tus
+          gastos: pagar una deuda no es un gasto nuevo, es saldar algo que ya
+          debías.
+        </TipText>
+        <TipText>Todo queda guardado solo en tu teléfono.</TipText>
+      </FirstTimeTip>
     </SafeAreaView>
   );
 }

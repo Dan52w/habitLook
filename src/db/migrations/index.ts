@@ -232,4 +232,31 @@ export const MIGRATIONS = [
       `ALTER TABLE notes ADD COLUMN reminder_at TEXT;`,
     ],
   },
+  {
+    // Deudas: entidad propia, separada de ingresos y egresos. Una deuda no
+    // es un flujo de dinero sino un compromiso: lo que debo o me deben.
+    // Los abonos solo actualizan la deuda; nunca tocan cuentas ni el
+    // resumen de ingresos/egresos (los saldos se calculan desde expenses).
+    name: '013_debts',
+    statements: [
+      `CREATE TABLE debts (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        person TEXT,
+        direction TEXT NOT NULL CHECK (direction IN ('owe','owed')),
+        total REAL NOT NULL,
+        due_date TEXT,
+        note TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );`,
+      `CREATE TABLE debt_payments (
+        id TEXT PRIMARY KEY,
+        debt_id TEXT NOT NULL REFERENCES debts(id) ON DELETE CASCADE,
+        amount REAL NOT NULL,
+        date TEXT NOT NULL,
+        note TEXT
+      );`,
+      `CREATE INDEX idx_debt_payments_debt ON debt_payments(debt_id);`,
+    ],
+  },
 ];
